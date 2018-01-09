@@ -17,6 +17,18 @@
             app:titleTextAppearance="@style/titleStyle"
             android:layout_height="40dp" />
 
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/hide_toolbar"
+            android:layout_width="match_parent"
+            app:titleTextAppearance="@style/titleStyle"
+            android:layout_height="40dp"
+            android:visibility="gone"
+            app:contentInsetLeft="0dp">
+
+            <include layout="@layout/toolbar_function" />
+
+        </android.support.v7.widget.Toolbar>
+
         <android.support.v7.widget.RecyclerView
             android:id="@+id/recyclerView"
             android:layout_width="match_parent"
@@ -33,31 +45,42 @@
             android:paddingEnd="10dp"
             android:visibility="gone">
 
-            <TextView
+            <RadioButton
+                android:id="@+id/share"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
-                android:text="上传" />
+                android:drawableTop="@drawable/share"
+                android:gravity="center"
+                android:text="share"
+                android:button="@null" />
 
-            <TextView
+            <RadioButton
+                android:id="@+id/move"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
-                android:text="上传" />
+                android:drawableTop="@drawable/move"
+                android:gravity="center"
+                android:text="move"
+                android:button="@null" />
 
-            <TextView
+            <RadioButton
+                android:id="@+id/delete"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
-                android:text="上传" />
+                android:drawableTop="@drawable/delete"
+                android:gravity="center"
+                android:text="delete"
+                android:button="@null" />
         </LinearLayout>
     </LinearLayout>
-
 
 </FrameLayout>

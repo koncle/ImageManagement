@@ -5,4 +5,6 @@
     <color name="colorAccent">#fff</color>
     <color name="select_background">#999</color>
     <color name="background">#5222</color>
+    <color name="transparent">#0000</color>
+    <color name="checked">#f00</color>
 </resources>

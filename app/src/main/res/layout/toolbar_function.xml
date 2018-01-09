@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageButton
+        android:id="@+id/select_back"
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+
+        android:background="@drawable/back"
+
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:id="@+id/select_msg"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+
+        android:text="asdf"
+        android:textSize="21dp"
+        android:gravity="center"
+
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/select_complete"
+
+        android:text="@string/right_top_button"
+        android:textSize="15dp"
+        android:textAllCaps="false"
+        android:textColor="#5222"
+        android:gravity="center"
+        android:background="@drawable/button_shape"
+
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+
+        android:paddingStart="3dp"
+        android:paddingEnd="3dp"
+        android:layout_alignParentEnd="true" />
+</RelativeLayout>

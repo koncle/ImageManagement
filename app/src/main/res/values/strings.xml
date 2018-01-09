@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ImageManagement</string>
+    <string name="right_top_button">All</string>
 </resources>

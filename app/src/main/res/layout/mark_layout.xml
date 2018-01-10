@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <Toolbar
+        android:layout_width="match_parent"
+        android:layout_height="50dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageButton
+                android:id="@+id/remark_back"
+                android:layout_width="wrap_content"
+                android:layout_height="25dp"
+                android:background="@drawable/back"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true" />
+
+            <TextView
+                android:id="@+id/select_msg"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+
+                android:text="Remark"
+                android:textSize="21dp"
+                android:gravity="center"
+
+                android:layout_centerHorizontal="true" />
+
+            <Button
+                android:id="@+id/remark_complete"
+                android:layout_width="wrap_content"
+                android:layout_height="25dp"
+                android:text="complete"
+                android:background="@color/transparent"
+                android:textColor="@color/background"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true" />
+
+        </RelativeLayout>
+
+    </Toolbar>
+
+    <EditText
+        android:id="@+id/remark_input"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+
+        android:hint="@string/mark_hint"
+
+        android:minLines="10"
+        android:maxLines="20" />
+</LinearLayout>

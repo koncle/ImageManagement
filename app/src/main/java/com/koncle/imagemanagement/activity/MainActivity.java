@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
     private void showImageList() {
         Intent intent = new Intent(MainActivity.this, ImageListViewer.class);
         Bundle bundle = new Bundle();
-        bundle.putStringArrayList("list", (ArrayList<String>) data);
+        bundle.putStringArrayList("paths", (ArrayList<String>) data);
         intent.putExtras(bundle);
         startActivity(intent);
     }

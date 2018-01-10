@@ -1,6 +1,9 @@
 package com.koncle.imagemanagement.adapter;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,6 +16,7 @@ import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.activity.ImageViewer;
 import com.koncle.imagemanagement.util.ImageUtils;
 
 import java.util.ArrayList;
@@ -69,7 +73,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         params.height = itemHeight;
 
         // show the select mode or not
-        if (selectMode == true) {
+        if (selectMode) {
             holder.selects.setVisibility(View.VISIBLE);
 
             if (selectedImages.containsKey(position)) {
@@ -79,7 +83,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 holder.selects.setChecked(false);
                 holder.frameLayout.setVisibility(View.GONE);
             }
-
         }else{
             holder.frameLayout.setVisibility(View.GONE);
             holder.selects.setVisibility(View.GONE);
@@ -91,7 +94,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             @Override
             public boolean onLongClick(View view) {
                 enterSelectMode();
-                toggleImageSelection(holder, position);
+                toggleImageSelectionAndCheck(holder, position);
                 return true;
             }
         });
@@ -99,8 +102,15 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         holder.image.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                if (selectMode == true) {
-                    toggleImageSelection(holder, position);
+                if (selectMode) {
+                    toggleImageSelectionAndCheck(holder, position);
+                } else {
+                    Intent intent = new Intent(ImageAdaptor.this.context, ImageViewer.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putStringArrayList("paths", (ArrayList<String>) ImageAdaptor.this.data);
+                    bundle.putInt("pos", position);
+                    intent.putExtras(bundle);
+                    ((Activity) ImageAdaptor.this.context).startActivityForResult(intent, 1);
                 }
             }
         });
@@ -118,43 +128,60 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 .into(holder.image);
     }
 
-    private void selectImageAndCheck(ImageViewHolder holder, int position) {
-        putImageIntoMap(holder, position);
-        holder.selects.setChecked(true);
+    private void enterSelectMode() {
+        Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
+        if (!selectMode) {
+            setOrClearDisplayedImageSelection(false);
+            modeOperator.enterSelectMode();
+        }
+        selectMode = true;
     }
 
-    private void removeImageAndCheck(ImageViewHolder holder, int position) {
-        removeImageFromMap(holder, position);
-        holder.selects.setChecked(false);
+    // this method will be called by ImageListViewer activity
+    public boolean exitSelectMode() {
+        if (selectMode) {
+            selectMode = false;
+            selectedImages.clear();
+            Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
+            modeOperator.exitSelectMode();
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    private void putImageIntoMap(ImageViewHolder holder, int position) {
-        selectedImages.put(position, data.get(position));
-        holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
-        modeOperator.showSelectedNum(selectedImages.size());
-    }
-
-    private void removeImageFromMap(ImageViewHolder holder, int position) {
-        selectedImages.remove(position);
-        holder.frameLayout.findViewById(R.id.background).setVisibility(View.GONE);
-        modeOperator.showSelectedNum(selectedImages.size());
-    }
-
+    /*
+    * To prevent the situation when an image has been selected by the checkbox
+    * and its click listener will be triggered, thus if set the checkbox again,
+    * the checkbox will set back to its original value, which almost means
+    * nothing has been done.
+    */
     private void toggleImageSelectionWithoutCheck(ImageViewHolder holder, int position) {
         if (selectedImages.containsKey(position)) {
-            putImageIntoMap(holder, position);
-        } else {
             selectedImages.put(position, data.get(position));
-            removeImageFromMap(holder, position);
+            holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
+        } else {
+            selectedImages.remove(position);
+            holder.frameLayout.findViewById(R.id.background).setVisibility(View.GONE);
         }
+
+        modeOperator.showSelectedNum(selectedImages.size());
     }
 
-    private void toggleImageSelection(ImageViewHolder holder, int position) {
+    private void toggleImageSelectionAndCheck(ImageViewHolder holder, int position) {
         if (selectedImages.containsKey(position)) {
-            removeImageAndCheck(holder, position);
+            selectedImages.remove(position);
+            holder.frameLayout.findViewById(R.id.background).setVisibility(View.GONE);
+
+            holder.selects.setChecked(false);
         } else {
-            selectImageAndCheck(holder, position);
+            selectedImages.put(position, data.get(position));
+            holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
+
+            holder.selects.setChecked(true);
         }
+
+        modeOperator.showSelectedNum(selectedImages.size());
     }
 
     private void setOrClearDisplayedImageSelection(boolean mode) {
@@ -162,6 +189,14 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         int end = gridLayoutManager.findLastVisibleItemPosition();
         View cur;
         int i = start;
+
+        for (; i <= end; ++i) {
+            cur = gridLayoutManager.findViewByPosition(i);
+            if (cur == null) break;
+            cur.findViewById(R.id.select_button).setVisibility(View.VISIBLE);
+        }
+
+        /*
         // clear
         if (mode) {
             for (; i <= end; ++i) {
@@ -180,40 +215,21 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 cur.findViewById(R.id.select_button).setVisibility(View.VISIBLE);
             }
         }
+        */
+
         Log.i("clear", "start + " + start + " end " + end);
-    }
-
-    private void enterSelectMode() {
-        Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
-        if (selectMode == false) {
-            setOrClearDisplayedImageSelection(false);
-            modeOperator.enterSelectMode();
-        }
-        selectMode = true;
-    }
-
-    // this method will be called by ImageListViewer activity
-    public boolean exitSelectMode() {
-        if (selectMode == true) {
-            selectMode = false;
-            selectedImages.clear();
-            Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
-            modeOperator.exitSelectMode();
-            return true;
-        }else{
-            return false;
-        }
     }
 
     // TODO:to compelte this method
     public void selectAll() {
         if (selectedImages.size() == data.size()) return;
 
-        ImageViewHolder holder;
         for (int i = 0; i < data.size(); ++i) {
             selectedImages.put(i, data.get(i));
         }
         modeOperator.refreshData();
+
+        modeOperator.showSelectedNum(selectedImages.size());
     }
 
     public List<String> getSelections() {

@@ -12,5 +12,10 @@
         <item name="android:textSize">20dp</item>
     </style>
 
+    <style name="FullscreenTheme" parent="Theme.AppCompat.Light.NoActionBar"> <!--自定义主题名称-->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+    </style>
 
 </resources>

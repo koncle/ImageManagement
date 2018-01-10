@@ -37,6 +37,7 @@ public class ImageSource {
         Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
         ContentResolver contentResolver = context.getContentResolver();
+
         Cursor cursor = contentResolver.query(uri, null,
                 MediaStore.Images.Media.MIME_TYPE + "=? or "
                         + MediaStore.Images.Media.MIME_TYPE + "=?",

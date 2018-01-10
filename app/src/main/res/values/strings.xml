@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ImageManagement</string>
     <string name="right_top_button">All</string>
+    <string name="mark_hint">Input your mark</string>
 </resources>

@@ -28,12 +28,15 @@ import java.util.List;
 
 public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.ModeOperator {
 
+    private static final int ROW = 4;
+
     private RecyclerView recyclerView;
     private List<String> data;
     private ImageAdaptor imageAdaptor;
     private Toolbar toolbar;
     private Toolbar hidedToolbar;
     private LinearLayout operatoins;
+    private TextView title;
     private TextView complete;
     private ImageButton back;
     private RadioButton share;
@@ -50,8 +53,7 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
             StrictMode.setVmPolicy(builder.build());
         }
 
-        Bundle bundle = this.getIntent().getExtras();
-        data = bundle.getStringArrayList("list");
+        data = this.getIntent().getExtras().getStringArrayList("paths");
 
         findViews();
         initToolbar();
@@ -116,6 +118,7 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
         share = findViewById(R.id.share);
         delete = findViewById(R.id.delete);
         move = findViewById(R.id.move);
+        title = findViewById(R.id.select_msg);
     }
 
     private void initToolbar() {
@@ -199,8 +202,26 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
 
     @Override
     public void showSelectedNum(int num) {
-        this.hidedToolbar.setTitle("Select " + num + " Pictures");
+        this.title.setText("Select " + num + " Pictures");
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (resultCode) {
+            case (ImageViewer.IMAGE_VIWER_SCROLL): {
+                int pos = data.getIntExtra("pos", 0);
+                recyclerView.scrollToPosition(pos + ROW * 2); // scroll to next 2 rows
+                break;
+            }
+            case (ImageViewer.IMAGE_VIEWER_DELETE): {
+                if (data.getBooleanExtra(ImageViewer.RESULT_TAG, false))
+                    imageAdaptor.notifyDataSetChanged();
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 

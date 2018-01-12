@@ -91,7 +91,7 @@ public class ImageViewer extends AppCompatActivity implements ImageViewPagerAdap
 
     private void initViewPager(int position) {
         pagerAdapter = new ImageViewPagerAdapter(this, paths);
-        pagerAdapter.setOperater(this);
+        pagerAdapter.setOperator(this);
         imageViewPager.setAdapter(pagerAdapter);
         imageViewPager.setCurrentItem(position);
     }

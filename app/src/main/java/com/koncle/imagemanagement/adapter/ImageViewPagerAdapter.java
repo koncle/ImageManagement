@@ -20,7 +20,7 @@ public class ImageViewPagerAdapter extends PagerAdapter {
     private final List<String> paths;
     private final Context context;
     private int width;
-    private ModeChange operater;
+    private ModeChange operator;
 
     public ImageViewPagerAdapter(Context context, List<String> paths) {
         this.paths = paths;
@@ -55,7 +55,7 @@ public class ImageViewPagerAdapter extends PagerAdapter {
             imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    operater.toggleMode();
+                    operator.toggleMode();
                 }
             });
 
@@ -69,8 +69,8 @@ public class ImageViewPagerAdapter extends PagerAdapter {
         container.removeView((ImageView) object);
     }
 
-    public void setOperater(ModeChange operater) {
-        this.operater = operater;
+    public void setOperator(ModeChange operator) {
+        this.operator = operator;
     }
 
     public interface ModeChange {

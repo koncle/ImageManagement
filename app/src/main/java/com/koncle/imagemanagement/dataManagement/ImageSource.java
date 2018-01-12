@@ -9,11 +9,17 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import com.koncle.imagemanagement.bean.Event;
+import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.bean.Location;
+import com.koncle.imagemanagement.bean.Tag;
+import com.koncle.imagemanagement.bean.TagAndImage;
+import com.koncle.imagemanagement.dao.DaoSession;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.content.ContentValues.TAG;
 import static android.support.v4.app.ActivityCompat.startActivityForResult;
 
 /**
@@ -44,14 +50,46 @@ public class ImageSource {
                 new String[]{"image/jpeg", "image/png"}, MediaStore.Images.Media.DATE_MODIFIED);
 
         if (cursor == null || cursor.getCount() <= 0) return null; // 没有图片
+
+
+        String path, folder, name, time, loc;
+        File file;
+        Event event;
+        Image image;
+        Location location;
+        Tag tag;
+        TagAndImage tagAndImage;
+
+        DaoSession daoSession = DaoManager.getInstance().getDaoSession();
+
         while (cursor.moveToNext()) {
-            int index = cursor
-                    .getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            String path = cursor.getString(index); // 文件地址
-            File file = new File(path);
-            if (file.exists()) {
-                result.add(path);
-                Log.i(TAG, path);
+            int index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            path = cursor.getString(index); // 文件地址
+
+            try {
+                String[] f = path.split("/");
+                folder = f[f.length - 2];
+                name = f[f.length - 1].split("\\.")[0];
+
+                image = new Image();
+                image.setName(name);
+                image.setFolder(folder);
+                image.setPath(path);
+
+                time = ImageAttribute.getTime(path);
+                image.setTime(time);
+
+                double[] tmp = ImageAttribute.getLocation(path);
+                loc = tmp == null ? null : tmp.toString();
+
+                daoSession.insert(image);
+
+                if (new File(path).exists()) {
+                    result.add(path);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.w("path", "failed path name : " + path);
             }
         }
 

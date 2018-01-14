@@ -64,7 +64,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                imageAdaptor.deleteSelectedImages();
+                imageAdaptor.deleteInvalidImages();
                 imageAdaptor.exitSelectMode();
             }
         });
@@ -192,6 +192,10 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
             case (SingleImageActivity.IMAGE_VIWER_SCROLL): {
                 int pos = data.getIntExtra("pos", 0);
                 recyclerView.scrollToPosition(pos + ROW * 2); // scroll to next 2 rows
+                if (data.getBooleanExtra("delete", false)) {
+                    List<Image> images = data.getExtras().getParcelableArrayList("deletes");
+                    imageAdaptor.deleteInvalidImages(images);
+                }
                 break;
             }
             case (SingleImageActivity.IMAGE_VIEWER_DELETE): {

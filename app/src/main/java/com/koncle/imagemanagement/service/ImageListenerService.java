@@ -86,7 +86,7 @@ public class ImageListenerService extends Service {
             switch (event) {
                 case FileObserver.CREATE:
                     Image image = ImageService.getImageFromPath(folder + "/" + path);
-                    ImageService.insertImage(image);
+                    ImageService.insertImage(image, true);
                     Log.w(TAG, "create file, path : " + path);
                     break;
                 case FileObserver.DELETE:

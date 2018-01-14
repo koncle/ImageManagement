@@ -10,6 +10,10 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
+import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
 
 import java.util.List;
@@ -45,17 +49,31 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
 
     @Override
     public Object instantiateItem(ViewGroup container, final int position) {
-        ImageView imageView = null;
         if (images.size() >= position) {
-            Image image = images.get(position);
+
+            final Image image = images.get(position);
             String path = image.getPath();
+
             operator.changeTitle(image.getName());
+
             //imageView = new FullScreenImageView(this.context);
-            imageView = new ImageView(this.context);
+            final ImageView imageView = new ImageView(this.context);
+
             Glide.with(this.context)
                     .load(path)
                     //   .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .into(imageView);
+                    .error(R.drawable.error)
+                    .into(new SimpleTarget<GlideDrawable>(imageView.getMaxWidth(), imageView.getMaxHeight()) {
+                        @Override
+                        public void onResourceReady(GlideDrawable glideDrawable, GlideAnimation<? super GlideDrawable> glideAnimation) {
+                            imageView.setImageDrawable(glideDrawable.getCurrent());
+                        }
+
+                        @Override
+                        public void onLoadFailed(Exception e, Drawable errorDrawable) {
+                            operator.addDeleteImage(image);
+                        }
+                    });
 
             imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);  // 充满容器
 
@@ -67,8 +85,9 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
             });
 
             container.addView(imageView);
+            return imageView;
         }
-        return imageView;
+        return null;
     }
 
     @Override
@@ -84,6 +103,10 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
         void toggleMode();
 
         void changeTitle(String s);
+
+        void deleteImage(Image image);
+
+        void addDeleteImage(Image image);
     }
 
     // Another way to show image

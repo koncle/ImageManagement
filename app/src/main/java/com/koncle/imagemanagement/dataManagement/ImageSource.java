@@ -52,7 +52,8 @@ public class ImageSource {
             path = cursor.getString(index); // 文件地址
             try {
                 image = ImageService.getImageFromPath(path);
-                daoSession.insert(image);
+                ImageService.insertImage(image, true);
+//                daoSession.insert(image);
             } catch (Exception e) {
                 e.printStackTrace();
                 Log.w("path", "failed path name : " + path);

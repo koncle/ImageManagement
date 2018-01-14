@@ -244,6 +244,16 @@ public class Image implements Parcelable {
             dest.writeLong(-1);
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Image) {
+            if (((Image) obj).getPath().equals(path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static final Parcelable.Creator<Image> CREATOR = new Creator<Image>() {
         @Override
         public Image createFromParcel(Parcel source) {
@@ -284,5 +294,7 @@ public class Image implements Parcelable {
         public Image[] newArray(int size) {
             return new Image[size];
         }
+
+
     };
 }

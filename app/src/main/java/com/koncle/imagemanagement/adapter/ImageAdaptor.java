@@ -15,6 +15,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.ImageUtils;
 
@@ -48,7 +49,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         this.gridLayoutManager = gridLayoutManager;
         this.images = images;
         selectedImages = new HashMap<>();
-        Log.w(this.getClass().getSimpleName(), "DATA : " + images.get(0).toString());
     }
 
     @Override
@@ -122,6 +122,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         Glide.with(context)
                 .load(path)
                 //  .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .thumbnail(0.00001f)
                 .into(holder.image);
     }
 
@@ -224,7 +225,9 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         for (int i = 0; i < images.size(); ++i) {
             selectedImages.put(i, images.get(i));
         }
-        modeOperator.refreshData();
+
+        //modeOperator.refreshData();
+        notifyDataSetChanged();
 
         modeOperator.showSelectedNum(selectedImages.size());
     }
@@ -237,7 +240,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         return images;
     }
 
-    public void deleteSelectedImages() {
+    public void deleteInvalidImages() {
         int count = 0;
         Image image;
         for (Integer pos : selectedImages.keySet()) {
@@ -259,6 +262,17 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         Toast.makeText(context, "delete " + count + " files", Toast.LENGTH_SHORT).show();
     }
 
+    public void deleteInvalidImages(List<Image> imageList) {
+        int count = 0;
+        for (Image image : imageList) {
+            images.remove(image);
+            ImageService.deleteImage(image);
+        }
+
+        notifyDataSetChanged();
+        Log.w(TAG, "delete " + count + "invalid files");
+    }
+
     public boolean deleteImageItem(Image image) {
         int i = 0;
         while (i < images.size()) {
@@ -269,8 +283,10 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             }
             ++i;
         }
+        Log.w(TAG, "delete image items");
         return false;
     }
+
 
     // to operate other components in activity
     public interface ModeOperator {

@@ -19,13 +19,6 @@ import java.util.List;
  */
 
 public class ActivityUtil {
-    public static void showImageList(Context context, List<Image> images) {
-        Intent intent = new Intent(context, MultiColumnImagesActivity.class);
-        Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList("images", (ArrayList<Image>) images);
-        intent.putExtras(bundle);
-        context.startActivity(intent);
-    }
 
     public static void shareImages(Context context, List<Image> images) {
 
@@ -57,6 +50,14 @@ public class ActivityUtil {
 
         intent.putExtra(Intent.EXTRA_STREAM, uri);
 
+        context.startActivity(intent);
+    }
+
+    public static void showImageList(Context context, List<Image> images) {
+        Intent intent = new Intent(context, MultiColumnImagesActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList("images", (ArrayList<Image>) images);
+        intent.putExtras(bundle);
         context.startActivity(intent);
     }
 

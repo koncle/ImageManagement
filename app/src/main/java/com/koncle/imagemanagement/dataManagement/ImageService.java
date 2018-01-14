@@ -42,7 +42,12 @@ public class ImageService {
         DaoMaster.dropAllTables(daoSession.getDatabase(), true);
     }
 
-    public static boolean insertImage(Image image) {
+    public static boolean insertImage(Image image, boolean ifExist) {
+        ImageDao imageDao = daoManager.getDaoSession().getImageDao();
+        if (imageDao.queryRawCreate("where T.path = ?", image.getPath()).list().size() == 0) {
+            Log.w(TAG, "insert " + image.getPath());
+            imageDao.insert(image);
+        }
         return true;
     }
 

@@ -7,4 +7,5 @@
     <color name="background">#5222</color>
     <color name="transparent">#0000</color>
     <color name="checked">#f00</color>
+    <color name="orange">#FFD700</color>
 </resources>

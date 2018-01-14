@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
@@ -18,6 +19,7 @@ import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.ImageUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,6 +43,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     public static final String RESULT_TAG = "result";
     public static final int IMAGE_VIEWER_DELETE = 2;
     public static final int IMAGE_VIWER_SCROLL = 3;
+    private List<Image> deleteImages;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -50,6 +53,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         Bundle bundle = getIntent().getExtras();
         int position = (int) bundle.get("pos");
         this.images = (List<Image>) bundle.get("images");
+        deleteImages = new ArrayList<>();
 
         findViews();
 
@@ -102,24 +106,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             @Override
             public void onClick(View v) {
                 Image currentImage = images.get(imageViewPager.getCurrentItem());
-
-                // delete from sd card
-                boolean result = ImageUtils.deleteFile(currentImage.getPath());
-
-                // delete from database
-                // replaced by service
-                // ImageService.deleteImage(currentImage);
-
-                // don't need to delete from memory, cause this activity will be destroyed
-                Intent intent = new Intent();
-                intent.putExtra(RESULT_TAG, result);
-                if (result) {
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelable(DELETE_IMAGE, currentImage);
-                    intent.putExtras(bundle);
-                }
-                setResult(IMAGE_VIEWER_DELETE, intent);
-                finish();
+                deleteImage(currentImage);
             }
         });
 
@@ -144,6 +131,30 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         });
     }
 
+    public void deleteImage(Image currentImage) {
+        // delete from sd card
+        boolean result = ImageUtils.deleteFile(currentImage.getPath());
+
+        // delete from database
+        // replaced by service
+        // ImageService.deleteImage(currentImage);
+
+        // don't need to delete from memory, cause this activity will be destroyed
+        Intent intent = new Intent();
+        intent.putExtra(RESULT_TAG, result);
+        if (result) {
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(DELETE_IMAGE, currentImage);
+            intent.putExtras(bundle);
+        }
+        setResult(IMAGE_VIEWER_DELETE, intent);
+        finish();
+    }
+
+    @Override
+    public void addDeleteImage(Image image) {
+        this.deleteImages.add(image);
+    }
 
     public void toggleMode() {
         if (toolMode == true) {
@@ -177,6 +188,15 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     public void onBackPressed() {
         Intent intent = new Intent();
         intent.putExtra("pos", imageViewPager.getCurrentItem());
+
+        if (deleteImages.size() > 0) {
+            intent.putExtra("delete", true);
+            Bundle bundle = new Bundle();
+            bundle.putParcelableArrayList("deletes", (ArrayList<? extends Parcelable>) deleteImages);
+            intent.putExtras(bundle);
+        } else {
+            intent.putExtra("delete", false);
+        }
         setResult(IMAGE_VIWER_SCROLL, intent);
         super.onBackPressed();
     }

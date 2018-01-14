@@ -2,7 +2,6 @@ package com.koncle.imagemanagement.activity;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -14,33 +13,34 @@ import android.view.View;
 import android.widget.LinearLayout;
 
 import com.koncle.imagemanagement.R;
-import com.koncle.imagemanagement.adapter.ImageViewPagerAdapter;
+import com.koncle.imagemanagement.adapter.SingleImageViewPagerAdapter;
+import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.ImageUtils;
 
-import java.io.File;
 import java.util.List;
 
 /**
  * Created by 10976 on 2018/1/10.
  */
 
-public class ImageViewer extends AppCompatActivity implements ImageViewPagerAdapter.ModeChange {
+public class SingleImageActivity extends AppCompatActivity implements SingleImageViewPagerAdapter.ModeChange {
+    public static final String DELETE_IMAGE = "image";
     private ViewPager imageViewPager;
-    private List<String> paths;
+    private List<Image> images;
     private View delete;
     private View share;
     private View mark;
     private View move;
     private Toolbar toolbar;
     private LinearLayout toolLayout;
-    private ImageViewPagerAdapter pagerAdapter;
+    private SingleImageViewPagerAdapter pagerAdapter;
 
     private boolean toolMode = true;
 
     public static final String RESULT_TAG = "result";
     public static final int IMAGE_VIEWER_DELETE = 2;
     public static final int IMAGE_VIWER_SCROLL = 3;
-
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,7 +49,7 @@ public class ImageViewer extends AppCompatActivity implements ImageViewPagerAdap
 
         Bundle bundle = getIntent().getExtras();
         int position = (int) bundle.get("pos");
-        this.paths = (List<String>) bundle.get("paths");
+        this.images = (List<Image>) bundle.get("images");
 
         findViews();
 
@@ -90,7 +90,8 @@ public class ImageViewer extends AppCompatActivity implements ImageViewPagerAdap
     }
 
     private void initViewPager(int position) {
-        pagerAdapter = new ImageViewPagerAdapter(this, paths);
+        pagerAdapter = new SingleImageViewPagerAdapter(this, images);
+        // interface for adapter
         pagerAdapter.setOperator(this);
         imageViewPager.setAdapter(pagerAdapter);
         imageViewPager.setCurrentItem(position);
@@ -100,10 +101,23 @@ public class ImageViewer extends AppCompatActivity implements ImageViewPagerAdap
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                boolean result = ImageUtils.deleteFile(paths.get(imageViewPager.getCurrentItem()));
+                Image currentImage = images.get(imageViewPager.getCurrentItem());
 
+                // delete from sd card
+                boolean result = ImageUtils.deleteFile(currentImage.getPath());
+
+                // delete from database
+                // replaced by service
+                // ImageService.deleteImage(currentImage);
+
+                // don't need to delete from memory, cause this activity will be destroyed
                 Intent intent = new Intent();
                 intent.putExtra(RESULT_TAG, result);
+                if (result) {
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable(DELETE_IMAGE, currentImage);
+                    intent.putExtras(bundle);
+                }
                 setResult(IMAGE_VIEWER_DELETE, intent);
                 finish();
             }
@@ -112,14 +126,7 @@ public class ImageViewer extends AppCompatActivity implements ImageViewPagerAdap
         share.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Uri uri = Uri.fromFile(new File(paths.get(imageViewPager.getCurrentItem())));
-                Intent intent = new Intent();
-
-                intent.setAction(Intent.ACTION_SEND);
-                intent.setType("image/*");
-
-                intent.putExtra(Intent.EXTRA_STREAM, uri);
-                startActivity(intent);
+                ActivityUtil.shareImage(SingleImageActivity.this, images.get(imageViewPager.getCurrentItem()));
             }
         });
 
@@ -132,10 +139,11 @@ public class ImageViewer extends AppCompatActivity implements ImageViewPagerAdap
         mark.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivityForResult(new Intent(ImageViewer.this, RemarkActivity.class), 0);
+                startActivityForResult(new Intent(SingleImageActivity.this, RemarkActivity.class), 0);
             }
         });
     }
+
 
     public void toggleMode() {
         if (toolMode == true) {
@@ -145,6 +153,11 @@ public class ImageViewer extends AppCompatActivity implements ImageViewPagerAdap
             showTools();
             toolMode = true;
         }
+    }
+
+    @Override
+    public void changeTitle(String s) {
+        this.toolbar.setTitle(s);
     }
 
     public void showTools() {

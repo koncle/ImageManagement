@@ -1,9 +1,6 @@
 package com.koncle.imagemanagement.adapter;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,10 +10,12 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
-import com.koncle.imagemanagement.activity.ImageViewer;
+import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.ImageUtils;
 
 import java.util.ArrayList;
@@ -28,6 +27,7 @@ import java.util.List;
  */
 
 public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHolder>{
+    private static final String TAG = ImageAdaptor.class.getSimpleName();
     // In order to ensure the height of the image is the same as its width,
     // the manager has to be introduced to get the correct height
     private final GridLayoutManager gridLayoutManager;
@@ -35,19 +35,20 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     private Context context;
 
-    private final List<String> data;
+    private final List<Image> images;
 
     // save <positoin, url> into map
-    private HashMap<Integer, String> selectedImages;
+    private HashMap<Integer, Image> selectedImages;
 
     private boolean selectMode = false;
     private ModeOperator modeOperator;
 
-    public ImageAdaptor(Context context, GridLayoutManager gridLayoutManager, List<String> data){
+    public ImageAdaptor(Context context, GridLayoutManager gridLayoutManager, List<Image> images) {
         this.context = context;
         this.gridLayoutManager = gridLayoutManager;
-        this.data = data;
+        this.images = images;
         selectedImages = new HashMap<>();
+        Log.w(this.getClass().getSimpleName(), "DATA : " + images.get(0).toString());
     }
 
     @Override
@@ -59,7 +60,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     @Override
     public void onBindViewHolder(final ImageViewHolder holder, final int position) {
-        final String path = data.get(position);
+        final String path = images.get(position).getPath();
         /*
         * Set the correct Height
         *
@@ -105,12 +106,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 if (selectMode) {
                     toggleImageSelectionAndCheck(holder, position);
                 } else {
-                    Intent intent = new Intent(ImageAdaptor.this.context, ImageViewer.class);
-                    Bundle bundle = new Bundle();
-                    bundle.putStringArrayList("paths", (ArrayList<String>) ImageAdaptor.this.data);
-                    bundle.putInt("pos", position);
-                    intent.putExtras(bundle);
-                    ((Activity) ImageAdaptor.this.context).startActivityForResult(intent, 1);
+                    ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, ImageAdaptor.this.images, position);
                 }
             }
         });
@@ -125,6 +121,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         // put images
         Glide.with(context)
                 .load(path)
+                //  .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .into(holder.image);
     }
 
@@ -137,7 +134,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         selectMode = true;
     }
 
-    // this method will be called by ImageListViewer activity
+    // this method will be called by MultiColumnImagesActivity activity
     public boolean exitSelectMode() {
         if (selectMode) {
             selectMode = false;
@@ -158,7 +155,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     */
     private void toggleImageSelectionWithoutCheck(ImageViewHolder holder, int position) {
         if (selectedImages.containsKey(position)) {
-            selectedImages.put(position, data.get(position));
+            selectedImages.put(position, images.get(position));
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
         } else {
             selectedImages.remove(position);
@@ -175,7 +172,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
             holder.selects.setChecked(false);
         } else {
-            selectedImages.put(position, data.get(position));
+            selectedImages.put(position, images.get(position));
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
 
             holder.selects.setChecked(true);
@@ -222,31 +219,57 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     // TODO:to compelte this method
     public void selectAll() {
-        if (selectedImages.size() == data.size()) return;
+        if (selectedImages.size() == images.size()) return;
 
-        for (int i = 0; i < data.size(); ++i) {
-            selectedImages.put(i, data.get(i));
+        for (int i = 0; i < images.size(); ++i) {
+            selectedImages.put(i, images.get(i));
         }
         modeOperator.refreshData();
 
         modeOperator.showSelectedNum(selectedImages.size());
     }
 
-    public List<String> getSelections() {
-        List<String> paths = new ArrayList<>();
+    public List<Image> getSelections() {
+        List<Image> images = new ArrayList<>();
         for (Integer key : selectedImages.keySet()) {
-            paths.add(selectedImages.get(key));
+            images.add(selectedImages.get(key));
         }
-        return paths;
+        return images;
     }
 
     public void deleteSelectedImages() {
-        String path;
+        int count = 0;
+        Image image;
         for (Integer pos : selectedImages.keySet()) {
-            path = selectedImages.get(pos);
-            ImageUtils.deleteFile(path);
-            data.remove(path);
+            image = selectedImages.get(pos);
+
+            // delete from sd card
+            count += ImageUtils.deleteFile(image.getPath()) ? 1 : 0;
+            // delete from memory
+            images.remove(image);
+            // delete from database,
+            // replaced by service
+            // ImageService.deleteImage(image);
         }
+
+        if (count > 0)
+            notifyDataSetChanged();
+        Log.w(TAG, "delete " + count + " files");
+
+        Toast.makeText(context, "delete " + count + " files", Toast.LENGTH_SHORT).show();
+    }
+
+    public boolean deleteImageItem(Image image) {
+        int i = 0;
+        while (i < images.size()) {
+            if (image.getId().equals(images.get(i).getId())) {
+                images.remove(images.get(i));
+                notifyDataSetChanged();
+                return true;
+            }
+            ++i;
+        }
+        return false;
     }
 
     // to operate other components in activity
@@ -266,7 +289,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     @Override
     public int getItemCount() {
-        return data.size();
+        return images.size();
     }
 
     class ImageViewHolder extends RecyclerView.ViewHolder{

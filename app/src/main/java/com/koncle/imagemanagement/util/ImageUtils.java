@@ -1,5 +1,7 @@
 package com.koncle.imagemanagement.util;
 
+import android.util.Log;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -14,6 +16,8 @@ import java.util.List;
  */
 
 public class ImageUtils {
+    public static final String TAG = ImageUtils.class.getSimpleName();
+
     public static boolean copyFile(String srcFilePath, String desDirPath) {
         File srcFile = new File(srcFilePath);
         if (!srcFile.exists()) {
@@ -44,6 +48,7 @@ public class ImageUtils {
         if (!file.exists()) {
             return false;
         } else {
+            Log.i(TAG, "delete file : " + path);
             return file.delete();
         }
     }

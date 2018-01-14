@@ -35,10 +35,8 @@ public class FolderFragment extends Fragment implements HasName {
         View view = inflater.inflate(R.layout.folder_fragment, null);
         RecyclerView recyclerView = view.findViewById(R.id.folder_recycler);
         try {
-
-            List<Image> images = ImageService.getFolders();
-
-            FolderRecyclerViewAdapter folderAdapter = new FolderRecyclerViewAdapter(this.getContext(), images);
+            List<Image> imageMap = ImageService.getFolders();
+            FolderRecyclerViewAdapter folderAdapter = new FolderRecyclerViewAdapter(this.getContext(), imageMap);
             recyclerView.setLayoutManager(new GridLayoutManager(this.getContext(), 2));
             recyclerView.setAdapter(folderAdapter);
 

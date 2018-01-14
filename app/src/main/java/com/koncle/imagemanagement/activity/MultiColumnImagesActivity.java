@@ -5,7 +5,6 @@ package com.koncle.imagemanagement.activity;
  */
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
@@ -21,17 +20,17 @@ import android.widget.TextView;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
+import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.util.ActivityUtil;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
-public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.ModeOperator {
+public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
 
     private static final int ROW = 4;
 
     private RecyclerView recyclerView;
-    private List<String> data;
+    private List<Image> images;
     private ImageAdaptor imageAdaptor;
     private Toolbar toolbar;
     private Toolbar hidedToolbar;
@@ -53,7 +52,7 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
             StrictMode.setVmPolicy(builder.build());
         }
 
-        data = this.getIntent().getExtras().getStringArrayList("paths");
+        images = this.getIntent().getExtras().getParcelableArrayList("images");
 
         findViews();
         initToolbar();
@@ -66,7 +65,6 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
             @Override
             public void onClick(View v) {
                 imageAdaptor.deleteSelectedImages();
-                imageAdaptor.notifyDataSetChanged();
                 imageAdaptor.exitSelectMode();
             }
         });
@@ -74,25 +72,7 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
         share.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                List<String> paths = imageAdaptor.getSelections();
-
-                ArrayList<Uri> imageUris = new ArrayList<Uri>();
-                for (String path : paths) {
-                    imageUris.add(Uri.fromFile(new File(path)));
-                }
-
-                Intent intent = new Intent();
-                /*
-                // share to wechat moment
-                ComponentName comp = new ComponentName("com.tencent.mm",
-                            "com.tencent.mm.ui.tools.ShareToTimeLineUI");
-                intent.setComponent(comp);
-                */
-                intent.setAction(Intent.ACTION_SEND_MULTIPLE);
-                intent.setType("image/*");
-
-                intent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, imageUris);
-                startActivity(intent);
+                ActivityUtil.shareImages(MultiColumnImagesActivity.this, imageAdaptor.getSelections());
                 imageAdaptor.exitSelectMode();
             }
         });
@@ -100,7 +80,7 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
         move.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                List<String> paths = imageAdaptor.getSelections();
+                List<Image> images = imageAdaptor.getSelections();
                 //  ImageUtils.moveImages(paths);
                 imageAdaptor.exitSelectMode();
             }
@@ -144,7 +124,7 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
     private void initRecyclerView() {
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 4);
         recyclerView.setLayoutManager(gridLayoutManager);
-        imageAdaptor = new ImageAdaptor(this, gridLayoutManager, data);
+        imageAdaptor = new ImageAdaptor(this, gridLayoutManager, images);
         imageAdaptor.setOperater(this);
         recyclerView.setAdapter(imageAdaptor);
         recyclerView.setItemViewCacheSize(0);
@@ -209,14 +189,16 @@ public class ImageListViewer extends AppCompatActivity implements ImageAdaptor.M
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (resultCode) {
-            case (ImageViewer.IMAGE_VIWER_SCROLL): {
+            case (SingleImageActivity.IMAGE_VIWER_SCROLL): {
                 int pos = data.getIntExtra("pos", 0);
                 recyclerView.scrollToPosition(pos + ROW * 2); // scroll to next 2 rows
                 break;
             }
-            case (ImageViewer.IMAGE_VIEWER_DELETE): {
-                if (data.getBooleanExtra(ImageViewer.RESULT_TAG, false))
-                    imageAdaptor.notifyDataSetChanged();
+            case (SingleImageActivity.IMAGE_VIEWER_DELETE): {
+                if (data.getBooleanExtra(SingleImageActivity.RESULT_TAG, false)) {
+                    Image image = data.getExtras().getParcelable(SingleImageActivity.DELETE_IMAGE);
+                    imageAdaptor.deleteImageItem(image);
+                }
                 break;
             }
             default:

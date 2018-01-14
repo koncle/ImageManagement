@@ -3,12 +3,14 @@ package com.koncle.imagemanagement.adapter;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.support.v4.view.PagerAdapter;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.koncle.imagemanagement.bean.Image;
 
 import java.util.List;
 
@@ -16,22 +18,24 @@ import java.util.List;
  * Created by 10976 on 2018/1/10.
  */
 
-public class ImageViewPagerAdapter extends PagerAdapter {
-    private final List<String> paths;
+public class SingleImageViewPagerAdapter extends PagerAdapter {
+    private final List<Image> images;
     private final Context context;
     private int width;
     private ModeChange operator;
 
-    public ImageViewPagerAdapter(Context context, List<String> paths) {
-        this.paths = paths;
+    public SingleImageViewPagerAdapter(Context context, List<Image> images) {
+        this.images = images;
         this.context = context;
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         this.width = wm.getDefaultDisplay().getWidth();
+
+        Log.w(this.getClass().getSimpleName(), "DATA : " + images.get(0));
     }
 
     @Override
     public int getCount() {
-        return paths.size();
+        return images.size();
     }
 
     @Override
@@ -42,12 +46,15 @@ public class ImageViewPagerAdapter extends PagerAdapter {
     @Override
     public Object instantiateItem(ViewGroup container, final int position) {
         ImageView imageView = null;
-        if (paths.size() >= position) {
-            String path = paths.get(position);
+        if (images.size() >= position) {
+            Image image = images.get(position);
+            String path = image.getPath();
+            operator.changeTitle(image.getName());
             //imageView = new FullScreenImageView(this.context);
             imageView = new ImageView(this.context);
             Glide.with(this.context)
                     .load(path)
+                    //   .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .into(imageView);
 
             imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);  // 充满容器
@@ -75,6 +82,8 @@ public class ImageViewPagerAdapter extends PagerAdapter {
 
     public interface ModeChange {
         void toggleMode();
+
+        void changeTitle(String s);
     }
 
     // Another way to show image

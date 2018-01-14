@@ -1,6 +1,7 @@
 package com.koncle.imagemanagement.activity;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -16,48 +17,70 @@ import android.view.View;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
+import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dataManagement.ImageSource;
 import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
+import com.koncle.imagemanagement.service.ImageListenerService;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static final String WATCH_TAG = "folders";
     private RecyclerView recyclerView;
     private ImageAdaptor imageAdaptor;
-    private List<String> data;
     private final int SCAN_OK = 1;
     private ProgressDialog progressDialog;
     private ViewPager viewPager;
     private TabLayout tab;
     private List<Fragment> fragments;
+    private boolean start = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
         initDataBase();
 
-        //initData();
+        initData(true);
 
         findViews();
 
         //ImageService.getAllImages();
 
-        initFragments();
-        initViewPager();
-        initTab();
-
-        //initToolbar();
-
-
         //initRecyclerView();
 
+    }
+
+    private void initWatcher() {
+        List<String> folders = new ArrayList<>();
+        for (Image i : ImageService.getFolders()) {
+            int index = i.getPath().lastIndexOf("/");
+            folders.add(i.getPath().substring(0, index));
+        }
+        Intent intent = new Intent(this, ImageListenerService.class);
+        Bundle bundle = new Bundle();
+        bundle.putStringArrayList(WATCH_TAG, (ArrayList<String>) folders);
+        intent.putExtras(bundle);
+        startService(intent);
+    }
+
+    private void destroyWatcherService() {
+        Intent intent = new Intent(this, ImageListenerService.class);
+        stopService(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        ImageService.close();
+
+        destroyWatcherService();
     }
 
     private void initFragments() {
@@ -86,13 +109,6 @@ public class MainActivity extends AppCompatActivity {
         });
         //viewPager.setPageTransformer(false, new MAnimation());
         viewPager.setOffscreenPageLimit(2); // 最大缓存页数 为 limit * 2 + 1
-
-        viewPager.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                initData();
-            }
-        });
     }
 
     private void findViews() {
@@ -107,12 +123,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initDataBase() {
         ImageService.init(this);
-        //DaoManager manager = DaoManager.getInstance();
-        //manager.init(this);
-        //DaoSession daoSession = manager.getDaoSession();
-
-        //DaoMaster.dropAllTables(daoSession.getDatabase(), true);
-        //DaoMaster.createAllTables(daoSession.getDatabase(), true);
+        ImageService.refreshTables();
     }
 
     private Handler mHandler = new Handler() {
@@ -122,27 +133,50 @@ public class MainActivity extends AppCompatActivity {
                     progressDialog.dismiss();
                     //initRecyclerView();
 
+                    initFragments();
+                    initViewPager();
+                    initTab();
+
+                    //initWatcher();
+
                     //ActivityUtil.showImageList(MainActivity.this, data);
             }
         }
     };
 
-
-    private void initData() {
-        progressDialog = ProgressDialog.show(this, null, "Loading...");
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                data = ImageSource.getSystemPhotoList(MainActivity.this);
-                mHandler.sendEmptyMessage(SCAN_OK);
-            }
-        }).start();
+    private void initData(boolean load) {
+        if (!load) {
+            initFragments();
+            initViewPager();
+            initTab();
+            return;
+        } else {
+            progressDialog = ProgressDialog.show(this, null, "Loading...");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    ImageSource.getSystemPhotoList(MainActivity.this);
+                    mHandler.sendEmptyMessage(SCAN_OK);
+                }
+            }).start();
+        }
     }
 
     private void initToolbar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setTitle("Images");
         setSupportActionBar(toolbar);
+        toolbar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, ImageListenerService.class);
+                if (!start) {
+                    startService(intent);
+                } else {
+                    stopService(intent);
+                }
+            }
+        });
     }
 
     private void initRecyclerView() {

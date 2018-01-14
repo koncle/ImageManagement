@@ -36,4 +36,11 @@ public class ExampleUnitTest {
         String name = f[f.length - 1].split("\\.")[0];
         System.out.println(folder + ":" + name);
     }
+
+    @Test
+    public void testSubstring() {
+        String path = "/asdf/asdf/asd/f/DCIM/P80111-161929.jpg";
+        int i = path.lastIndexOf("/");
+        System.out.println(path.substring(0, i));
+    }
 }

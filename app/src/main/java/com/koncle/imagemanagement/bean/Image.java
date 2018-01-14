@@ -1,5 +1,8 @@
 package com.koncle.imagemanagement.bean;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.koncle.imagemanagement.dao.DaoSession;
 import com.koncle.imagemanagement.dao.ImageDao;
 import com.koncle.imagemanagement.dao.TagDao;
@@ -19,7 +22,7 @@ import java.util.List;
  */
 
 @Entity
-public class Image {
+public class Image implements Parcelable {
     @Id(autoincrement = true)
     private Long id;
 
@@ -215,4 +218,71 @@ public class Image {
         myDao = daoSession != null ? daoSession.getImageDao() : null;
     }
 
+
+    public int describeContents() {
+        return 0;
+    }
+
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        if (id == null)
+            dest.writeLong(-1);
+        else
+            dest.writeLong(id);
+
+        dest.writeString(path);
+        dest.writeString(folder);
+        dest.writeString(name);
+        dest.writeString(desc);
+        dest.writeString(time);
+
+        dest.writeList(tags);
+        if (event_id == null)
+            dest.writeLong(-1);
+        if (loc_id == null)
+            dest.writeLong(-1);
+    }
+
+    public static final Parcelable.Creator<Image> CREATOR = new Creator<Image>() {
+        @Override
+        public Image createFromParcel(Parcel source) {
+
+            Image image = new Image();
+
+            long tmp = source.readLong();
+            //image.id=source.readLong();
+            if (tmp == -1)
+                image.id = null;
+            else
+                image.id = tmp;
+
+            image.path = source.readString();
+            image.folder = source.readString();
+            image.name = source.readString();
+            image.desc = source.readString();
+            image.time = source.readString();
+
+            source.readList(image.tags, Tag.class.getClass().getClassLoader());
+
+            tmp = source.readLong();
+            if (tmp == -1)
+                image.event_id = null;
+            else
+                image.event_id = tmp;
+
+            tmp = source.readLong();
+            if (tmp == -1)
+                image.loc_id = null;
+            else
+                image.loc_id = tmp;
+
+            return image;
+        }
+
+        @Override
+        public Image[] newArray(int size) {
+            return new Image[size];
+        }
+    };
 }

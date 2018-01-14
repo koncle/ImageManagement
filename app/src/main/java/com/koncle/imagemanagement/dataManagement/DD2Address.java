@@ -68,7 +68,6 @@ public class DD2Address {
                 inputStream.close();
                 return new String[]{Lng, Lat};
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
                 return null;
             }
@@ -172,7 +171,6 @@ public class DD2Address {
                 bufferedReader.close();
                 inputStream.close();
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }

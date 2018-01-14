@@ -14,7 +14,6 @@ import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -22,14 +21,14 @@ import java.util.List;
  */
 
 public class FolderRecyclerViewAdapter extends RecyclerView.Adapter<FolderRecyclerViewAdapter.FolderHolder> {
-    private final List<Image> images;
+    private List<Image> folders;
     private Context context;
 
-    public FolderRecyclerViewAdapter(Context context, List<Image> images) throws Exception {
+    public FolderRecyclerViewAdapter(Context context, List<Image> imageMap) throws Exception {
         this.context = context;
-        if (images == null)
-            throw new Exception("images for folders should not be null");
-        this.images = images;
+        if (imageMap == null)
+            throw new Exception("folders for folders should not be null");
+        this.folders = imageMap;
     }
 
     @Override
@@ -40,26 +39,23 @@ public class FolderRecyclerViewAdapter extends RecyclerView.Adapter<FolderRecycl
 
     @Override
     public int getItemCount() {
-        return images.size();
+        return folders.size();
     }
 
     @Override
-    public void onBindViewHolder(FolderHolder holder, int position) {
-        final Image image = images.get(position);
-        holder.textView.setText(image.getFolder());
+    public void onBindViewHolder(FolderHolder holder, final int position) {
+        final String folder = folders.get(position).getFolder();
+        holder.textView.setText(folder);
         Glide.with(context)
-                .load(image.getPath())
+                .load(folders.get(position).getPath())
+                // .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .into(holder.imageView);
 
         holder.imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                List<Image> images = ImageService.getImagesFromSameFolders(image.getFolder());
-                List<String> paths = new ArrayList<>();
-                for (Image image1 : images) {
-                    paths.add(image1.getPath());
-                }
-                ActivityUtil.showImageList(FolderRecyclerViewAdapter.this.context, paths);
+                List<Image> images = ImageService.getImagesFromSameFolders(folder);
+                ActivityUtil.showImageList(FolderRecyclerViewAdapter.this.context, images);
             }
         });
     }

@@ -5,7 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v7.widget.PopupMenu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Toast;
 
+import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.activity.MapActivity;
 import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
 import com.koncle.imagemanagement.activity.SingleImageActivity;
 import com.koncle.imagemanagement.bean.Image;
@@ -66,6 +72,32 @@ public class ActivityUtil {
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList("images", (ArrayList<Image>) images);
         bundle.putInt("pos", currentPos);
+        intent.putExtras(bundle);
+        ((Activity) context).startActivityForResult(intent, 1); // lager than 0
+    }
+
+    public static void showPopup(final Context context, View view) {
+        PopupMenu popupMenu = new PopupMenu(context, view);
+        popupMenu.getMenuInflater().inflate(R.menu.event_op, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                Toast.makeText(context, "delete...", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        });
+        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
+            @Override
+            public void onDismiss(PopupMenu menu) {
+            }
+        });
+        popupMenu.show();
+    }
+
+    public static void showMap(Context context, List<Image> images) {
+        Intent intent = new Intent(context, MapActivity.class);
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList("images", (ArrayList<Image>) images);
         intent.putExtras(bundle);
         ((Activity) context).startActivityForResult(intent, 1);
     }

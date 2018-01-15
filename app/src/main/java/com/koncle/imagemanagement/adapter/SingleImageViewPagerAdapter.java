@@ -77,6 +77,7 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
 
             imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);  // 充满容器
 
+
             imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

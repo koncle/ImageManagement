@@ -146,4 +146,8 @@ public class ImageService {
             return false;
         }
     }
+
+    public static List<Image> getEvents() {
+        return null;
+    }
 }

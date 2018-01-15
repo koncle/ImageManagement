@@ -193,28 +193,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             if (cur == null) break;
             cur.findViewById(R.id.select_button).setVisibility(View.VISIBLE);
         }
-
-        /*
-        // clear
-        if (mode) {
-            for (; i <= end; ++i) {
-                cur = gridLayoutManager.findViewByPosition(i);
-                if (cur == null) break;
-                cur.findViewById(R.id.background).setVisibility(View.GONE);
-                cur = cur.findViewById(R.id.select_button);
-                cur.setVisibility(View.GONE);
-                ((CheckBox) cur).setChecked(false);
-            }
-        } else {
-            // show
-            for (; i <= end; ++i) {
-                cur = gridLayoutManager.findViewByPosition(i);
-                if (cur == null) break;
-                cur.findViewById(R.id.select_button).setVisibility(View.VISIBLE);
-            }
-        }
-        */
-
         Log.i("clear", "start + " + start + " end " + end);
     }
 
@@ -287,7 +265,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         return false;
     }
 
-
     // to operate other components in activity
     public interface ModeOperator {
         void exitSelectMode();
@@ -312,6 +289,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         public ImageView image;
         public CheckBox selects;
         public FrameLayout frameLayout;
+
         public ImageViewHolder(View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.image);

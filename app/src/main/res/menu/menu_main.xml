@@ -2,9 +2,9 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/share"
+        android:id="@+id/map"
         android:orderInCategory="100"
-        android:title="分享"
+        android:title="Map"
         app:showAsAction="never" />
 
     <item

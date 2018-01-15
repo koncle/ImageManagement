@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
+import android.support.design.widget.BottomSheetBehavior;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -44,6 +45,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     public static final int IMAGE_VIEWER_DELETE = 2;
     public static final int IMAGE_VIWER_SCROLL = 3;
     private List<Image> deleteImages;
+    private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -91,6 +93,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         move = findViewById(R.id.move);
         mark = findViewById(R.id.mark);
         toolLayout = findViewById(R.id.tool_layout);
+        bottomSheetBehavior = BottomSheetBehavior.from(toolLayout);
     }
 
     private void initViewPager(int position) {
@@ -157,6 +160,14 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     }
 
     public void toggleMode() {
+        if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+            showTools();
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+        } else {
+            hideTools();
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+        /*
         if (toolMode == true) {
             hideTools();
             toolMode = false;
@@ -164,6 +175,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             showTools();
             toolMode = true;
         }
+        */
     }
 
     @Override
@@ -172,13 +184,13 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     }
 
     public void showTools() {
-        toolLayout.setVisibility(View.VISIBLE);
+        //toolLayout.setVisibility(View.VISIBLE);
         toolbar.setVisibility(View.VISIBLE);
         imageViewPager.setBackgroundColor(Color.BLACK);
     }
 
     public void hideTools() {
-        toolLayout.setVisibility(View.GONE);
+        //toolLayout.setVisibility(View.GONE);
         toolbar.setVisibility(View.GONE);
         imageViewPager.setBackgroundColor(Color.WHITE);
     }

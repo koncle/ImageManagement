@@ -11,6 +11,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -73,10 +74,6 @@ public class FolderFragment extends Fragment implements HasName {
         this.operater = operater;
     }
 
-    public interface Operater {
-        void refreshFolders();
-    }
-
     class FolderRecyclerViewAdapter extends RecyclerView.Adapter<FolderRecyclerViewAdapter.FolderHolder> {
         @Override
         public FolderHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -130,6 +127,13 @@ public class FolderFragment extends Fragment implements HasName {
                     return true;
                 }
             });
+
+            holder.more.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ActivityUtil.showPopup(getContext(), holder.more);
+                }
+            });
         }
 
         private void toggleFolderSelection(CardView card, Image image, int pos) {
@@ -165,12 +169,14 @@ public class FolderFragment extends Fragment implements HasName {
             public ImageView imageView;
             public TextView textView;
             public CardView cardView;
+            public ImageButton more;
 
             public FolderHolder(View view) {
                 super(view);
                 imageView = view.findViewById(R.id.folder_image);
                 textView = view.findViewById(R.id.folder_text);
                 cardView = view.findViewById(R.id.folder_card);
+                more = view.findViewById(R.id.folder_more);
             }
         }
     }

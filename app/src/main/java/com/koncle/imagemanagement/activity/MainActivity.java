@@ -11,41 +11,35 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ImageButton;
-import android.widget.TextView;
 
 import com.koncle.imagemanagement.R;
-import com.koncle.imagemanagement.adapter.ImageAdaptor;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dataManagement.ImageSource;
+import com.koncle.imagemanagement.fragment.EventFragment;
 import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
+import com.koncle.imagemanagement.fragment.MapFragment;
+import com.koncle.imagemanagement.fragment.Operater;
 import com.koncle.imagemanagement.service.ImageListenerService;
+import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements FolderFragment.Operater {
+public class MainActivity extends AppCompatActivity implements Operater {
 
     public static final String WATCH_TAG = "folders";
     private static final int SCAN_OK_SHOW = 2;
     private static final String TAG = MainActivity.class.getSimpleName();
-    private RecyclerView recyclerView;
-    private ImageAdaptor imageAdaptor;
     private final int SCAN_OK = 1;
     private ProgressDialog progressDialog;
     private ViewPager viewPager;
     private TabLayout tab;
     private List<Fragment> fragments;
-    private ImageButton refresh;
-    private TextView title;
     private long start;
 
     @Override
@@ -65,8 +59,9 @@ public class MainActivity extends AppCompatActivity implements FolderFragment.Op
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.share) {
-
+        if (id == R.id.map) {
+            List<Image> images = ImageService.getAllImages();
+            ActivityUtil.showMap(this, images);
         }
 
         return super.onOptionsItemSelected(item);
@@ -98,8 +93,8 @@ public class MainActivity extends AppCompatActivity implements FolderFragment.Op
     private void initFragments() {
         fragments = new ArrayList<>();
         fragments.add(FolderFragment.newInstance("Main", this));
-        fragments.add(FolderFragment.newInstance("Events", this));
-        fragments.add(FolderFragment.newInstance("Map", this));
+        fragments.add(EventFragment.newInstance("Events", this));
+        fragments.add(MapFragment.newInstance("Map", this));
     }
 
     private void initViewPager() {
@@ -129,8 +124,6 @@ public class MainActivity extends AppCompatActivity implements FolderFragment.Op
     private void findViews() {
         viewPager = findViewById(R.id.main_viewpager);
         tab = findViewById(R.id.tab);
-        title = findViewById(R.id.title);
-        refresh = findViewById(R.id.refresh);
     }
 
     private void initDataBase(boolean refresh) {
@@ -156,8 +149,6 @@ public class MainActivity extends AppCompatActivity implements FolderFragment.Op
                     show();
                     break;
                 case SCAN_OK:
-                    long end = System.currentTimeMillis() - start;
-                    Log.w(TAG, "refresh finished in " + end / 1000 + "s...");
                     List<Image> folders = ImageService.getFolders();
                     ((FolderFragment) fragments.get(0)).setFolders(folders);
                     break;
@@ -183,20 +174,9 @@ public class MainActivity extends AppCompatActivity implements FolderFragment.Op
     private void show() {
         findViews();
         initToolbar();
-        initRefresh();
         initFragments();
         initViewPager();
         initWatcher();
-    }
-
-    private void initRefresh() {
-        start = System.currentTimeMillis();
-        refresh.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                refreshFolders();
-            }
-        });
     }
 
     public void refreshFolders() {
@@ -211,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements FolderFragment.Op
 
     private void initToolbar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        title.setText("ImageManagement");
+        // title.setText("ImageManagement");
         setSupportActionBar(toolbar);
     }
 
@@ -229,8 +209,10 @@ public class MainActivity extends AppCompatActivity implements FolderFragment.Op
                     super.onBackPressed();
                 break;
             case EVENT_FRAGMENT:
+                super.onBackPressed();
                 break;
             case MAP_FRAGMENT:
+                super.onBackPressed();
                 break;
             default:
                 super.onBackPressed();

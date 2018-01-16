@@ -35,18 +35,45 @@ public class MainActivity extends AppCompatActivity implements Operater {
     public static final String WATCH_TAG = "folders";
     private static final int SCAN_OK_SHOW = 2;
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final int FOLDER_FRAGMENT = 0;
+    private static final int EVENT_FRAGMENT = 1;
+    private static final int MAP_FRAGMENT = 2;
     private final int SCAN_OK = 1;
     private ProgressDialog progressDialog;
     private ViewPager viewPager;
     private TabLayout tab;
     private List<Fragment> fragments;
     private long start;
+    private Handler mHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case SCAN_OK_SHOW:
+                    progressDialog.dismiss();
+                    show();
+                    break;
+                case SCAN_OK:
+                    List<Image> folders = ImageService.getFolders();
+                    ((FolderFragment) fragments.get(0)).setFolders(folders);
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initDataBase(false);
+        initDataBase(false); // 31.12416648864746 : 120.62750244140625
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        ImageService.close();
+
+        Intent intent = new Intent(this, ImageListenerService.class);
+        stopService(intent);
     }
 
     @Override
@@ -61,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements Operater {
 
         if (id == R.id.map) {
             List<Image> images = ImageService.getAllImages();
-            ActivityUtil.showMap(this, images);
+            ActivityUtil.showMap(this, ImageService.getImagesWithLoc());
         }
 
         return super.onOptionsItemSelected(item);
@@ -78,16 +105,6 @@ public class MainActivity extends AppCompatActivity implements Operater {
         bundle.putStringArrayList(WATCH_TAG, (ArrayList<String>) folders);
         intent.putExtras(bundle);
         startService(intent);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        ImageService.close();
-
-        Intent intent = new Intent(this, ImageListenerService.class);
-        stopService(intent);
     }
 
     private void initFragments() {
@@ -141,21 +158,6 @@ public class MainActivity extends AppCompatActivity implements Operater {
         }
     }
 
-    private Handler mHandler = new Handler() {
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case SCAN_OK_SHOW:
-                    progressDialog.dismiss();
-                    show();
-                    break;
-                case SCAN_OK:
-                    List<Image> folders = ImageService.getFolders();
-                    ((FolderFragment) fragments.get(0)).setFolders(folders);
-                    break;
-            }
-        }
-    };
-
     private void initData(boolean load) {
         if (!load) {
             show();
@@ -194,10 +196,6 @@ public class MainActivity extends AppCompatActivity implements Operater {
         // title.setText("ImageManagement");
         setSupportActionBar(toolbar);
     }
-
-    private static final int FOLDER_FRAGMENT = 0;
-    private static final int EVENT_FRAGMENT = 1;
-    private static final int MAP_FRAGMENT = 2;
 
     @Override
     public void onBackPressed() {

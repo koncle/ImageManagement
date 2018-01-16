@@ -15,6 +15,7 @@ import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.annotation.ToMany;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,34 +50,28 @@ public class Image implements Parcelable {
 
     private Long loc_id;
 
-    /**
-     * Used to resolve relations
-     */
-    @Generated(hash = 2040040024)
-    private transient DaoSession daoSession;
+    private String lat;
 
-    /**
-     * Used for active entity operations.
-     */
-    @Generated(hash = 1428462909)
-    private transient ImageDao myDao;
+    private String lng;
 
-    @Generated(hash = 1065913437)
-    public Image(Long id, @NotNull String path, @NotNull String folder,
-                 @NotNull String name, String desc, String time, Long event_id,
-                 Long loc_id) {
-        this.id = id;
-        this.path = path;
-        this.folder = folder;
-        this.name = name;
-        this.desc = desc;
-        this.time = time;
-        this.event_id = event_id;
-        this.loc_id = loc_id;
+    @Override
+    public int describeContents() {
+        return 0;
     }
 
-    @Generated(hash = 1590301345)
-    public Image() {
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(this.id);
+        dest.writeString(this.path);
+        dest.writeString(this.folder);
+        dest.writeString(this.name);
+        dest.writeString(this.desc);
+        dest.writeString(this.time);
+        dest.writeList(this.tags);
+        dest.writeValue(this.event_id);
+        dest.writeValue(this.loc_id);
+        dest.writeString(this.lat);
+        dest.writeString(this.lng);
     }
 
     public Long getId() {
@@ -141,6 +136,22 @@ public class Image implements Parcelable {
 
     public void setLoc_id(Long loc_id) {
         this.loc_id = loc_id;
+    }
+
+    public String getLat() {
+        return this.lat;
+    }
+
+    public void setLat(String lat) {
+        this.lat = lat;
+    }
+
+    public String getLng() {
+        return this.lng;
+    }
+
+    public void setLng(String lng) {
+        this.lng = lng;
     }
 
     /**
@@ -209,92 +220,67 @@ public class Image implements Parcelable {
         myDao.update(this);
     }
 
-    /**
-     * called by internal mechanisms, do not call yourself.
-     */
+    /** called by internal mechanisms, do not call yourself. */
     @Generated(hash = 1859334423)
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getImageDao() : null;
     }
 
-
-    public int describeContents() {
-        return 0;
+    public Image() {
     }
 
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        if (id == null)
-            dest.writeLong(-1);
-        else
-            dest.writeLong(id);
-
-        dest.writeString(path);
-        dest.writeString(folder);
-        dest.writeString(name);
-        dest.writeString(desc);
-        dest.writeString(time);
-
-        dest.writeList(tags);
-        if (event_id == null)
-            dest.writeLong(-1);
-        if (loc_id == null)
-            dest.writeLong(-1);
+    protected Image(Parcel in) {
+        this.id = (Long) in.readValue(Long.class.getClassLoader());
+        this.path = in.readString();
+        this.folder = in.readString();
+        this.name = in.readString();
+        this.desc = in.readString();
+        this.time = in.readString();
+        this.tags = new ArrayList<Tag>();
+        in.readList(this.tags, Tag.class.getClassLoader());
+        this.event_id = (Long) in.readValue(Long.class.getClassLoader());
+        this.loc_id = (Long) in.readValue(Long.class.getClassLoader());
+        this.lat = in.readString();
+        this.lng = in.readString();
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Image) {
-            if (((Image) obj).getPath().equals(path)) {
-                return true;
-            }
-        }
-        return false;
+    @Generated(hash = 1761367243)
+    public Image(Long id, @NotNull String path, @NotNull String folder, @NotNull String name,
+                 String desc, String time, Long event_id, Long loc_id, String lat, String lng) {
+        this.id = id;
+        this.path = path;
+        this.folder = folder;
+        this.name = name;
+        this.desc = desc;
+        this.time = time;
+        this.event_id = event_id;
+        this.loc_id = loc_id;
+        this.lat = lat;
+        this.lng = lng;
     }
 
-    public static final Parcelable.Creator<Image> CREATOR = new Creator<Image>() {
+    public static final Parcelable.Creator<Image> CREATOR = new Parcelable.Creator<Image>() {
         @Override
         public Image createFromParcel(Parcel source) {
-
-            Image image = new Image();
-
-            long tmp = source.readLong();
-            //image.id=source.readLong();
-            if (tmp == -1)
-                image.id = null;
-            else
-                image.id = tmp;
-
-            image.path = source.readString();
-            image.folder = source.readString();
-            image.name = source.readString();
-            image.desc = source.readString();
-            image.time = source.readString();
-
-            source.readList(image.tags, Tag.class.getClass().getClassLoader());
-
-            tmp = source.readLong();
-            if (tmp == -1)
-                image.event_id = null;
-            else
-                image.event_id = tmp;
-
-            tmp = source.readLong();
-            if (tmp == -1)
-                image.loc_id = null;
-            else
-                image.loc_id = tmp;
-
-            return image;
+            return new Image(source);
         }
 
         @Override
         public Image[] newArray(int size) {
             return new Image[size];
         }
-
-
     };
+
+    /**
+     * Used to resolve relations
+     */
+    @Generated(hash = 2040040024)
+    private transient DaoSession daoSession;
+
+    /**
+     * Used for active entity operations.
+     */
+    @Generated(hash = 1428462909)
+    private transient ImageDao myDao;
 }

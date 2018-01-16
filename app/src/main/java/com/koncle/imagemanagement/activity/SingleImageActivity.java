@@ -23,6 +23,8 @@ import com.koncle.imagemanagement.util.ImageUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
+
 /**
  * Created by 10976 on 2018/1/10.
  */
@@ -50,6 +52,8 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(FEATURE_CONTENT_TRANSITIONS);
+
         setContentView(R.layout.single_view_layout);
 
         Bundle bundle = getIntent().getExtras();
@@ -93,11 +97,15 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         move = findViewById(R.id.move);
         mark = findViewById(R.id.mark);
         toolLayout = findViewById(R.id.tool_layout);
+
         bottomSheetBehavior = BottomSheetBehavior.from(toolLayout);
+        bottomSheetBehavior.setHideable(true);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        hideTools();
     }
 
     private void initViewPager(int position) {
-        pagerAdapter = new SingleImageViewPagerAdapter(this, images);
+        pagerAdapter = new SingleImageViewPagerAdapter(this, images, position);
         // interface for adapter
         pagerAdapter.setOperator(this);
         imageViewPager.setAdapter(pagerAdapter);
@@ -161,21 +169,12 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
 
     public void toggleMode() {
         if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
-            showTools();
-            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-        } else {
             hideTools();
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        } else {
+            showTools();
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         }
-        /*
-        if (toolMode == true) {
-            hideTools();
-            toolMode = false;
-        } else {
-            showTools();
-            toolMode = true;
-        }
-        */
     }
 
     @Override

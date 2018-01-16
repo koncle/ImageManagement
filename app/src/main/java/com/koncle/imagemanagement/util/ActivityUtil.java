@@ -1,11 +1,17 @@
 package com.koncle.imagemanagement.util;
 
 import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.app.SharedElementCallback;
 import android.support.v7.widget.PopupMenu;
+import android.transition.Explode;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
@@ -19,13 +25,15 @@ import com.koncle.imagemanagement.bean.Image;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by 10976 on 2018/1/12.
  */
 
 public class ActivityUtil {
-
+    public static final String ACTIVITY_IMAGE_TAG = "images";
+    public static final String ACTIVITY_POS_TAG = "pos";
     public static void shareImages(Context context, List<Image> images) {
 
         ArrayList<Uri> imageUris = new ArrayList<Uri>();
@@ -62,18 +70,27 @@ public class ActivityUtil {
     public static void showImageList(Context context, List<Image> images) {
         Intent intent = new Intent(context, MultiColumnImagesActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList("images", (ArrayList<Image>) images);
+        bundle.putParcelableArrayList(ACTIVITY_IMAGE_TAG, (ArrayList<Image>) images);
         intent.putExtras(bundle);
         context.startActivity(intent);
     }
 
-    public static void showSingleImageWithPos(Context context, List<Image> images, int currentPos) {
+    public static void showSingleImageWithPos(final Context context, List<Image> images, int currentPos, View view) {
         Intent intent = new Intent(context, SingleImageActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList("images", (ArrayList<Image>) images);
-        bundle.putInt("pos", currentPos);
+        bundle.putParcelableArrayList(ACTIVITY_IMAGE_TAG, (ArrayList<Image>) images);
+        bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
-        ((Activity) context).startActivityForResult(intent, 1); // lager than 0
+
+        ActivityOptionsCompat compat = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, view, context.getString(R.string.m2s_transition));
+
+        SharedElementCallback s = new ECallback();
+        ActivityCompat.setEnterSharedElementCallback((Activity) context, s);
+        ActivityCompat.setExitSharedElementCallback((Activity) context, s);
+
+        ActivityCompat.startActivityForResult((Activity) context, intent, 1, compat.toBundle());
+
+        //((Activity) context).startActivityForResult(intent, 1); // lager than 0
     }
 
     public static void showPopup(final Context context, View view) {
@@ -95,10 +112,44 @@ public class ActivityUtil {
     }
 
     public static void showMap(Context context, List<Image> images) {
+
         Intent intent = new Intent(context, MapActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList("images", (ArrayList<Image>) images);
+        bundle.putParcelableArrayList(ACTIVITY_IMAGE_TAG, (ArrayList<Image>) images);
         intent.putExtras(bundle);
-        ((Activity) context).startActivityForResult(intent, 1);
+
+        //((Activity) context).startActivityForResult(intent, 1);
+
+        ((Activity) context).getWindow().setExitTransition(new Explode());
+        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
+        context.startActivity(intent, options.toBundle());
+    }
+
+    static class ECallback extends SharedElementCallback {
+        @Override
+        public void onSharedElementStart(List<String> sharedElementNames, List<View> sharedElements, List<View> sharedElementSnapshots) {
+            super.onSharedElementStart(sharedElementNames, sharedElements, sharedElementSnapshots);
+            Log.w("Shared", "start share");
+        }
+
+        @Override
+        public void onSharedElementEnd(List<String> sharedElementNames, List<View> sharedElements, List<View> sharedElementSnapshots) {
+            super.onSharedElementEnd(sharedElementNames, sharedElements, sharedElementSnapshots);
+            Log.w("Shared", "end share");
+        }
+
+        @Override
+        public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
+            super.onMapSharedElements(names, sharedElements);
+            Log.w("Shared", "map share");
+            for (String s : names) {
+                Log.w("Shared", s + sharedElements.get(s));
+            }
+        }
+
+        @Override
+        public void onRejectSharedElements(List<View> rejectedSharedElements) {
+            super.onRejectSharedElements(rejectedSharedElements);
+        }
     }
 }

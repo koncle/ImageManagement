@@ -3,7 +3,6 @@ package com.koncle.imagemanagement.adapter;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.support.v4.view.PagerAdapter;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -27,14 +26,14 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
     private final Context context;
     private int width;
     private ModeChange operator;
+    int cur;
 
-    public SingleImageViewPagerAdapter(Context context, List<Image> images) {
+    public SingleImageViewPagerAdapter(Context context, List<Image> images, int cur) {
         this.images = images;
         this.context = context;
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         this.width = wm.getDefaultDisplay().getWidth();
-
-        Log.w(this.getClass().getSimpleName(), "DATA : " + images.get(0));
+        this.cur = cur;
     }
 
     @Override
@@ -58,6 +57,9 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
 
             //imageView = new FullScreenImageView(this.context);
             final ImageView imageView = new ImageView(this.context);
+
+            if (cur == position)
+                imageView.setTransitionName(context.getString(R.string.m2s_transition));
 
             Glide.with(this.context)
                     .load(path)

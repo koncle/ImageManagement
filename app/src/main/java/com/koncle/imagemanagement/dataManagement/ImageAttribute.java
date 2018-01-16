@@ -65,7 +65,7 @@ public class ImageAttribute {
                     output2 = convertRationalLatLonToFloat(lngValue, lngRef);
                 } catch (IllegalArgumentException e) {
                     if (DEBUG) {
-                        Log.i(TAG, "can't convert location : " + path);
+                        Log.i(TAG, "can't convert2AMapCoord location : " + path);
                     }
                 }
             } else {
@@ -73,7 +73,7 @@ public class ImageAttribute {
             }
         } catch (Exception e) {
             if (DEBUG) {
-                Log.i(TAG, "can't resulve attribute from : " + path);
+                Log.i(TAG, "can't resolve attribute from : " + path);
             }
             return null;
         }
@@ -86,7 +86,7 @@ public class ImageAttribute {
         double lng = location.getLongitude();
         double[] f = {lat, lng};
         if (TagUtil.DEBUG) {
-            Log.i("loc", lat + " : " + lng);
+            Log.w("loc", lat + " : " + lng);
         }
         return f;
     }

@@ -5,10 +5,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <android.support.v4.view.ViewPager
-
         android:id="@+id/image_view_pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:transitionName="@string/m2s_transition" />
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/single_toolbar"

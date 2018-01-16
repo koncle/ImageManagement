@@ -157,7 +157,7 @@ public class EventFragment extends Fragment implements HasName {
         }
 
         @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
             if (getItemViewType(position) == LINE) {
                 if (position == this.size - 1) {
                     ((EventLineHolder) holder).line.setVisibility(View.GONE);
@@ -165,11 +165,17 @@ public class EventFragment extends Fragment implements HasName {
                     ((EventLineHolder) holder).line.setVisibility(View.VISIBLE);
                 }
             } else {
-                EventImageHolder imageHolder = (EventImageHolder) holder;
+                final EventImageHolder imageHolder = (EventImageHolder) holder;
                 Glide.with(EventFragment.this)
                         .load(this.images.get(position / 2).getPath())
                         .into(imageHolder.image);
                 holder.itemView.setTag(position);
+                imageHolder.image.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ActivityUtil.showSingleImageWithPos(getContext(), images, position / 2, imageHolder.image);
+                    }
+                });
                 Log.w("EventFragment", "item : " + position);
             }
         }

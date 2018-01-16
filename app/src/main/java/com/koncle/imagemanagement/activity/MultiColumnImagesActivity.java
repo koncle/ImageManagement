@@ -8,10 +8,12 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
+import android.support.design.widget.BottomSheetBehavior;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -24,6 +26,8 @@ import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.List;
+
+import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
 
 public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
 
@@ -41,10 +45,12 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     private RadioButton share;
     private RadioButton delete;
     private RadioButton move;
+    private BottomSheetBehavior bottomSheetBehavior;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(FEATURE_CONTENT_TRANSITIONS);
         setContentView(R.layout.activity_fullscreen);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -55,12 +61,50 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         images = this.getIntent().getExtras().getParcelableArrayList("images");
 
         findViews();
-        initToolbar();
+        initMode();
         initRecyclerView();
-        initOperatoins();
     }
 
-    private void initOperatoins() {
+    private void findViews() {
+        hidedToolbar = findViewById(R.id.hide_toolbar);
+        title = findViewById(R.id.select_msg);
+        complete = findViewById(R.id.select_complete);
+        back = findViewById(R.id.select_back);
+
+        recyclerView = findViewById(R.id.recyclerView);
+
+        operatoins = findViewById(R.id.operations);
+        share = findViewById(R.id.share);
+        delete = findViewById(R.id.delete);
+        move = findViewById(R.id.move);
+
+        bottomSheetBehavior = BottomSheetBehavior.from(operatoins);
+    }
+
+    private void initMode() {
+        // init toolbar
+        toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle("Show");
+        setSupportActionBar(toolbar);
+
+        complete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                imageAdaptor.selectAll();
+            }
+        });
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                imageAdaptor.exitSelectMode();
+            }
+        });
+
+        // init bottom tools
+        bottomSheetBehavior.setHideable(true);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -87,40 +131,6 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         });
     }
 
-    private void findViews() {
-        hidedToolbar = findViewById(R.id.hide_toolbar);
-        complete = findViewById(R.id.select_complete);
-        back = findViewById(R.id.select_back);
-
-        recyclerView = findViewById(R.id.recyclerView);
-
-        operatoins = findViewById(R.id.operations);
-        share = findViewById(R.id.share);
-        delete = findViewById(R.id.delete);
-        move = findViewById(R.id.move);
-        title = findViewById(R.id.select_msg);
-    }
-
-    private void initToolbar() {
-        toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("Show");
-        setSupportActionBar(toolbar);
-
-        complete.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                imageAdaptor.selectAll();
-            }
-        });
-
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                imageAdaptor.exitSelectMode();
-            }
-        });
-    }
-
     private void initRecyclerView() {
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 4);
         recyclerView.setLayoutManager(gridLayoutManager);
@@ -130,21 +140,17 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         recyclerView.setItemViewCacheSize(0);
     }
 
-    private void changeToHideBar() {
-        toolbar.setVisibility(View.GONE);
-        hidedToolbar.setVisibility(View.VISIBLE);
-        setSupportActionBar(hidedToolbar);
-    }
 
-    private void changeToNormalBar() {
+    public void exitSelectMode() {
+        // show nomal toolbar
         toolbar.setVisibility(View.VISIBLE);
         hidedToolbar.setVisibility(View.GONE);
         setSupportActionBar(toolbar);
-    }
 
-    public void exitSelectMode() {
-        changeToNormalBar();
-        operatoins.setVisibility(View.GONE);
+        // hide tools
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+
+        //toggleMode();
         /*
          * The recyclerView will retain at least 4 images to
          * have a perfect perfomance which leads to my failure
@@ -156,8 +162,13 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     }
 
     public void enterSelectMode() {
-        changeToHideBar();
-        operatoins.setVisibility(View.VISIBLE);
+        // show hidden toolbar
+        toolbar.setVisibility(View.GONE);
+        hidedToolbar.setVisibility(View.VISIBLE);
+        setSupportActionBar(hidedToolbar);
+
+        // show tools
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     }
 
     @Override
@@ -190,8 +201,9 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         super.onActivityResult(requestCode, resultCode, data);
         switch (resultCode) {
             case (SingleImageActivity.IMAGE_VIWER_SCROLL): {
+                Log.w("Share", "return");
                 int pos = data.getIntExtra("pos", 0);
-                recyclerView.scrollToPosition(pos + ROW * 2); // scroll to next 2 rows
+                recyclerView.scrollToPosition(pos); // //scroll to next 2 rows
                 if (data.getBooleanExtra("delete", false)) {
                     List<Image> images = data.getExtras().getParcelableArrayList("deletes");
                     imageAdaptor.deleteInvalidImages(images);

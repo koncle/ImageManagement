@@ -1,5 +1,10 @@
 package com.koncle.imagemanagement.util;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.PixelFormat;
+import android.graphics.drawable.Drawable;
 import android.util.Log;
 
 import java.io.File;
@@ -17,6 +22,19 @@ import java.util.List;
 
 public class ImageUtils {
     public static final String TAG = ImageUtils.class.getSimpleName();
+
+    public static Bitmap drawableToBitmap(Drawable drawable) {
+
+        Bitmap bitmap = Bitmap.createBitmap(
+                drawable.getIntrinsicWidth(),
+                drawable.getIntrinsicHeight(),
+                drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
+        Canvas canvas = new Canvas(bitmap);
+        //canvas.setBitmap(bitmap);
+        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+        drawable.draw(canvas);
+        return bitmap;
+    }
 
     public static boolean copyFile(String srcFilePath, String desDirPath) {
         File srcFile = new File(srcFilePath);
@@ -59,5 +77,28 @@ public class ImageUtils {
                 return false;
         }
         return true;
+    }
+
+    public static Bitmap loadBitmap(String path, int reqWidth, int reqHeight) {
+        // get parameters of image without loading it
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(path, options);
+        int imageHeight = options.outHeight;
+        int imageWidth = options.outWidth;
+        String imageType = options.outMimeType;
+        int inSampleSize = 1;
+
+        // calculate the final width and height
+        if (reqWidth < imageWidth || reqHeight < imageHeight) {
+            int widthRatio = Math.round((float) reqWidth / reqWidth);
+            int heightRatio = Math.round((float) imageHeight / reqHeight);
+            inSampleSize = widthRatio > heightRatio ? widthRatio : heightRatio;
+        }
+
+        // scale the image with the parameters and load it
+        options.inSampleSize = inSampleSize;
+        options.inJustDecodeBounds = false;
+        return BitmapFactory.decodeFile(path, options);
     }
 }

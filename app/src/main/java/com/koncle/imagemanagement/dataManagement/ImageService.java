@@ -106,8 +106,20 @@ public class ImageService {
         image.setTime(time);
 
         double[] tmp = ImageAttribute.getLocation(path);
-        loc = tmp == null ? null : tmp.toString();
+        if (tmp != null) {
+            image.setLat(String.valueOf(tmp[0]));
+            image.setLng(String.valueOf(tmp[1]));
+        }
         return image;
+    }
+
+    public static List<Image> getImagesWithLoc() {
+        ImageDao imageDao = daoManager.getDaoSession().getImageDao();
+        List<Image> images = imageDao.queryRawCreate("where T.lat !=? ", "0").list();
+        if (DEBUG) {
+            Log.i(TAG, "get images with loc : " + images.size());
+        }
+        return images;
     }
 
     public static List<Image> getFolders() {

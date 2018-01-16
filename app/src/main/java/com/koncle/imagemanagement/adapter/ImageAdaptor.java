@@ -96,6 +96,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             public boolean onLongClick(View view) {
                 enterSelectMode();
                 toggleImageSelectionAndCheck(holder, position);
+                modeOperator.enterSelectMode();
                 return true;
             }
         });
@@ -106,7 +107,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 if (selectMode) {
                     toggleImageSelectionAndCheck(holder, position);
                 } else {
-                    ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, ImageAdaptor.this.images, position);
+                    ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, ImageAdaptor.this.images, position, holder.image);
                 }
             }
         });

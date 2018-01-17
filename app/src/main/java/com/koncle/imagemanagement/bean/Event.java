@@ -1,24 +1,26 @@
 package com.koncle.imagemanagement.bean;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import com.koncle.imagemanagement.dao.DaoSession;
+import com.koncle.imagemanagement.dao.EventDao;
+import com.koncle.imagemanagement.dao.ImageDao;
+
+import org.greenrobot.greendao.DaoException;
 import org.greenrobot.greendao.annotation.Entity;
+import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.annotation.ToMany;
 
 import java.util.List;
 
-import org.greenrobot.greendao.annotation.Generated;
-import org.greenrobot.greendao.DaoException;
-
-import com.koncle.imagemanagement.dao.DaoSession;
-import com.koncle.imagemanagement.dao.ImageDao;
-import com.koncle.imagemanagement.dao.EventDao;
-
 /**
  * Created by 10976 on 2018/1/11.
  */
 @Entity
-public class Event {
+public class Event implements Parcelable {
     @Id(autoincrement = true)
     private Long id;
 
@@ -141,4 +143,33 @@ public class Event {
         myDao = daoSession != null ? daoSession.getEventDao() : null;
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(this.id);
+        dest.writeString(this.name);
+        dest.writeTypedList(this.imageList);
+    }
+
+    protected Event(Parcel in) {
+        this.id = (Long) in.readValue(Long.class.getClassLoader());
+        this.name = in.readString();
+        this.imageList = in.createTypedArrayList(Image.CREATOR);
+    }
+
+    public static final Parcelable.Creator<Event> CREATOR = new Parcelable.Creator<Event>() {
+        @Override
+        public Event createFromParcel(Parcel source) {
+            return new Event(source);
+        }
+
+        @Override
+        public Event[] newArray(int size) {
+            return new Event[size];
+        }
+    };
 }

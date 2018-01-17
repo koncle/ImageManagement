@@ -73,7 +73,6 @@ public class MapActivity extends AppCompatActivity implements GeocodeSearch.OnGe
             markers.add(m);
             if (i % 2 == 1) m.setVisible(false);
         }
-
     }
 
     @Override

@@ -61,14 +61,36 @@ public class ImageUtils {
         return true;
     }
 
-    public static boolean deleteFile(String path) {
-        File file = new File(path);
-        if (!file.exists()) {
+    public static boolean deleteFile(File file) {
+        if (file == null || !file.exists()) {
             return false;
         } else {
-            Log.i(TAG, "delete file : " + path);
-            return file.delete();
+            if (file.isDirectory()) {
+                File[] files = file.listFiles();
+                for (File f : files) {
+                    deleteFile(f);
+                }
+            } else {
+                file.delete();
+            }
         }
+        return true;
+    }
+
+    public static boolean deleteFile(String path) {
+        if (path == null) return false;
+        File file = new File(path);
+        Log.w(TAG, "delete 1 file");
+        return deleteFile(file);
+    }
+
+    public static int deleteFiles(List<String> pathes) {
+        int count = 0;
+        for (String p : pathes) {
+            count += deleteFile(p) ? 1 : 0;
+        }
+        Log.w(TAG, "delete " + count + " file");
+        return count;
     }
 
     public static boolean deleteImages(List<String> paths) {

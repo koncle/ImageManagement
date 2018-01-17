@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="400dp"
+    android:paddingTop="10dp"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/dialog_input_liearlayout"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:background="@drawable/input_shape">
+
+            <ImageButton
+                android:id="@+id/dialog_input_close"
+                android:layout_gravity="center"
+                android:background="#0fff"
+                android:src="@drawable/close"
+                android:layout_width="35dp"
+                android:layout_height="35dp" />
+
+            <EditText
+                android:layout_gravity="center"
+                android:id="@+id/dialog_input"
+                android:maxLines="1"
+                android:textSize="15sp"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/dialog_input_complete"
+                android:layout_gravity="center"
+                android:background="#0fff"
+                android:src="@drawable/add"
+                android:layout_width="35dp"
+                android:layout_height="35dp" />
+        </LinearLayout>
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/tag_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <Button
+            android:background="@drawable/dialog_add_button_shape"
+            android:id="@+id/dialog_add_tag"
+            android:text="@string/dialog_add_tag"
+            android:textAllCaps="false"
+            android:textSize="20dp"
+            android:gravity="center"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackground" />
+    </LinearLayout>
+</android.support.design.widget.CoordinatorLayout>

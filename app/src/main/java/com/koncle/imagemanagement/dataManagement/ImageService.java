@@ -4,12 +4,17 @@ import android.content.Context;
 import android.util.Log;
 
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.bean.Tag;
+import com.koncle.imagemanagement.bean.TagAndImage;
 import com.koncle.imagemanagement.dao.DaoMaster;
 import com.koncle.imagemanagement.dao.DaoSession;
 import com.koncle.imagemanagement.dao.ImageDao;
+import com.koncle.imagemanagement.dao.TagAndImageDao;
+import com.koncle.imagemanagement.dao.TagDao;
 
 import org.greenrobot.greendao.query.WhereCondition;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.koncle.imagemanagement.util.TagUtil.DEBUG;
@@ -46,7 +51,7 @@ public class ImageService {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         if (imageDao.queryRawCreate("where T.path = ?", image.getPath()).list().size() == 0) {
             Log.w(TAG, "insert " + image.getPath());
-            imageDao.insert(image);
+            imageDao.insertInTx(image);
         }
         return true;
     }
@@ -161,5 +166,85 @@ public class ImageService {
 
     public static List<Image> getEvents() {
         return null;
+    }
+
+    public static Tag addTagIfNotExists(String tagString) {
+        DaoSession daoSession = daoManager.getDaoSession();
+        TagDao tagDao = daoSession.getTagDao();
+        List<Tag> tags = tagDao.queryRawCreate(" where T.tag = ?", tagString).list();
+        Tag tag;
+        if (tags.size() > 0) {
+            tag = tags.get(0);
+        } else {
+            tag = new Tag(null, tagString);
+            tagDao.insertInTx(tag);
+        }
+        return tag;
+    }
+
+    public static List<Tag> getTags() {
+        DaoSession daoSession = daoManager.getDaoSession();
+        TagDao tagDao = daoSession.getTagDao();
+        return tagDao.loadAll();
+    }
+
+    public static void addTag2Images(List<Image> images, Tag tag) {
+        Long tagId = tag.getId();
+        List<TagAndImage> tagAndImages = new ArrayList<>();
+        for (Image image : images) {
+            if (!image.getTags().contains(tag)) {
+                TagAndImage tagAndImage = new TagAndImage(null, tagId, image.getId());
+                tagAndImages.add(tagAndImage);
+            }
+        }
+        TagAndImageDao tagAndImageDao = daoManager.getDaoSession().getTagAndImageDao();
+        tagAndImageDao.insertInTx(tagAndImages);
+    }
+
+    public static void addTag2Image(Image image, Tag tag) {
+        Long tagId = tag.getId();
+        TagAndImage tagAndImage = new TagAndImage(null, tagId, image.getId());
+        TagAndImageDao tagAndImageDao = daoManager.getDaoSession().getTagAndImageDao();
+        tagAndImageDao.insertInTx(tagAndImage);
+    }
+
+    public static void addTags(List<Image> images, String tagString) {
+        tagString = tagString.trim();
+        Tag tag = addTagIfNotExists(tagString);
+        addTag2Images(images, tag);
+    }
+
+    public static void addTags2Images(List<Image> images, List<Tag> tags) {
+        for (Tag tag : tags) {
+            addTag2Images(images, tag);
+        }
+    }
+
+    public static void clearTags(Image image) {
+        DaoSession daoSession = daoManager.getDaoSession();
+        ImageDao imageDao = daoSession.getImageDao();
+        image.resetTags();
+        imageDao.save(image);
+    }
+
+    public static void clearTags(List<Image> images) {
+        ImageDao imageDao = daoManager.getDaoSession().getImageDao();
+        for (Image image : images) {
+            image.resetTags();
+            ;
+        }
+        imageDao.saveInTx(images);
+    }
+
+    public static void recoverDaoSession(Image image) {
+        DaoSession daoSession = daoManager.getDaoSession();
+        image.__setDaoSession(daoSession);
+    }
+
+    public static void recoverDaoSession(List<Image> images) {
+        DaoSession daoSession = daoManager.getDaoSession();
+        for (Image image : images) {
+            image.__setDaoSession(daoSession);
+        }
     }
 }

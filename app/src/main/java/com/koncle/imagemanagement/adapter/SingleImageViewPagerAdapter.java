@@ -53,8 +53,6 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
             final Image image = images.get(position);
             String path = image.getPath();
 
-            operator.changeTitle(image.getName());
-
             //imageView = new FullScreenImageView(this.context);
             final ImageView imageView = new ImageView(this.context);
 

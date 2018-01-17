@@ -4,12 +4,11 @@
     <item
         android:id="@+id/map"
         android:orderInCategory="100"
-        android:title="Map"
+        android:title="@string/main_menu_item_map"
         app:showAsAction="never" />
-
     <item
-        android:id="@+id/collect"
+        android:id="@+id/refresh_data"
         android:orderInCategory="100"
-        android:title="收藏"
+        android:title="@string/main_menu_item_refresh"
         app:showAsAction="never" />
 </menu>

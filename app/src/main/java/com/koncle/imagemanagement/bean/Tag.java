@@ -1,6 +1,15 @@
 package com.koncle.imagemanagement.bean;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import com.koncle.imagemanagement.dao.DaoSession;
+import com.koncle.imagemanagement.dao.ImageDao;
+import com.koncle.imagemanagement.dao.TagDao;
+
+import org.greenrobot.greendao.DaoException;
 import org.greenrobot.greendao.annotation.Entity;
+import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
@@ -8,18 +17,11 @@ import org.greenrobot.greendao.annotation.ToMany;
 
 import java.util.List;
 
-import org.greenrobot.greendao.annotation.Generated;
-import org.greenrobot.greendao.DaoException;
-
-import com.koncle.imagemanagement.dao.DaoSession;
-import com.koncle.imagemanagement.dao.ImageDao;
-import com.koncle.imagemanagement.dao.TagDao;
-
 /**
  * Created by 10976 on 2018/1/11.
  */
 @Entity
-public class Tag {
+public class Tag implements Parcelable {
     @Id(autoincrement = true)
     private Long id;
 
@@ -33,6 +35,16 @@ public class Tag {
             targetProperty = "image_id"
     )
     private List<Image> images;
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Tag) {
+            if (tag.equals(((Tag) obj).getTag())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Used to resolve relations
@@ -147,4 +159,33 @@ public class Tag {
         myDao = daoSession != null ? daoSession.getTagDao() : null;
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(this.id);
+        dest.writeString(this.tag);
+        dest.writeTypedList(this.images);
+    }
+
+    protected Tag(Parcel in) {
+        this.id = (Long) in.readValue(Long.class.getClassLoader());
+        this.tag = in.readString();
+        this.images = in.createTypedArrayList(Image.CREATOR);
+    }
+
+    public static final Parcelable.Creator<Tag> CREATOR = new Parcelable.Creator<Tag>() {
+        @Override
+        public Tag createFromParcel(Parcel source) {
+            return new Tag(source);
+        }
+
+        @Override
+        public Tag[] newArray(int size) {
+            return new Tag[size];
+        }
+    };
 }

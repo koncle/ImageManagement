@@ -74,5 +74,17 @@
             android:gravity="center"
             android:text="delete"
             android:button="@null" />
+
+        <RadioButton
+            android:id="@+id/single_tag"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:drawableTop="@drawable/delete"
+            android:gravity="center"
+            android:text="delete"
+            android:button="@null" />
     </LinearLayout>
 </android.support.design.widget.CoordinatorLayout>

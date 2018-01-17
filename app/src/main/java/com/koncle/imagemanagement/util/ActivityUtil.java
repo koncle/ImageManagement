@@ -9,12 +9,9 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.SharedElementCallback;
-import android.support.v7.widget.PopupMenu;
 import android.transition.Explode;
 import android.util.Log;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.activity.MapActivity;
@@ -91,24 +88,6 @@ public class ActivityUtil {
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, compat.toBundle());
 
         //((Activity) context).startActivityForResult(intent, 1); // lager than 0
-    }
-
-    public static void showPopup(final Context context, View view) {
-        PopupMenu popupMenu = new PopupMenu(context, view);
-        popupMenu.getMenuInflater().inflate(R.menu.event_op, popupMenu.getMenu());
-        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                Toast.makeText(context, "delete...", Toast.LENGTH_SHORT).show();
-                return false;
-            }
-        });
-        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
-            @Override
-            public void onDismiss(PopupMenu menu) {
-            }
-        });
-        popupMenu.show();
     }
 
     public static void showMap(Context context, List<Image> images) {

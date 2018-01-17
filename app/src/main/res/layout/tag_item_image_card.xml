@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<android.support.v7.widget.CardView android:layout_height="wrap_content"
+    android:layout_width="0dp"
+    android:layout_weight="1"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardCornerRadius="2dp"
+    android:paddingStart="0dp"
+    android:paddingEnd="0dp"
+    cardPreventCornerOverlap="false"
+    android:clickable="true"
+    android:foreground="?attr/selectableItemBackgroundBorderless"
+    android:focusable="true"
+
+    android:layout_marginStart="1dp"
+    android:layout_marginEnd="1dp"
+    android:layout_marginTop="1dp"
+    android:layout_marginBottom="1dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible">
+
+        <ImageView
+            android:id="@+id/image"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scaleType="centerCrop"
+            android:transitionName="@string/m2s_transition" />
+
+        <FrameLayout
+            android:id="@+id/background"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/background"
+            android:visibility="gone"></FrameLayout>
+
+        <CheckBox
+            android:id="@+id/select_button"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="top|end" />
+    </FrameLayout>
+
+</android.support.v7.widget.CardView>

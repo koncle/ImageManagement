@@ -55,7 +55,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     public ImageViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         return new ImageViewHolder(
                 LayoutInflater.from(context)
-                        .inflate(R.layout.image_display, parent, false));
+                        .inflate(R.layout.multiple_image_inner_layout, parent, false));
     }
 
     @Override

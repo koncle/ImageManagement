@@ -3,4 +3,10 @@
     <string name="right_top_button">All</string>
     <string name="mark_hint">Input your mark</string>
     <string name="m2s_transition">m2s</string>
+    <string name="delete">delete</string>
+    <string name="share">share</string>
+    <string name="main_menu_item_map">map</string>
+    <string name="add_tag">tag</string>
+    <string name="dialog_add_tag">add new tags</string>
+    <string name="main_menu_item_refresh">refresh</string>
 </resources>

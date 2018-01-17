@@ -23,6 +23,9 @@ import android.widget.TextView;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.dataManagement.ImageService;
+import com.koncle.imagemanagement.fragment.MultipleImageDialogFragment;
+import com.koncle.imagemanagement.fragment.SingleImageDIalogFragment;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.List;
@@ -45,13 +48,15 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     private RadioButton share;
     private RadioButton delete;
     private RadioButton move;
+    private RadioButton tag;
     private BottomSheetBehavior bottomSheetBehavior;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(FEATURE_CONTENT_TRANSITIONS);
-        setContentView(R.layout.activity_fullscreen);
+        setContentView(R.layout.multiple_image_outer_layout);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
@@ -59,6 +64,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         }
 
         images = this.getIntent().getExtras().getParcelableArrayList("images");
+        ImageService.recoverDaoSession(images);
 
         findViews();
         initMode();
@@ -77,6 +83,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         share = findViewById(R.id.share);
         delete = findViewById(R.id.delete);
         move = findViewById(R.id.move);
+        tag = findViewById(R.id.tag);
 
         bottomSheetBehavior = BottomSheetBehavior.from(operatoins);
     }
@@ -126,6 +133,22 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
             public void onClick(View v) {
                 List<Image> images = imageAdaptor.getSelections();
                 //  ImageUtils.moveImages(paths);
+                imageAdaptor.exitSelectMode();
+            }
+        });
+
+        tag.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<Image> images = imageAdaptor.getSelections();
+                //ImageService.addTags(images, );
+                if (images.size() > 1) {
+                    MultipleImageDialogFragment dialog = MultipleImageDialogFragment.newInstance(images);
+                    dialog.show(getSupportFragmentManager(), "Multi");
+                } else {
+                    SingleImageDIalogFragment dialog = SingleImageDIalogFragment.newInstance(images.get(0));
+                    dialog.show(getSupportFragmentManager());
+                }
                 imageAdaptor.exitSelectMode();
             }
         });

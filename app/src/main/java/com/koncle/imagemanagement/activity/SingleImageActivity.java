@@ -13,10 +13,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.SingleImageViewPagerAdapter;
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.dataManagement.ImageService;
+import com.koncle.imagemanagement.fragment.SingleImageDIalogFragment;
 import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.ImageUtils;
 
@@ -48,6 +51,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     public static final int IMAGE_VIWER_SCROLL = 3;
     private List<Image> deleteImages;
     private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
+    private RadioButton tag;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -59,6 +63,8 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         Bundle bundle = getIntent().getExtras();
         int position = (int) bundle.get("pos");
         this.images = (List<Image>) bundle.get("images");
+        ImageService.recoverDaoSession(images);  // its daoSession can't not be parsed
+
         deleteImages = new ArrayList<>();
 
         findViews();
@@ -96,6 +102,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         share = findViewById(R.id.share);
         move = findViewById(R.id.move);
         mark = findViewById(R.id.mark);
+        tag = findViewById(R.id.single_tag);
         toolLayout = findViewById(R.id.tool_layout);
 
         bottomSheetBehavior = BottomSheetBehavior.from(toolLayout);
@@ -110,6 +117,21 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         pagerAdapter.setOperator(this);
         imageViewPager.setAdapter(pagerAdapter);
         imageViewPager.setCurrentItem(position);
+
+        imageViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                changeTitle(images.get(position).getName());
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+            }
+        });
     }
 
     private void initOperatoins() {
@@ -138,6 +160,15 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             @Override
             public void onClick(View v) {
                 startActivityForResult(new Intent(SingleImageActivity.this, RemarkActivity.class), 0);
+            }
+        });
+
+
+        tag.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SingleImageDIalogFragment dialog = SingleImageDIalogFragment.newInstance(images.get(imageViewPager.getCurrentItem()));
+                dialog.show(getSupportFragmentManager(), "Single");
             }
         });
     }

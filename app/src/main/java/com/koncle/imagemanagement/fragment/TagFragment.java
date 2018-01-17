@@ -13,11 +13,11 @@ import com.koncle.imagemanagement.R;
  * Created by 10976 on 2018/1/12.
  */
 
-public class MapFragment extends Fragment implements HasName {
+public class TagFragment extends Fragment implements HasName {
     private String name;
 
     public static Fragment newInstance(String name, Operater operater) {
-        MapFragment f = new MapFragment();
+        TagFragment f = new TagFragment();
         f.setName(name);
         return f;
     }
@@ -25,8 +25,8 @@ public class MapFragment extends Fragment implements HasName {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.map_fragment, null);
-
+        View view = inflater.inflate(R.layout.tag_outer_layout, null);
+        view.findViewById(R.id.)
         return view;
     }
 

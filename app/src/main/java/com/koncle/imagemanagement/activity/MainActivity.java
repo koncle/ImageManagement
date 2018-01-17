@@ -22,7 +22,7 @@ import com.koncle.imagemanagement.dataManagement.ImageSource;
 import com.koncle.imagemanagement.fragment.EventFragment;
 import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
-import com.koncle.imagemanagement.fragment.MapFragment;
+import com.koncle.imagemanagement.fragment.TagFragment;
 import com.koncle.imagemanagement.fragment.Operater;
 import com.koncle.imagemanagement.service.ImageListenerService;
 import com.koncle.imagemanagement.util.ActivityUtil;
@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements Operater {
     private ViewPager viewPager;
     private TabLayout tab;
     private List<Fragment> fragments;
-    private long start;
+
     private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements Operater {
                     break;
                 case SCAN_OK:
                     List<Image> folders = ImageService.getFolders();
-                    ((FolderFragment) fragments.get(0)).setFolders(folders);
+                    ((FolderFragment) fragments.get(0)).setFolderCovers(folders);
                     break;
             }
         }
@@ -86,11 +86,15 @@ public class MainActivity extends AppCompatActivity implements Operater {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.map) {
-            List<Image> images = ImageService.getAllImages();
-            ActivityUtil.showMap(this, ImageService.getImagesWithLoc());
+        switch (id) {
+            case R.id.map:
+                List<Image> images = ImageService.getAllImages();
+                ActivityUtil.showMap(this, ImageService.getImagesWithLoc());
+                break;
+            case R.id.refresh_data:
+                refreshFolders();
+                break;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -111,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements Operater {
         fragments = new ArrayList<>();
         fragments.add(FolderFragment.newInstance("Main", this));
         fragments.add(EventFragment.newInstance("Events", this));
-        fragments.add(MapFragment.newInstance("Map", this));
+        fragments.add(TagFragment.newInstance("Map", this));
     }
 
     private void initViewPager() {

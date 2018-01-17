@@ -6,14 +6,17 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
@@ -60,8 +63,22 @@ public class EventFragment extends Fragment implements HasName {
         return view;
     }
 
-    public void setOperater(Operater operater) {
-        this.operater = operater;
+    public void showPopup(View view) {
+        PopupMenu popupMenu = new PopupMenu(getContext(), view);
+        popupMenu.getMenuInflater().inflate(R.menu.event_op, popupMenu.getMenu());
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                Toast.makeText(getContext(), "delete...", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        });
+        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
+            @Override
+            public void onDismiss(PopupMenu menu) {
+            }
+        });
+        popupMenu.show();
     }
 
     class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecyclerViewAdapter.EventHolder> {
@@ -93,7 +110,7 @@ public class EventFragment extends Fragment implements HasName {
             holder.imageButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    ActivityUtil.showPopup(getContext(), holder.imageButton);
+                    showPopup(holder.imageButton);
                 }
             });
         }
@@ -204,6 +221,9 @@ public class EventFragment extends Fragment implements HasName {
         }
     }
 
+    public void setOperater(Operater operater) {
+        this.operater = operater;
+    }
     @Override
     public void setName(String s) {
         this.name = s;

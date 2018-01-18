@@ -26,7 +26,7 @@ public class TagFragment extends Fragment implements HasName {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.tag_outer_layout, null);
-        view.findViewById(R.id.)
+        //view.findViewById(R.id.)
         return view;
     }
 

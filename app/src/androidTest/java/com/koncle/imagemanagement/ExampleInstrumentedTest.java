@@ -7,7 +7,6 @@ import android.util.Log;
 
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.bean.Tag;
-import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dataManagement.ImageSource;
 
 import org.junit.AfterClass;

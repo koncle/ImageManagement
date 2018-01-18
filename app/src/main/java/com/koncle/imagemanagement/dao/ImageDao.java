@@ -1,7 +1,6 @@
 package com.koncle.imagemanagement.dao;
 
 import java.util.List;
-
 import android.database.Cursor;
 import android.database.sqlite.SQLiteStatement;
 
@@ -13,6 +12,7 @@ import org.greenrobot.greendao.database.DatabaseStatement;
 import org.greenrobot.greendao.query.Query;
 import org.greenrobot.greendao.query.QueryBuilder;
 
+import com.koncle.imagemanagement.bean.ImageAndEvent;
 import com.koncle.imagemanagement.bean.TagAndImage;
 
 import com.koncle.imagemanagement.bean.Image;
@@ -36,11 +36,10 @@ public class ImageDao extends AbstractDao<Image, Long> {
         public final static Property Folder = new Property(2, String.class, "folder", false, "FOLDER");
         public final static Property Name = new Property(3, String.class, "name", false, "NAME");
         public final static Property Desc = new Property(4, String.class, "desc", false, "DESC");
-        public final static Property Time = new Property(5, String.class, "time", false, "TIME");
-        public final static Property Event_id = new Property(6, Long.class, "event_id", false, "EVENT_ID");
-        public final static Property Loc_id = new Property(7, Long.class, "loc_id", false, "LOC_ID");
-        public final static Property Lat = new Property(8, String.class, "lat", false, "LAT");
-        public final static Property Lng = new Property(9, String.class, "lng", false, "LNG");
+        public final static Property Time = new Property(5, java.util.Date.class, "time", false, "TIME");
+        public final static Property Loc_id = new Property(6, Long.class, "loc_id", false, "LOC_ID");
+        public final static Property Lat = new Property(7, String.class, "lat", false, "LAT");
+        public final static Property Lng = new Property(8, String.class, "lng", false, "LNG");
     }
 
     private DaoSession daoSession;
@@ -62,23 +61,20 @@ public class ImageDao extends AbstractDao<Image, Long> {
      * Creates the underlying database table.
      */
     public static void createTable(Database db, boolean ifNotExists) {
-        String constraint = ifNotExists ? "IF NOT EXISTS " : "";
+        String constraint = ifNotExists ? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"IMAGE\" (" + //
                 "\"_id\" INTEGER PRIMARY KEY AUTOINCREMENT ," + // 0: id
                 "\"PATH\" TEXT NOT NULL ," + // 1: path
                 "\"FOLDER\" TEXT NOT NULL ," + // 2: folder
                 "\"NAME\" TEXT NOT NULL ," + // 3: name
                 "\"DESC\" TEXT," + // 4: desc
-                "\"TIME\" TEXT," + // 5: time
-                "\"EVENT_ID\" INTEGER," + // 6: event_id
-                "\"LOC_ID\" INTEGER," + // 7: loc_id
-                "\"LAT\" TEXT," + // 8: lat
-                "\"LNG\" TEXT);"); // 9: lng
+                "\"TIME\" INTEGER," + // 5: time
+                "\"LOC_ID\" INTEGER," + // 6: loc_id
+                "\"LAT\" TEXT," + // 7: lat
+                "\"LNG\" TEXT);"); // 8: lng
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"IMAGE\"";
         db.execSQL(sql);
@@ -87,7 +83,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
     @Override
     protected final void bindValues(DatabaseStatement stmt, Image entity) {
         stmt.clearBindings();
-
+ 
         Long id = entity.getId();
         if (id != null) {
             stmt.bindLong(1, id);
@@ -95,42 +91,37 @@ public class ImageDao extends AbstractDao<Image, Long> {
         stmt.bindString(2, entity.getPath());
         stmt.bindString(3, entity.getFolder());
         stmt.bindString(4, entity.getName());
-
+ 
         String desc = entity.getDesc();
         if (desc != null) {
             stmt.bindString(5, desc);
         }
 
-        String time = entity.getTime();
+        java.util.Date time = entity.getTime();
         if (time != null) {
-            stmt.bindString(6, time);
+            stmt.bindLong(6, time.getTime());
         }
-
-        Long event_id = entity.getEvent_id();
-        if (event_id != null) {
-            stmt.bindLong(7, event_id);
-        }
-
+ 
         Long loc_id = entity.getLoc_id();
         if (loc_id != null) {
-            stmt.bindLong(8, loc_id);
+            stmt.bindLong(7, loc_id);
         }
-
+ 
         String lat = entity.getLat();
         if (lat != null) {
-            stmt.bindString(9, lat);
+            stmt.bindString(8, lat);
         }
-
+ 
         String lng = entity.getLng();
         if (lng != null) {
-            stmt.bindString(10, lng);
+            stmt.bindString(9, lng);
         }
     }
 
     @Override
     protected final void bindValues(SQLiteStatement stmt, Image entity) {
         stmt.clearBindings();
-
+ 
         Long id = entity.getId();
         if (id != null) {
             stmt.bindLong(1, id);
@@ -138,35 +129,30 @@ public class ImageDao extends AbstractDao<Image, Long> {
         stmt.bindString(2, entity.getPath());
         stmt.bindString(3, entity.getFolder());
         stmt.bindString(4, entity.getName());
-
+ 
         String desc = entity.getDesc();
         if (desc != null) {
             stmt.bindString(5, desc);
         }
 
-        String time = entity.getTime();
+        java.util.Date time = entity.getTime();
         if (time != null) {
-            stmt.bindString(6, time);
+            stmt.bindLong(6, time.getTime());
         }
-
-        Long event_id = entity.getEvent_id();
-        if (event_id != null) {
-            stmt.bindLong(7, event_id);
-        }
-
+ 
         Long loc_id = entity.getLoc_id();
         if (loc_id != null) {
-            stmt.bindLong(8, loc_id);
+            stmt.bindLong(7, loc_id);
         }
-
+ 
         String lat = entity.getLat();
         if (lat != null) {
-            stmt.bindString(9, lat);
+            stmt.bindString(8, lat);
         }
-
+ 
         String lng = entity.getLng();
         if (lng != null) {
-            stmt.bindString(10, lng);
+            stmt.bindString(9, lng);
         }
     }
 
@@ -179,7 +165,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
     @Override
     public Long readKey(Cursor cursor, int offset) {
         return cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0);
-    }
+    }    
 
     @Override
     public Image readEntity(Cursor cursor, int offset) {
@@ -189,15 +175,14 @@ public class ImageDao extends AbstractDao<Image, Long> {
                 cursor.getString(offset + 2), // folder
                 cursor.getString(offset + 3), // name
                 cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4), // desc
-                cursor.isNull(offset + 5) ? null : cursor.getString(offset + 5), // time
-                cursor.isNull(offset + 6) ? null : cursor.getLong(offset + 6), // event_id
-                cursor.isNull(offset + 7) ? null : cursor.getLong(offset + 7), // loc_id
-                cursor.isNull(offset + 8) ? null : cursor.getString(offset + 8), // lat
-                cursor.isNull(offset + 9) ? null : cursor.getString(offset + 9) // lng
+                cursor.isNull(offset + 5) ? null : new java.util.Date(cursor.getLong(offset + 5)), // time
+                cursor.isNull(offset + 6) ? null : cursor.getLong(offset + 6), // loc_id
+                cursor.isNull(offset + 7) ? null : cursor.getString(offset + 7), // lat
+                cursor.isNull(offset + 8) ? null : cursor.getString(offset + 8) // lng
         );
         return entity;
     }
-
+     
     @Override
     public void readEntity(Cursor cursor, Image entity, int offset) {
         entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
@@ -205,19 +190,18 @@ public class ImageDao extends AbstractDao<Image, Long> {
         entity.setFolder(cursor.getString(offset + 2));
         entity.setName(cursor.getString(offset + 3));
         entity.setDesc(cursor.isNull(offset + 4) ? null : cursor.getString(offset + 4));
-        entity.setTime(cursor.isNull(offset + 5) ? null : cursor.getString(offset + 5));
-        entity.setEvent_id(cursor.isNull(offset + 6) ? null : cursor.getLong(offset + 6));
-        entity.setLoc_id(cursor.isNull(offset + 7) ? null : cursor.getLong(offset + 7));
-        entity.setLat(cursor.isNull(offset + 8) ? null : cursor.getString(offset + 8));
-        entity.setLng(cursor.isNull(offset + 9) ? null : cursor.getString(offset + 9));
-    }
-
+        entity.setTime(cursor.isNull(offset + 5) ? null : new java.util.Date(cursor.getLong(offset + 5)));
+        entity.setLoc_id(cursor.isNull(offset + 6) ? null : cursor.getLong(offset + 6));
+        entity.setLat(cursor.isNull(offset + 7) ? null : cursor.getString(offset + 7));
+        entity.setLng(cursor.isNull(offset + 8) ? null : cursor.getString(offset + 8));
+     }
+    
     @Override
     protected final Long updateKeyAfterInsert(Image entity, long rowId) {
         entity.setId(rowId);
         return rowId;
     }
-
+    
     @Override
     public Long getKey(Image entity) {
         if (entity != null) {
@@ -237,14 +221,13 @@ public class ImageDao extends AbstractDao<Image, Long> {
         return true;
     }
 
-    /**
-     * Internal query to resolve the "imageList" to-many relationship of Event.
-     */
+    /** Internal query to resolve the "imageList" to-many relationship of Event. */
     public List<Image> _queryEvent_ImageList(Long event_id) {
         synchronized (this) {
             if (event_ImageListQuery == null) {
                 QueryBuilder<Image> queryBuilder = queryBuilder();
-                queryBuilder.where(Properties.Event_id.eq(null));
+                queryBuilder.join(ImageAndEvent.class, ImageAndEventDao.Properties.Image_id)
+                        .where(ImageAndEventDao.Properties.Event_id.eq(event_id));
                 event_ImageListQuery = queryBuilder.build();
             }
         }
@@ -253,9 +236,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
         return query.list();
     }
 
-    /**
-     * Internal query to resolve the "images" to-many relationship of Location.
-     */
+    /** Internal query to resolve the "images" to-many relationship of Location. */
     public List<Image> _queryLocation_Images(Long loc_id) {
         synchronized (this) {
             if (location_ImagesQuery == null) {
@@ -269,9 +250,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
         return query.list();
     }
 
-    /**
-     * Internal query to resolve the "images" to-many relationship of Tag.
-     */
+    /** Internal query to resolve the "images" to-many relationship of Tag. */
     public List<Image> _queryTag_Images(Long tag_id) {
         synchronized (this) {
             if (tag_ImagesQuery == null) {

@@ -43,16 +43,14 @@ public class TagAndImageDao extends AbstractDao<TagAndImage, Long> {
      * Creates the underlying database table.
      */
     public static void createTable(Database db, boolean ifNotExists) {
-        String constraint = ifNotExists ? "IF NOT EXISTS " : "";
+        String constraint = ifNotExists ? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"TAG_AND_IMAGE\" (" + //
                 "\"_id\" INTEGER PRIMARY KEY AUTOINCREMENT ," + // 0: id
                 "\"TAG_ID\" INTEGER NOT NULL ," + // 1: tag_id
                 "\"IMAGE_ID\" INTEGER NOT NULL );"); // 2: image_id
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"TAG_AND_IMAGE\"";
         db.execSQL(sql);
@@ -61,7 +59,7 @@ public class TagAndImageDao extends AbstractDao<TagAndImage, Long> {
     @Override
     protected final void bindValues(DatabaseStatement stmt, TagAndImage entity) {
         stmt.clearBindings();
-
+ 
         Long id = entity.getId();
         if (id != null) {
             stmt.bindLong(1, id);
@@ -73,7 +71,7 @@ public class TagAndImageDao extends AbstractDao<TagAndImage, Long> {
     @Override
     protected final void bindValues(SQLiteStatement stmt, TagAndImage entity) {
         stmt.clearBindings();
-
+ 
         Long id = entity.getId();
         if (id != null) {
             stmt.bindLong(1, id);
@@ -85,7 +83,7 @@ public class TagAndImageDao extends AbstractDao<TagAndImage, Long> {
     @Override
     public Long readKey(Cursor cursor, int offset) {
         return cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0);
-    }
+    }    
 
     @Override
     public TagAndImage readEntity(Cursor cursor, int offset) {
@@ -96,20 +94,20 @@ public class TagAndImageDao extends AbstractDao<TagAndImage, Long> {
         );
         return entity;
     }
-
+     
     @Override
     public void readEntity(Cursor cursor, TagAndImage entity, int offset) {
         entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
         entity.setTag_id(cursor.getLong(offset + 1));
         entity.setImage_id(cursor.getLong(offset + 2));
-    }
-
+     }
+    
     @Override
     protected final Long updateKeyAfterInsert(TagAndImage entity, long rowId) {
         entity.setId(rowId);
         return rowId;
     }
-
+    
     @Override
     public Long getKey(TagAndImage entity) {
         if (entity != null) {
@@ -128,5 +126,5 @@ public class TagAndImageDao extends AbstractDao<TagAndImage, Long> {
     protected final boolean isEntityUpdateable() {
         return true;
     }
-
+    
 }

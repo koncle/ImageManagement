@@ -18,12 +18,11 @@ import android.view.MenuItem;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.dataManagement.ImageSource;
 import com.koncle.imagemanagement.fragment.EventFragment;
 import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
-import com.koncle.imagemanagement.fragment.TagFragment;
 import com.koncle.imagemanagement.fragment.Operater;
+import com.koncle.imagemanagement.fragment.TagFragment;
 import com.koncle.imagemanagement.service.ImageListenerService;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
@@ -31,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements Operater {
+
+    private static final boolean INIT_TABLES = false;
 
     public static final String WATCH_TAG = "folders";
     private static final int SCAN_OK_SHOW = 2;
@@ -44,7 +45,9 @@ public class MainActivity extends AppCompatActivity implements Operater {
     private TabLayout tab;
     private List<Fragment> fragments;
 
-    private Handler mHandler = new Handler() {
+    private Handler mHandler = new MyHandler();
+
+    private class MyHandler extends Handler {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case SCAN_OK_SHOW:
@@ -57,18 +60,20 @@ public class MainActivity extends AppCompatActivity implements Operater {
                     break;
             }
         }
-    };
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initDataBase(false); // 31.12416648864746 : 120.62750244140625
+        initDataBase(INIT_TABLES); // 31.12416648864746 : 120.62750244140625
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        mHandler.removeCallbacksAndMessages(null);
 
         ImageService.close();
 
@@ -88,7 +93,6 @@ public class MainActivity extends AppCompatActivity implements Operater {
 
         switch (id) {
             case R.id.map:
-                List<Image> images = ImageService.getAllImages();
                 ActivityUtil.showMap(this, ImageService.getImagesWithLoc());
                 break;
             case R.id.refresh_data:
@@ -170,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements Operater {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    ImageSource.getSystemPhotoList(MainActivity.this);
+                    ImageService.getSystemPhotoList(MainActivity.this);
                     mHandler.sendEmptyMessage(SCAN_OK_SHOW);
                 }
             }).start();
@@ -189,14 +193,14 @@ public class MainActivity extends AppCompatActivity implements Operater {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                ImageSource.getSystemPhotoList(MainActivity.this);
+                ImageService.getSystemPhotoList(MainActivity.this);
                 mHandler.sendEmptyMessage(SCAN_OK);
             }
         }).start();
     }
 
     private void initToolbar() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         // title.setText("ImageManagement");
         setSupportActionBar(toolbar);
     }
@@ -219,6 +223,16 @@ public class MainActivity extends AppCompatActivity implements Operater {
             default:
                 super.onBackPressed();
                 break;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == SelectImageActivity.RESULT_CODE) {
+            List<Image> images = data.getExtras().getParcelableArrayList(SelectImageActivity.IMAGES);
+            ((EventFragment) fragments.get(1)).handleResult(images);
         }
     }
 }

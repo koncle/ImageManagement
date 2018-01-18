@@ -7,6 +7,9 @@ import android.graphics.PixelFormat;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
 
+import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.dataManagement.ImageAttribute;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -14,6 +17,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -22,6 +28,7 @@ import java.util.List;
 
 public class ImageUtils {
     public static final String TAG = ImageUtils.class.getSimpleName();
+    public static SimpleDateFormat sdf = new SimpleDateFormat("yyyy:MM:DD hh:mm:ss");
 
     public static Bitmap drawableToBitmap(Drawable drawable) {
 
@@ -122,5 +129,41 @@ public class ImageUtils {
         options.inSampleSize = inSampleSize;
         options.inJustDecodeBounds = false;
         return BitmapFactory.decodeFile(path, options);
+    }
+
+    public static Image getImageFromPath(String path) {
+        String folder, name, time, loc;
+
+        String[] f = path.split("/");
+        folder = f[f.length - 2];
+        name = f[f.length - 1].split("\\.")[0];
+
+        Image image = new Image();
+        image.setName(name);
+        image.setFolder(folder);
+        image.setPath(path);
+
+        time = ImageAttribute.getTime(path);
+        if (time != null) {
+            Log.w(TAG, "time : " + time);
+            image.setTime(getUtilDateByString(time));
+        }
+
+        double[] tmp = ImageAttribute.getLocation(path);
+        if (tmp != null) {
+            image.setLat(String.valueOf(tmp[0]));
+            image.setLng(String.valueOf(tmp[1]));
+        }
+        return image;
+    }
+
+    public static Date getUtilDateByString(String time) {
+        Date sqlDate = null;
+        try {
+            sqlDate = sdf.parse(time);
+        } catch (ParseException e) {
+            Log.w(TAG, "can't resolve time with " + time);
+        }
+        return sqlDate;
     }
 }

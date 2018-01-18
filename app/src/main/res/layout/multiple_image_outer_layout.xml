@@ -80,7 +80,7 @@
             android:button="@null" />
 
         <RadioButton
-            android:id="@+id/delete"
+            android:id="@+id/event_delete"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"

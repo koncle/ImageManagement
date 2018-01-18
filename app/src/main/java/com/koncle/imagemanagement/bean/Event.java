@@ -11,6 +11,7 @@ import org.greenrobot.greendao.DaoException;
 import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
+import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.annotation.ToMany;
 
@@ -27,29 +28,24 @@ public class Event implements Parcelable {
     @NotNull
     private String name;
 
-    @ToMany(referencedJoinProperty = "event_id")
+    @ToMany
+    @JoinEntity(
+            entity = ImageAndEvent.class,
+            sourceProperty = "event_id",
+            targetProperty = "image_id"
+    )
     private List<Image> imageList;
 
-    /**
-     * Used to resolve relations
-     */
-    @Generated(hash = 2040040024)
-    private transient DaoSession daoSession;
-
-    /**
-     * Used for active entity operations.
-     */
-    @Generated(hash = 1542254534)
-    private transient EventDao myDao;
-
-    @Generated(hash = 1278351185)
-    public Event(Long id, @NotNull String name) {
-        this.id = id;
-        this.name = name;
+    @Override
+    public int describeContents() {
+        return 0;
     }
 
-    @Generated(hash = 344677835)
-    public Event() {
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(this.id);
+        dest.writeString(this.name);
+        dest.writeTypedList(this.imageList);
     }
 
     public Long getId() {
@@ -134,25 +130,14 @@ public class Event implements Parcelable {
         myDao.update(this);
     }
 
-    /**
-     * called by internal mechanisms, do not call yourself.
-     */
+    /** called by internal mechanisms, do not call yourself. */
     @Generated(hash = 1459865304)
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;
         myDao = daoSession != null ? daoSession.getEventDao() : null;
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeValue(this.id);
-        dest.writeString(this.name);
-        dest.writeTypedList(this.imageList);
+    public Event() {
     }
 
     protected Event(Parcel in) {
@@ -161,7 +146,13 @@ public class Event implements Parcelable {
         this.imageList = in.createTypedArrayList(Image.CREATOR);
     }
 
-    public static final Parcelable.Creator<Event> CREATOR = new Parcelable.Creator<Event>() {
+    @Generated(hash = 1278351185)
+    public Event(Long id, @NotNull String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public static final Creator<Event> CREATOR = new Creator<Event>() {
         @Override
         public Event createFromParcel(Parcel source) {
             return new Event(source);
@@ -172,4 +163,16 @@ public class Event implements Parcelable {
             return new Event[size];
         }
     };
+
+    /**
+     * Used to resolve relations
+     */
+    @Generated(hash = 2040040024)
+    private transient DaoSession daoSession;
+
+    /**
+     * Used for active entity operations.
+     */
+    @Generated(hash = 1542254534)
+    private transient EventDao myDao;
 }

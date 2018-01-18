@@ -16,6 +16,7 @@ import android.view.View;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.activity.MapActivity;
 import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
+import com.koncle.imagemanagement.activity.SelectImageActivity;
 import com.koncle.imagemanagement.activity.SingleImageActivity;
 import com.koncle.imagemanagement.bean.Image;
 
@@ -79,6 +80,8 @@ public class ActivityUtil {
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
 
+        ((Activity) context).getWindow().setExitTransition(new Explode());
+        ((Activity) context).getWindow().setEnterTransition(new Explode());
         ActivityOptionsCompat compat = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, view, context.getString(R.string.m2s_transition));
 
         SharedElementCallback s = new ECallback();
@@ -100,8 +103,16 @@ public class ActivityUtil {
         //((Activity) context).startActivityForResult(intent, 1);
 
         ((Activity) context).getWindow().setExitTransition(new Explode());
+        ((Activity) context).getWindow().setEnterTransition(new Explode());
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
         context.startActivity(intent, options.toBundle());
+    }
+
+    public static void selectImages(Context context) {
+        Intent intent = new Intent(context, SelectImageActivity.class);
+        ((Activity) context).getWindow().setExitTransition(new Explode());
+        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
+        ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
     }
 
     static class ECallback extends SharedElementCallback {

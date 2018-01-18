@@ -44,14 +44,12 @@ public class LocationDao extends AbstractDao<Location, Long> {
      * Creates the underlying database table.
      */
     public static void createTable(Database db, boolean ifNotExists) {
-        String constraint = ifNotExists ? "IF NOT EXISTS " : "";
+        String constraint = ifNotExists ? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"LOCATION\" (" + //
                 "\"_id\" INTEGER PRIMARY KEY AUTOINCREMENT );"); // 0: id
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"LOCATION\"";
         db.execSQL(sql);
@@ -60,7 +58,7 @@ public class LocationDao extends AbstractDao<Location, Long> {
     @Override
     protected final void bindValues(DatabaseStatement stmt, Location entity) {
         stmt.clearBindings();
-
+ 
         Long id = entity.getId();
         if (id != null) {
             stmt.bindLong(1, id);
@@ -70,7 +68,7 @@ public class LocationDao extends AbstractDao<Location, Long> {
     @Override
     protected final void bindValues(SQLiteStatement stmt, Location entity) {
         stmt.clearBindings();
-
+ 
         Long id = entity.getId();
         if (id != null) {
             stmt.bindLong(1, id);
@@ -86,7 +84,7 @@ public class LocationDao extends AbstractDao<Location, Long> {
     @Override
     public Long readKey(Cursor cursor, int offset) {
         return cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0);
-    }
+    }    
 
     @Override
     public Location readEntity(Cursor cursor, int offset) {
@@ -95,18 +93,18 @@ public class LocationDao extends AbstractDao<Location, Long> {
         );
         return entity;
     }
-
+     
     @Override
     public void readEntity(Cursor cursor, Location entity, int offset) {
         entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
-    }
-
+     }
+    
     @Override
     protected final Long updateKeyAfterInsert(Location entity, long rowId) {
         entity.setId(rowId);
         return rowId;
     }
-
+    
     @Override
     public Long getKey(Location entity) {
         if (entity != null) {
@@ -125,5 +123,5 @@ public class LocationDao extends AbstractDao<Location, Long> {
     protected final boolean isEntityUpdateable() {
         return true;
     }
-
+    
 }

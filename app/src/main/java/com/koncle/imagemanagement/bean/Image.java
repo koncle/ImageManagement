@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.koncle.imagemanagement.dao.DaoSession;
+import com.koncle.imagemanagement.dao.EventDao;
 import com.koncle.imagemanagement.dao.ImageDao;
 import com.koncle.imagemanagement.dao.TagDao;
 
@@ -15,7 +16,7 @@ import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.annotation.ToMany;
 
-import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -36,7 +37,7 @@ public class Image implements Parcelable {
 
     private String desc;
 
-    private String time;
+    private Date time;
 
     @ToMany
     @JoinEntity(
@@ -46,7 +47,13 @@ public class Image implements Parcelable {
     )
     private List<Tag> tags;
 
-    private Long event_id;
+    @ToMany
+    @JoinEntity(
+            entity = ImageAndEvent.class,
+            sourceProperty = "image_id",
+            targetProperty = "event_id"
+    )
+    private List<Event> events;
 
     private Long loc_id;
 
@@ -66,9 +73,9 @@ public class Image implements Parcelable {
         dest.writeString(this.folder);
         dest.writeString(this.name);
         dest.writeString(this.desc);
-        dest.writeString(this.time);
-        dest.writeList(this.tags);
-        dest.writeValue(this.event_id);
+        dest.writeLong(this.time != null ? this.time.getTime() : -1);
+        dest.writeTypedList(this.tags);
+        dest.writeTypedList(this.events);
         dest.writeValue(this.loc_id);
         dest.writeString(this.lat);
         dest.writeString(this.lng);
@@ -114,20 +121,12 @@ public class Image implements Parcelable {
         this.desc = desc;
     }
 
-    public String getTime() {
+    public Date getTime() {
         return this.time;
     }
 
-    public void setTime(String time) {
+    public void setTime(Date time) {
         this.time = time;
-    }
-
-    public Long getEvent_id() {
-        return this.event_id;
-    }
-
-    public void setEvent_id(Long event_id) {
-        this.event_id = event_id;
     }
 
     public Long getLoc_id() {
@@ -185,6 +184,36 @@ public class Image implements Parcelable {
     }
 
     /**
+     * To-many relationship, resolved on first access (and after reset).
+     * Changes to to-many relations are not persisted, make changes to the target entity.
+     */
+    @Generated(hash = 737283601)
+    public List<Event> getEvents() {
+        if (events == null) {
+            final DaoSession daoSession = this.daoSession;
+            if (daoSession == null) {
+                throw new DaoException("Entity is detached from DAO context");
+            }
+            EventDao targetDao = daoSession.getEventDao();
+            List<Event> eventsNew = targetDao._queryImage_Events(id);
+            synchronized (this) {
+                if (events == null) {
+                    events = eventsNew;
+                }
+            }
+        }
+        return events;
+    }
+
+    /**
+     * Resets a to-many relationship, making the next get call to query for a fresh result.
+     */
+    @Generated(hash = 1830105409)
+    public synchronized void resetEvents() {
+        events = null;
+    }
+
+    /**
      * Convenient call for {@link org.greenrobot.greendao.AbstractDao#delete(Object)}.
      * Entity must attached to an entity context.
      */
@@ -236,31 +265,31 @@ public class Image implements Parcelable {
         this.folder = in.readString();
         this.name = in.readString();
         this.desc = in.readString();
-        this.time = in.readString();
-        this.tags = new ArrayList<Tag>();
-        in.readList(this.tags, Tag.class.getClassLoader());
-        this.event_id = (Long) in.readValue(Long.class.getClassLoader());
+        long tmpTime = in.readLong();
+        this.time = tmpTime == -1 ? null : new Date(tmpTime);
+        this.tags = in.createTypedArrayList(Tag.CREATOR);
+        this.events = in.createTypedArrayList(Event.CREATOR);
         this.loc_id = (Long) in.readValue(Long.class.getClassLoader());
         this.lat = in.readString();
         this.lng = in.readString();
     }
 
-    @Generated(hash = 1761367243)
-    public Image(Long id, @NotNull String path, @NotNull String folder, @NotNull String name,
-                 String desc, String time, Long event_id, Long loc_id, String lat, String lng) {
+    @Generated(hash = 550789930)
+    public Image(Long id, @NotNull String path, @NotNull String folder,
+                 @NotNull String name, String desc, Date time, Long loc_id, String lat,
+                 String lng) {
         this.id = id;
         this.path = path;
         this.folder = folder;
         this.name = name;
         this.desc = desc;
         this.time = time;
-        this.event_id = event_id;
         this.loc_id = loc_id;
         this.lat = lat;
         this.lng = lng;
     }
 
-    public static final Parcelable.Creator<Image> CREATOR = new Parcelable.Creator<Image>() {
+    public static final Creator<Image> CREATOR = new Creator<Image>() {
         @Override
         public Image createFromParcel(Parcel source) {
             return new Image(source);
@@ -272,15 +301,11 @@ public class Image implements Parcelable {
         }
     };
 
-    /**
-     * Used to resolve relations
-     */
+    /** Used to resolve relations */
     @Generated(hash = 2040040024)
     private transient DaoSession daoSession;
 
-    /**
-     * Used for active entity operations.
-     */
+    /** Used for active entity operations. */
     @Generated(hash = 1428462909)
     private transient ImageDao myDao;
 }

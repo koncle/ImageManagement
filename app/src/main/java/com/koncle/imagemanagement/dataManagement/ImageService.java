@@ -1,20 +1,30 @@
 package com.koncle.imagemanagement.dataManagement;
 
+import android.content.ContentResolver;
 import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.util.Log;
 
+import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.bean.ImageAndEvent;
 import com.koncle.imagemanagement.bean.Tag;
 import com.koncle.imagemanagement.bean.TagAndImage;
 import com.koncle.imagemanagement.dao.DaoMaster;
 import com.koncle.imagemanagement.dao.DaoSession;
+import com.koncle.imagemanagement.dao.EventDao;
+import com.koncle.imagemanagement.dao.ImageAndEventDao;
 import com.koncle.imagemanagement.dao.ImageDao;
 import com.koncle.imagemanagement.dao.TagAndImageDao;
 import com.koncle.imagemanagement.dao.TagDao;
 
 import org.greenrobot.greendao.query.WhereCondition;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import static com.koncle.imagemanagement.util.TagUtil.DEBUG;
@@ -95,32 +105,9 @@ public class ImageService {
         return images;
     }
 
-    public static Image getImageFromPath(String path) {
-        String folder, name, time, loc;
-
-        String[] f = path.split("/");
-        folder = f[f.length - 2];
-        name = f[f.length - 1].split("\\.")[0];
-
-        Image image = new Image();
-        image.setName(name);
-        image.setFolder(folder);
-        image.setPath(path);
-
-        time = ImageAttribute.getTime(path);
-        image.setTime(time);
-
-        double[] tmp = ImageAttribute.getLocation(path);
-        if (tmp != null) {
-            image.setLat(String.valueOf(tmp[0]));
-            image.setLng(String.valueOf(tmp[1]));
-        }
-        return image;
-    }
-
     public static List<Image> getImagesWithLoc() {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
-        List<Image> images = imageDao.queryRawCreate("where T.lat !=? ", "0").list();
+        List<Image> images = imageDao.queryRawCreate("where T.lat !=? ", "0.0").list();
         if (DEBUG) {
             Log.i(TAG, "get images with loc : " + images.size());
         }
@@ -164,8 +151,9 @@ public class ImageService {
         }
     }
 
-    public static List<Image> getEvents() {
-        return null;
+    public static List<Event> getEvents() {
+        EventDao eventDao = daoManager.getDaoSession().getEventDao();
+        return eventDao.loadAll();
     }
 
     public static Tag addTagIfNotExists(String tagString) {
@@ -188,7 +176,7 @@ public class ImageService {
         return tagDao.loadAll();
     }
 
-    public static void addTag2Images(List<Image> images, Tag tag) {
+    public static Tag addTag2Images(List<Image> images, Tag tag) {
         Long tagId = tag.getId();
         List<TagAndImage> tagAndImages = new ArrayList<>();
         for (Image image : images) {
@@ -199,6 +187,8 @@ public class ImageService {
         }
         TagAndImageDao tagAndImageDao = daoManager.getDaoSession().getTagAndImageDao();
         tagAndImageDao.insertInTx(tagAndImages);
+        tag.resetImages();
+        return tag;
     }
 
     public static void addTag2Image(Image image, Tag tag) {
@@ -220,7 +210,7 @@ public class ImageService {
         }
     }
 
-    public static void clearTags(Image image) {
+    public static void clearTag(Image image) {
         DaoSession daoSession = daoManager.getDaoSession();
         ImageDao imageDao = daoSession.getImageDao();
         image.resetTags();
@@ -241,10 +231,101 @@ public class ImageService {
         image.__setDaoSession(daoSession);
     }
 
+    public static Event addEvent(String eventName) {
+        eventName = eventName.trim();
+        EventDao eventDao = daoManager.getDaoSession().getEventDao();
+        List<Event> events = eventDao.queryRawCreate(" where T.name = ?", eventName).list();
+        Event event;
+        if (events.size() > 0) {
+            event = events.get(0);
+        } else {
+            event = new Event(null, eventName);
+            eventDao.insert(event);
+        }
+        return event;
+    }
+
+    public static void deleteEvent(Event event) {
+        EventDao eventDao = daoManager.getDaoSession().getEventDao();
+        eventDao.delete(event);
+    }
+
+    public static Event addImages2Event(Event event, List<Image> images) {
+
+        Long eventId = event.getId();
+        List<ImageAndEvent> imageAndEvents = new ArrayList<>();
+        for (Image image : images) {
+            if (!image.getEvents().contains(event)) {
+                ImageAndEvent imageAndEvent = new ImageAndEvent(null, eventId, image.getId());
+                imageAndEvents.add(imageAndEvent);
+            }
+        }
+        ImageAndEventDao imageAndEventDao = daoManager.getDaoSession().getImageAndEventDao();
+        imageAndEventDao.insertInTx(imageAndEvents);
+        event.resetImageList();
+        return event;
+    }
+
     public static void recoverDaoSession(List<Image> images) {
         DaoSession daoSession = daoManager.getDaoSession();
         for (Image image : images) {
             image.__setDaoSession(daoSession);
         }
+    }
+
+    public static void getSystemPhotoList(Context context) {
+
+        Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+
+        ContentResolver contentResolver = context.getContentResolver();
+
+        Cursor cursor = contentResolver.query(uri, null,
+                MediaStore.Images.Media.MIME_TYPE + "=? or "
+                        + MediaStore.Images.Media.MIME_TYPE + "=?",
+                new String[]{"image/jpeg", "image/png"}, MediaStore.Images.Media.DATE_MODIFIED);
+
+        if (cursor == null || cursor.getCount() <= 0) return; // 没有图片
+
+        String path;
+        Image image;
+        DaoSession daoSession = DaoManager.getInstance().getDaoSession();
+
+        while (cursor.moveToNext()) {
+            int index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+
+            int timeIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN);
+            int nameIndex = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME);
+            int latIndex = cursor.getColumnIndex(MediaStore.Images.Media.LATITUDE);
+            int lngIndex = cursor.getColumnIndex(MediaStore.Images.Media.LONGITUDE);
+            int despIndex = cursor.getColumnIndex(MediaStore.Images.Media.DESCRIPTION);
+
+            path = cursor.getString(index); // 文件地址
+            String name = cursor.getString(nameIndex);
+            long time = cursor.getLong(timeIndex);
+            double lat = cursor.getDouble(latIndex);
+            double lng = cursor.getDouble(lngIndex);
+            String desp = cursor.getString(despIndex);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            String folder;
+            try {
+                String[] f = path.split("/");
+                folder = f[f.length - 2];
+
+                image = new Image();
+                image.setName(name);
+                image.setFolder(folder);
+                image.setPath(path);
+                image.setTime(new Date(time));
+                image.setLat(String.valueOf(lat));
+                image.setLng(String.valueOf(lng));
+                image.setDesc(desp);
+                ImageService.insertImage(image, true);
+                // daoSession.insert(image);
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.w("path", "failed path name : " + path);
+            }
+        }
+        cursor.close();
     }
 }

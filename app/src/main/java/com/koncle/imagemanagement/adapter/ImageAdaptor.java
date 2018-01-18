@@ -36,7 +36,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     private Context context;
 
-    private final List<Image> images;
+    private List<Image> images;
 
     // save <positoin, url> into map
     private HashMap<Integer, Image> selectedImages;
@@ -47,7 +47,11 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     public ImageAdaptor(Context context, GridLayoutManager gridLayoutManager, List<Image> images) {
         this.context = context;
         this.gridLayoutManager = gridLayoutManager;
-        this.images = images;
+        if (images == null) {
+            this.images = new ArrayList<>();
+        } else {
+            this.images = images;
+        }
         selectedImages = new HashMap<>();
     }
 
@@ -127,7 +131,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 .into(holder.image);
     }
 
-    private void enterSelectMode() {
+    public void enterSelectMode() {
         Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
         if (!selectMode) {
             setOrClearDisplayedImageSelection(false);
@@ -157,11 +161,11 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     */
     private void toggleImageSelectionWithoutCheck(ImageViewHolder holder, int position) {
         if (selectedImages.containsKey(position)) {
-            selectedImages.put(position, images.get(position));
-            holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
-        } else {
             selectedImages.remove(position);
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.GONE);
+        } else {
+            selectedImages.put(position, images.get(position));
+            holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
         }
 
         modeOperator.showSelectedNum(selectedImages.size());
@@ -264,6 +268,11 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         }
         Log.w(TAG, "delete image items");
         return false;
+    }
+
+    public void setData(List<Image> images) {
+        this.images = images;
+        notifyDataSetChanged();
     }
 
     // to operate other components in activity

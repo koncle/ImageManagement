@@ -10,6 +10,8 @@ import org.junit.Test;
 public class ExampleUnitTest {
     @Test
     public void addition_isCorrect() throws Exception {
+        int a = 145192222;
+        int b = 1516268647;
 
     }
 }

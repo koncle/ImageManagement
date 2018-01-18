@@ -98,7 +98,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     private void findViews() {
         toolbar = findViewById(R.id.single_toolbar);
         imageViewPager = findViewById(R.id.image_view_pager);
-        delete = findViewById(R.id.delete);
+        delete = findViewById(R.id.event_delete);
         share = findViewById(R.id.share);
         move = findViewById(R.id.move);
         mark = findViewById(R.id.mark);

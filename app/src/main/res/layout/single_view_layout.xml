@@ -2,6 +2,7 @@
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:paddingTop="5dp"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <android.support.v4.view.ViewPager
@@ -52,7 +53,7 @@
             android:button="@null" />
 
         <RadioButton
-            android:id="@+id/delete"
+            android:id="@+id/event_delete"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -70,9 +71,9 @@
             android:layout_weight="1"
             android:layout_marginStart="10dp"
             android:layout_marginEnd="10dp"
-            android:drawableTop="@drawable/delete"
+            android:drawableTop="@drawable/ic_pencil"
             android:gravity="center"
-            android:text="delete"
+            android:text="mark"
             android:button="@null" />
 
         <RadioButton
@@ -82,9 +83,9 @@
             android:layout_weight="1"
             android:layout_marginStart="10dp"
             android:layout_marginEnd="10dp"
-            android:drawableTop="@drawable/delete"
+            android:drawableTop="@drawable/tag"
             android:gravity="center"
-            android:text="delete"
+            android:text="tag"
             android:button="@null" />
     </LinearLayout>
 </android.support.design.widget.CoordinatorLayout>

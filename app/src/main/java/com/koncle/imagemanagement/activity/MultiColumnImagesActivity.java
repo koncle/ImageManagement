@@ -81,7 +81,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
         operatoins = findViewById(R.id.operations);
         share = findViewById(R.id.share);
-        delete = findViewById(R.id.delete);
+        delete = findViewById(R.id.event_delete);
         move = findViewById(R.id.move);
         tag = findViewById(R.id.tag);
 

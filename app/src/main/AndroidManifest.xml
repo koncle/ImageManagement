@@ -52,6 +52,7 @@
         <activity android:name=".activity.SingleImageActivity" />
         <activity android:name=".activity.RemarkActivity" />
         <activity android:name=".activity.MapActivity" />
+        <activity android:name=".activity.SelectImageActivity" />
 
         <service
             android:name=".service.ImageListenerService"

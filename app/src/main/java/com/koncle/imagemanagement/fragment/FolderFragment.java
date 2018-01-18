@@ -51,6 +51,7 @@ public class FolderFragment extends Fragment implements HasName {
     private BottomSheetBehavior<View> bottomSheetBehavior;
     private LinearLayout operations;
 
+
     public static Fragment newInstance(String name, Operater operater) {
         FolderFragment f = new FolderFragment();
         f.setName(name);
@@ -82,7 +83,7 @@ public class FolderFragment extends Fragment implements HasName {
         //bottomSheetBehavior = BottomSheetBehavior.from(view.findViewById(R.id.folder_operations));
         //bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
 
-        RadioButton delete = view.findViewById(R.id.delete);
+        RadioButton delete = view.findViewById(R.id.event_delete);
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -104,6 +105,7 @@ public class FolderFragment extends Fragment implements HasName {
                     images.addAll(ImageService.getImagesFromSameFolders(folder.getFolder()));
                     if (images.size() > 100) {
                         Toast.makeText(getContext(), "the number of image should be less than 100", Toast.LENGTH_SHORT).show();
+                        return;
                     }
                 }
                 if (images.size() > 0)
@@ -120,7 +122,7 @@ public class FolderFragment extends Fragment implements HasName {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
-                    case R.id.delete:
+                    case R.id.event_delete:
                         if (ImageUtils.deleteFile(folder))
                             Toast.makeText(getContext(), "delete...", Toast.LENGTH_SHORT).show();
                         else
@@ -286,4 +288,5 @@ public class FolderFragment extends Fragment implements HasName {
     public String getName() {
         return this.name;
     }
+
 }

@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by 10976 on 2018/1/12.
+ * Created by Koncle on 2018/1/12.
  */
 
 public class FolderFragment extends Fragment implements HasName {
@@ -43,6 +43,7 @@ public class FolderFragment extends Fragment implements HasName {
     private List<Image> folderCovers;
     private boolean selectMode = false;
     private Map<Integer, Image> selectedFolder = new HashMap<>();
+    private Map<String, List<Image>> folderMap = new HashMap<>();
 
     final int ORANGE = Color.rgb(255, 223, 0);
     final int WHITE = Color.WHITE;
@@ -74,7 +75,7 @@ public class FolderFragment extends Fragment implements HasName {
         refresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                operater.refreshFolders();
+                operater.refreshData();
             }
         });
 
@@ -177,13 +178,19 @@ public class FolderFragment extends Fragment implements HasName {
 
         private void initListener(final FolderHolder holder, final String folder, final int position) {
             final Image image = folderCovers.get(position);
+            final List<Image> images;
+            if (!folderMap.containsKey(folder)) {
+                images = ImageService.getImagesFromSameFolders(folder);
+                folderMap.put(folder, images);
+            } else {
+                images = folderMap.get(folder);
+            }
             holder.imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (selectMode) {
                         toggleFolderSelection(holder.cardView, folderCovers.get(position), position);
                     } else {
-                        List<Image> images = ImageService.getImagesFromSameFolders(folder);
                         ActivityUtil.showImageList(FolderFragment.this.getContext(), images);
                     }
                 }
@@ -203,6 +210,8 @@ public class FolderFragment extends Fragment implements HasName {
                     showPopup(holder.more, folder, folderCovers.get(position));
                 }
             });
+
+            holder.num.setText(String.format("(%d)", images.size()));
         }
 
         private void toggleFolderSelection(CardView card, Image image, int pos) {
@@ -235,17 +244,19 @@ public class FolderFragment extends Fragment implements HasName {
         }
 
         class FolderHolder extends RecyclerView.ViewHolder {
-            public ImageView imageView;
-            public TextView textView;
-            public CardView cardView;
-            public ImageButton more;
+            ImageView imageView;
+            TextView textView;
+            CardView cardView;
+            ImageButton more;
+            TextView num;
 
-            public FolderHolder(View view) {
+            FolderHolder(View view) {
                 super(view);
                 imageView = view.findViewById(R.id.folder_image);
                 textView = view.findViewById(R.id.folder_text);
                 cardView = view.findViewById(R.id.folder_card);
                 more = view.findViewById(R.id.folder_more);
+                num = view.findViewById(R.id.folder_number);
             }
         }
     }

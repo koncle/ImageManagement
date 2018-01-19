@@ -72,13 +72,15 @@ public class ImageUtils {
         if (file == null || !file.exists()) {
             return false;
         } else {
+            boolean b;
             if (file.isDirectory()) {
                 File[] files = file.listFiles();
                 for (File f : files) {
                     deleteFile(f);
                 }
             } else {
-                file.delete();
+                b = file.delete();
+                Log.w(TAG, "delete 1 file : " + file.getAbsolutePath() + " result : " + b);
             }
         }
         return true;

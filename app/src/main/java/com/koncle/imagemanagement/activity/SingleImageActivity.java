@@ -21,7 +21,6 @@ import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.fragment.SingleImageDIalogFragment;
 import com.koncle.imagemanagement.util.ActivityUtil;
-import com.koncle.imagemanagement.util.ImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -175,7 +174,8 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
 
     public void deleteImage(Image currentImage) {
         // delete from sd card
-        boolean result = ImageUtils.deleteFile(currentImage.getPath());
+        boolean result = true;
+        ImageService.deleteImage(this, currentImage, false);
 
         // delete from database
         // replaced by service
@@ -231,6 +231,14 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         Intent intent = new Intent();
         intent.putExtra("pos", imageViewPager.getCurrentItem());
 
+        /*
+        * when user scroll images, there may be many invalid images
+        * that some application didn't delete completely as what this app did,
+        * thus invalid images have to be deleted both in database and in MediaStore
+        *
+        * Of cause this work should be done by MultiActivity which should
+        * show the change of a data set
+        */
         if (deleteImages.size() > 0) {
             intent.putExtra("delete", true);
             Bundle bundle = new Bundle();

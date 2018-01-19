@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity implements Operater {
                 ActivityUtil.showMap(this, ImageService.getImagesWithLoc());
                 break;
             case R.id.refresh_data:
-                refreshFolders();
+                refreshData();
                 break;
         }
         return super.onOptionsItemSelected(item);
@@ -189,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements Operater {
         initWatcher();
     }
 
-    public void refreshFolders() {
+    public void refreshData() {
         new Thread(new Runnable() {
             @Override
             public void run() {

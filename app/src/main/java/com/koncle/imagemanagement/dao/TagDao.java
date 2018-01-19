@@ -135,7 +135,7 @@ public class TagDao extends AbstractDao<Tag, Long> {
     protected final boolean isEntityUpdateable() {
         return true;
     }
-
+    
     /** Internal query to resolve the "tags" to-many relationship of Image. */
     public List<Tag> _queryImage_Tags(Long image_id) {
         synchronized (this) {

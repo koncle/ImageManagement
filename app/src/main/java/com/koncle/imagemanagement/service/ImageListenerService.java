@@ -9,7 +9,6 @@ import android.util.Log;
 
 import com.koncle.imagemanagement.activity.MainActivity;
 import com.koncle.imagemanagement.bean.Image;
-import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.util.ImageUtils;
 
 import java.util.ArrayList;
@@ -87,11 +86,11 @@ public class ImageListenerService extends Service {
             switch (event) {
                 case FileObserver.CREATE:
                     Image image = ImageUtils.getImageFromPath(folder + "/" + path);
-                    ImageService.insertImage(image, true);
+                    //ImageService.insertImage(image, true);
                     Log.w(TAG, "create file, path : " + path);
                     break;
                 case FileObserver.DELETE:
-                    ImageService.deleteImageByPath(folder + "/" + path);
+                    //ImageService.deleteImageByPath(folder + "/" + path);
                     Log.w(TAG, "delete file, path : " + path);
                     break;
                 case FileObserver.MOVED_TO:

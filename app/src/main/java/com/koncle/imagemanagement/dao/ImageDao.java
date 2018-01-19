@@ -96,7 +96,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
         if (desc != null) {
             stmt.bindString(5, desc);
         }
-
+ 
         java.util.Date time = entity.getTime();
         if (time != null) {
             stmt.bindLong(6, time.getTime());
@@ -134,7 +134,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
         if (desc != null) {
             stmt.bindString(5, desc);
         }
-
+ 
         java.util.Date time = entity.getTime();
         if (time != null) {
             stmt.bindLong(6, time.getTime());
@@ -220,7 +220,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
     protected final boolean isEntityUpdateable() {
         return true;
     }
-
+    
     /** Internal query to resolve the "imageList" to-many relationship of Event. */
     public List<Image> _queryEvent_ImageList(Long event_id) {
         synchronized (this) {

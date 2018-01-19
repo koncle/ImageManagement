@@ -3,7 +3,6 @@ package com.koncle.imagemanagement.fragment;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
@@ -34,6 +33,7 @@ import java.util.List;
 
 public class EventFragment extends Fragment implements HasName {
     private String name;
+    private RecyclerView eventsRecyclerView;
     private EventRecyclerViewAdapter eventAdapter;
     private List<Event> events;
 
@@ -42,8 +42,8 @@ public class EventFragment extends Fragment implements HasName {
     private Operater operater;
     private SwipeRefreshLayout refresh;
 
-    private int eventPositionWaitingForResult;
-    private InnerEventAdapter adapterWaitingForResult;
+    private int eventPositionWaitingForAddImageResult;
+    private InnerEventAdapter adapterWaitingForAddImageResult;
 
     public static Fragment newInstance(String name, Operater operater) {
         EventFragment f = new EventFragment();
@@ -56,31 +56,32 @@ public class EventFragment extends Fragment implements HasName {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.event_fragment, null);
-        RecyclerView recyclerView = view.findViewById(R.id.event_root_recycler_view);
+        eventsRecyclerView = view.findViewById(R.id.event_root_recycler_view);
 
         this.events = ImageService.getEvents();
 
         eventAdapter = new EventRecyclerViewAdapter();
-        recyclerView.setLayoutManager(new LinearLayoutManager(this.getContext()));
-        recyclerView.setAdapter(eventAdapter);
-
-        FloatingActionButton fab = view.findViewById(R.id.event_add);
-
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                EventDialogFragment dialog = EventDialogFragment.newInstance(new EventDialogFragment.OnInputFinished() {
-                    @Override
-                    public void inputFinished(String eventName) {
-                        events.add(ImageService.addEvent(eventName));
-                        eventAdapter.notifyItemInserted(events.size() - 1);
-                    }
-                });
-                dialog.show(getActivity().getFragmentManager(), "a");
-            }
-        });
+        eventsRecyclerView.setLayoutManager(new LinearLayoutManager(this.getContext()));
+        eventsRecyclerView.setAdapter(eventAdapter);
 
         return view;
+    }
+
+    private void addEvent() {
+        EventDialogFragment dialog = EventDialogFragment.newInstance(new EventDialogFragment.OnInputFinished() {
+            @Override
+            public void inputFinished(String eventName) {
+                Event e = ImageService.addEvent(eventName);
+                int index = events.indexOf(e);
+                if (-1 == index) {
+                    events.add(e);
+                    eventAdapter.notifyItemInserted(events.size() - 1);
+                } else {
+                    eventsRecyclerView.smoothScrollToPosition(index);
+                }
+            }
+        });
+        dialog.show(getActivity().getFragmentManager(), "a");
     }
 
     public void showPopup(View view, final int position, final InnerEventAdapter innerEventAdapter) {
@@ -97,8 +98,8 @@ public class EventFragment extends Fragment implements HasName {
                         break;
                     case R.id.event_add_image:
                         ActivityUtil.selectImages(getContext());
-                        eventPositionWaitingForResult = position;
-                        adapterWaitingForResult = innerEventAdapter;
+                        eventPositionWaitingForAddImageResult = position;
+                        adapterWaitingForAddImageResult = innerEventAdapter;
                 }
                 return false;
             }
@@ -112,42 +113,85 @@ public class EventFragment extends Fragment implements HasName {
     }
 
 
-    class EventRecyclerViewAdapter extends RecyclerView.Adapter<EventRecyclerViewAdapter.EventHolder> {
+    class EventRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        private static final int ADD_TYPE = 1;
+        private static final int EVENT_TYPE = 2;
         private List<InnerEventAdapter> adapters = new ArrayList<>();
         private List<LinearLayoutManager> managers = new ArrayList<>();
         private RecyclerView.RecycledViewPool viewPool = new RecyclerView.RecycledViewPool();
 
         @Override
-        public EventHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            EventHolder holder = new EventHolder(LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.event_outer_item_layout, parent, false));
-            // to support multiple recycler views
-            holder.recyclerView.setRecycledViewPool(viewPool);
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            RecyclerView.ViewHolder holder;
+            if (viewType == EVENT_TYPE) {
+                EventHolder eventholder = new EventHolder(LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.event_outer_item_layout, parent, false));
+                // to support multiple recycler views
+                eventholder.recyclerView.setRecycledViewPool(viewPool);
+                holder = eventholder;
+            } else {
+                holder = new AddHolder(LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.event_outer_add_item_layout, parent, false));
+            }
             return holder;
         }
 
         @Override
         public int getItemCount() {
-            return events.size();
+            return events.size() + 1;
         }
 
         @Override
-        public void onBindViewHolder(final EventHolder holder, final int position) {
-            holder.title.setText(events.get(position).getName());
-            holder.innerAdapter.setData(events.get(position).getImageList());
-            holder.imageButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showPopup(holder.imageButton, position, holder.innerAdapter);
-                }
-            });
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
+            if (getItemViewType(position) == EVENT_TYPE) {
+                final EventHolder finalHolder = (EventHolder) holder;
+                finalHolder.title.setText(events.get(position).getName());
+                finalHolder.innerAdapter.setData(events.get(position).getImageList());
+                finalHolder.add.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ActivityUtil.selectImages(getContext());
+                        eventPositionWaitingForAddImageResult = position;
+                        adapterWaitingForAddImageResult = finalHolder.innerAdapter;
+                    }
+                });
+                finalHolder.delete.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        ImageService.deleteEvent(events.get(position));
+                        events.remove(position);
+                        eventAdapter.notifyItemRemoved(position);
+                    }
+                });
+            }
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            if (position == events.size())
+                return ADD_TYPE;
+            else
+                return EVENT_TYPE;
+        }
+
+        class AddHolder extends RecyclerView.ViewHolder {
+            AddHolder(View itemView) {
+                super(itemView);
+                itemView.findViewById(R.id.event_card_add).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        addEvent();
+                    }
+                });
+            }
         }
 
         class EventHolder extends RecyclerView.ViewHolder {
             RecyclerView recyclerView;
-            TextView title;
+            public TextView title;
             InnerEventAdapter innerAdapter;
-            ImageButton imageButton;
+            ImageButton add;
+            ImageButton delete;
 
             EventHolder(View view) {
                 super(view);
@@ -161,7 +205,8 @@ public class EventFragment extends Fragment implements HasName {
                 recyclerView.setAdapter(innerAdapter);
 
                 title = view.findViewById(R.id.event_title);
-                imageButton = view.findViewById(R.id.event_more);
+                add = view.findViewById(R.id.event_add_image);
+                delete = view.findViewById(R.id.event_delete);
             }
         }
     }
@@ -265,8 +310,8 @@ public class EventFragment extends Fragment implements HasName {
     public void handleResult(List<Image> images) {
         if (images != null) {
             ImageService.recoverDaoSession(images);
-            Event event = ImageService.addImages2Event(events.get(eventPositionWaitingForResult), images);
-            adapterWaitingForResult.setData(event.getImageList());
+            Event event = ImageService.addImages2Event(events.get(eventPositionWaitingForAddImageResult), images);
+            adapterWaitingForAddImageResult.setData(event.getImageList());
         }
     }
 }

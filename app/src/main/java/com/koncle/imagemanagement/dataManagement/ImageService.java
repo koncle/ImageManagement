@@ -3,6 +3,7 @@ package com.koncle.imagemanagement.dataManagement;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -19,6 +20,7 @@ import com.koncle.imagemanagement.dao.ImageAndEventDao;
 import com.koncle.imagemanagement.dao.ImageDao;
 import com.koncle.imagemanagement.dao.TagAndImageDao;
 import com.koncle.imagemanagement.dao.TagDao;
+import com.koncle.imagemanagement.util.ImageUtils;
 
 import org.greenrobot.greendao.query.WhereCondition;
 
@@ -96,7 +98,7 @@ public class ImageService {
         return flag;
     }
 
-    public static List<Image> getAllImages() {
+    public static List<Image> getImages() {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         List<Image> images = imageDao.loadAll();
         if (DEBUG) {
@@ -136,6 +138,22 @@ public class ImageService {
         DaoSession daoSession = daoManager.getDaoSession();
         DaoMaster.dropAllTables(daoSession.getDatabase(), true);
         DaoMaster.createAllTables(daoSession.getDatabase(), true);
+    }
+
+    public static boolean deleteImage(Context context, Image image, boolean invalidImage) {
+        ImageDao imageDao = daoManager.getDaoSession().getImageDao();
+        imageDao.delete(image);
+        boolean ret = ImageUtils.deleteFile(image.getPath());
+        // if the action of delete is successful
+        // or meet invalid image
+        if (invalidImage || ret) {
+            MediaScannerConnection.scanFile(context, new String[]{image.getPath()}, null,
+                    new MediaScannerConnection.OnScanCompletedListener() {
+                        public void onScanCompleted(String path, Uri uri) {
+                        }
+                    });
+        }
+        return ret;
     }
 
     public static boolean deleteImageByPath(String path) {

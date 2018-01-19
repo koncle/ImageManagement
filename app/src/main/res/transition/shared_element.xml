@@ -3,6 +3,7 @@
     android:transitionOrdering="together"
     android:duration="240">
     <transitionSet>
-
+        <explode />
+        <fade />
     </transitionSet>
 </transitionSet>

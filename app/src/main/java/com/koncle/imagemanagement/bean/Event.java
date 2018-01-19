@@ -37,6 +37,11 @@ public class Event implements Parcelable {
     private List<Image> imageList;
 
     @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Event && ((Event) obj).getName().equals(name);
+    }
+
+    @Override
     public int describeContents() {
         return 0;
     }

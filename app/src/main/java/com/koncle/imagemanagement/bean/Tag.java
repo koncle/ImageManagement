@@ -38,14 +38,8 @@ public class Tag implements Parcelable {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Tag) {
-            if (tag.equals(((Tag) obj).getTag())) {
-                return true;
-            }
-        }
-        return false;
+        return obj instanceof Tag && ((Tag) obj).getTag().equals(tag);
     }
-
     /**
      * Used to resolve relations
      */

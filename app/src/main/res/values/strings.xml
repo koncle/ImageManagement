@@ -11,4 +11,8 @@
     <string name="main_menu_item_refresh">refresh</string>
     <string name="event_input_msg">please input event name</string>
     <string name="add_image">add image</string>
+    <string name="add_image_desc">add image</string>
+    <string name="delete_image_desc">delete image</string>
+    <string name="drawer_open">open</string>
+    <string name="drawer_close">close</string>
 </resources>

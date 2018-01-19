@@ -136,9 +136,7 @@ public class EventDao extends AbstractDao<Event, Long> {
         return true;
     }
 
-    /**
-     * Internal query to resolve the "events" to-many relationship of Image.
-     */
+    /** Internal query to resolve the "events" to-many relationship of Image. */
     public List<Event> _queryImage_Events(Long image_id) {
         synchronized (this) {
             if (image_EventsQuery == null) {

@@ -16,7 +16,7 @@ import android.widget.Spinner;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.FolderSpinnerAdapter;
-import com.koncle.imagemanagement.adapter.ImageAdaptor;
+import com.koncle.imagemanagement.adapter.ImageSelectAdaptor;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 
@@ -31,12 +31,12 @@ import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
  * Created by 10976 on 2018/1/18.
  */
 
-public class SelectImageActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
+public class SelectImageActivity extends AppCompatActivity {
 
     public static final int RESULT_CODE = -3;
     public static final String IMAGES = "images";
     private RecyclerView recyclerView;
-    private ImageAdaptor imageAdaptor;
+    private ImageSelectAdaptor imageAdaptor;
     private Toolbar toolbar;
     private Button complete;
     private Button show;
@@ -133,26 +133,7 @@ public class SelectImageActivity extends AppCompatActivity implements ImageAdapt
         recyclerView = findViewById(R.id.image_select_recycler_view);
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 4);
         recyclerView.setLayoutManager(gridLayoutManager);
-        imageAdaptor = new ImageAdaptor(this, gridLayoutManager, folderImageMap.get(folderList.get(0)));
-        imageAdaptor.setOperater(this);
-        imageAdaptor.enterSelectMode();
+        imageAdaptor = new ImageSelectAdaptor(this, gridLayoutManager, folderImageMap.get(folderList.get(0)));
         recyclerView.setAdapter(imageAdaptor);
-        recyclerView.setItemViewCacheSize(0);
-    }
-
-    @Override
-    public void exitSelectMode() {
-    }
-
-    @Override
-    public void enterSelectMode() {
-    }
-
-    @Override
-    public void refreshData() {
-    }
-
-    @Override
-    public void showSelectedNum(int num) {
     }
 }

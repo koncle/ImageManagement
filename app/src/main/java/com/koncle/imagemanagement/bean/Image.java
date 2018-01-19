@@ -62,6 +62,11 @@ public class Image implements Parcelable {
     private String lng;
 
     @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Image && ((Image) obj).getPath().equals(path);
+    }
+
+    @Override
     public int describeContents() {
         return 0;
     }

@@ -5,5 +5,5 @@ package com.koncle.imagemanagement.fragment;
  */
 
 public interface Operater {
-    void refreshFolders();
+    void refreshData();
 }

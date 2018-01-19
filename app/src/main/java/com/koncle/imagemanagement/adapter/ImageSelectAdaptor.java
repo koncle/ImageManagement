@@ -10,13 +10,10 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
-import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,8 +23,8 @@ import java.util.List;
  * Created by 10976 on 2018/1/8.
  */
 
-public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHolder>{
-    private static final String TAG = ImageAdaptor.class.getSimpleName();
+public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.ImageViewHolder> {
+    private static final String TAG = ImageSelectAdaptor.class.getSimpleName();
     // In order to ensure the height of the image is the same as its width,
     // the manager has to be introduced to get the correct height
     private final GridLayoutManager gridLayoutManager;
@@ -40,10 +37,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     // save <positoin, url> into map
     private HashMap<Integer, Image> selectedImages;
 
-    private boolean selectMode = false;
-    private ModeOperator modeOperator;
-
-    public ImageAdaptor(Context context, GridLayoutManager gridLayoutManager, List<Image> images) {
+    public ImageSelectAdaptor(Context context, GridLayoutManager gridLayoutManager, List<Image> images) {
         this.context = context;
         this.gridLayoutManager = gridLayoutManager;
         if (images == null) {
@@ -63,7 +57,8 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     @Override
     public void onBindViewHolder(final ImageViewHolder holder, final int position) {
-        final String path = images.get(position).getPath();
+        Image image = images.get(position);
+        final String path = image.getPath();
         /*
         * Set the correct Height
         *
@@ -77,41 +72,29 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         params.height = itemHeight;
 
         // show the select mode or not
-        if (selectMode) {
-            holder.selects.setVisibility(View.VISIBLE);
+        holder.selects.setVisibility(View.VISIBLE);
 
-            if (selectedImages.containsValue(images.get(position))) {
-                holder.selects.setChecked(true);
-                holder.frameLayout.setVisibility(View.VISIBLE);
-            } else {
-                holder.selects.setChecked(false);
-                holder.frameLayout.setVisibility(View.GONE);
-            }
-        }else{
-            holder.frameLayout.setVisibility(View.GONE);
-            holder.selects.setVisibility(View.GONE);
+        if (selectedImages.containsValue(image)) {
+            holder.selects.setChecked(true);
+            holder.frameLayout.setVisibility(View.VISIBLE);
+        } else {
             holder.selects.setChecked(false);
+            holder.frameLayout.setVisibility(View.GONE);
         }
 
         // set listeners
         holder.image.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                enterSelectMode();
                 toggleImageSelectionAndCheck(holder, position);
-                modeOperator.enterSelectMode();
                 return true;
             }
         });
 
-        holder.image.setOnClickListener(new View.OnClickListener(){
+        holder.image.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (selectMode) {
-                    toggleImageSelectionAndCheck(holder, position);
-                } else {
-                    ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, ImageAdaptor.this.images, position, holder.image);
-                }
+                toggleImageSelectionAndCheck(holder, position);
             }
         });
 
@@ -125,32 +108,8 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         // put images
         Glide.with(context)
                 .load(path)
-                //  .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .thumbnail(0.00001f)
                 // can't add simple target, cause it costs too much memory
                 .into(holder.image);
-    }
-
-    public void enterSelectMode() {
-        Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
-        if (!selectMode) {
-            setOrClearDisplayedImageSelection(false);
-            modeOperator.enterSelectMode();
-        }
-        selectMode = true;
-    }
-
-    // this method will be called by MultiColumnImagesActivity activity
-    public boolean exitSelectMode() {
-        if (selectMode) {
-            selectMode = false;
-            selectedImages.clear();
-            Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
-            modeOperator.exitSelectMode();
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /*
@@ -167,8 +126,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             selectedImages.put(position, images.get(position));
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
         }
-
-        modeOperator.showSelectedNum(selectedImages.size());
     }
 
     private void toggleImageSelectionAndCheck(ImageViewHolder holder, int position) {
@@ -183,8 +140,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
             holder.selects.setChecked(true);
         }
-
-        modeOperator.showSelectedNum(selectedImages.size());
     }
 
     private void setOrClearDisplayedImageSelection(boolean mode) {
@@ -209,10 +164,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             selectedImages.put(i, images.get(i));
         }
 
-        //modeOperator.refreshData();
         notifyDataSetChanged();
-
-        modeOperator.showSelectedNum(selectedImages.size());
     }
 
     public List<Image> getSelections() {
@@ -223,75 +175,9 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         return images;
     }
 
-    public void deleteSelectedImages() {
-        int count = 0;
-        Image image;
-        for (Integer pos : selectedImages.keySet()) {
-            image = selectedImages.get(pos);
-
-            // delete from sd card
-            count += ImageService.deleteImage(context, image, false) ? 1 : 0;
-            // delete from memory
-            images.remove(image);
-            // delete from database,
-            // replaced by service
-            // ImageService.deleteImage(image);
-        }
-
-        if (count > 0)
-            notifyDataSetChanged();
-        Log.w(TAG, "delete " + count + " files");
-
-        Toast.makeText(context, "delete " + count + " files", Toast.LENGTH_SHORT).show();
-    }
-
-    // delete one item from single view
-    public void deleteImageItem(Image image) {
-        int i = images.indexOf(image);
-        images.remove(i);
-        notifyItemRemoved(i);
-        Log.w(TAG, "delete image items");
-    }
-
-    // delete invalid item from view
-    public void deleteInvalidImage(Image image) {
-        // images.remove(image);
-        int i = images.indexOf(image);
-        images.remove(i);
-        notifyItemChanged(i);
-        // delete image from database and broadcast it
-        ImageService.deleteImage(context, image, true);
-        //notifyDataSetChanged();
-        Log.w(TAG, "delete 1 invalid file " + image.getPath());
-    }
-
-    public void deleteInvalidImages(List<Image> imageList) {
-        for (Image image : imageList) {
-            deleteInvalidImage(image);
-        }
-        //notifyDataSetChanged();
-        Log.w(TAG, "delete " + imageList.size() + "invalid files");
-    }
-
     public void setData(List<Image> images) {
         this.images = images;
         notifyDataSetChanged();
-    }
-
-
-    // to operate other components in activity
-    public interface ModeOperator {
-        void exitSelectMode();
-
-        void enterSelectMode();
-
-        void refreshData();
-
-        void showSelectedNum(int num);
-    }
-
-    public void setOperater(ModeOperator modeOperator) {
-        this.modeOperator = modeOperator;
     }
 
     @Override
@@ -299,7 +185,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         return images.size();
     }
 
-    class ImageViewHolder extends RecyclerView.ViewHolder{
+    class ImageViewHolder extends RecyclerView.ViewHolder {
         public ImageView image;
         public CheckBox selects;
         public FrameLayout frameLayout;

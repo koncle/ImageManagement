@@ -115,7 +115,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                imageAdaptor.deleteInvalidImages();
+                imageAdaptor.deleteSelectedImages();
                 imageAdaptor.exitSelectMode();
             }
         });
@@ -223,6 +223,9 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (resultCode) {
+            // the glide will use cache to show image
+            // so that only when user click the image and enter the singleImage mode,
+            // can the system know whether the image is valid.
             case (SingleImageActivity.IMAGE_VIWER_SCROLL): {
                 Log.w("Share", "return");
                 int pos = data.getIntExtra("pos", 0);

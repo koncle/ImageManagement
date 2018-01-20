@@ -2,6 +2,7 @@ package com.koncle.imagemanagement.bean;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 import com.koncle.imagemanagement.dao.DaoSession;
 import com.koncle.imagemanagement.dao.EventDao;
@@ -24,7 +25,7 @@ import java.util.List;
  */
 
 @Entity
-public class Image implements Parcelable {
+public class Image implements Parcelable, Comparable<Image> {
     @Id(autoincrement = true)
     private Long id;
 
@@ -64,6 +65,17 @@ public class Image implements Parcelable {
     @Override
     public boolean equals(Object obj) {
         return obj instanceof Image && ((Image) obj).getPath().equals(path);
+    }
+
+    @Override
+    public int compareTo(@NonNull Image image) {
+        if (image.getTime().getTime() > time.getTime()) {
+            return -1;
+        } else if (image.getTime().getTime() == time.getTime()) {
+            return 0;
+        } else {
+            return 1;
+        }
     }
 
     @Override
@@ -313,4 +325,5 @@ public class Image implements Parcelable {
     /** Used for active entity operations. */
     @Generated(hash = 1428462909)
     private transient ImageDao myDao;
+
 }

@@ -10,6 +10,7 @@ import android.support.v7.widget.CardView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -51,6 +52,7 @@ public class FolderFragment extends Fragment implements HasName {
     private SwipeRefreshLayout refresh;
     private BottomSheetBehavior<View> bottomSheetBehavior;
     private LinearLayout operations;
+    private boolean refreshed = false;
 
 
     public static Fragment newInstance(String name, Operater operater) {
@@ -71,6 +73,9 @@ public class FolderFragment extends Fragment implements HasName {
         recyclerView.setLayoutManager(new GridLayoutManager(this.getContext(), 2));
         recyclerView.setAdapter(folderAdapter);
 
+        ((SimpleItemAnimator) recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
+        recyclerView.getItemAnimator().setChangeDuration(0);
+
         refresh = view.findViewById(R.id.swipe_refresh);
         refresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -89,8 +94,9 @@ public class FolderFragment extends Fragment implements HasName {
             @Override
             public void onClick(View v) {
                 List<String> pathes = new ArrayList<>();
-                for (Image folder : selectedFolder.values()) {
-                    pathes.add(folder.getPath());
+                for (Integer pos : selectedFolder.keySet()) {
+                    pathes.add(selectedFolder.get(pos).getPath());
+                    folderAdapter.notifyItemRemoved(pos);
                 }
                 int count = ImageUtils.deleteFiles(pathes);
                 Toast.makeText(getContext(), "delete " + count + " files", Toast.LENGTH_SHORT).show();
@@ -156,6 +162,10 @@ public class FolderFragment extends Fragment implements HasName {
             return folderCovers.size();
         }
 
+        public void notifyDataSetChangedWithoutFlash() {
+            notifyItemRangeChanged(0, folderCovers.size());
+        }
+
         @Override
         public void onBindViewHolder(final FolderHolder holder, final int position) {
             final String folder = folderCovers.get(position).getFolder();
@@ -179,7 +189,9 @@ public class FolderFragment extends Fragment implements HasName {
         private void initListener(final FolderHolder holder, final String folder, final int position) {
             final Image image = folderCovers.get(position);
             final List<Image> images;
-            if (!folderMap.containsKey(folder)) {
+            // if the data has been refreshed, then get images from database again
+            // otherwise use previous data
+            if (refreshed || !folderMap.containsKey(folder)) {
                 images = ImageService.getImagesFromSameFolders(folder);
                 folderMap.put(folder, images);
             } else {
@@ -235,12 +247,12 @@ public class FolderFragment extends Fragment implements HasName {
         public void selectAll() {
             for (int i = 0; i < folderCovers.size(); ++i)
                 selectedFolder.put(i, folderCovers.get(i));
-            notifyDataSetChanged();
+            notifyDataSetChangedWithoutFlash();
         }
 
         private void unSelectAll() {
             selectedFolder.clear();
-            notifyDataSetChanged();
+            notifyDataSetChangedWithoutFlash();
         }
 
         class FolderHolder extends RecyclerView.ViewHolder {
@@ -281,8 +293,12 @@ public class FolderFragment extends Fragment implements HasName {
     }
 
     public void setFolderCovers(List<Image> folderCovers) {
+        // change data set
         this.folderCovers = folderCovers;
-        this.folderAdapter.notifyDataSetChanged();
+        this.folderAdapter.notifyDataSetChangedWithoutFlash();
+        this.refreshed = true;
+
+        // stop refresh ui
         refresh.setRefreshing(false);
     }
 
@@ -299,5 +315,4 @@ public class FolderFragment extends Fragment implements HasName {
     public String getName() {
         return this.name;
     }
-
 }

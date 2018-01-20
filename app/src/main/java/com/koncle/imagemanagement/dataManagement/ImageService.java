@@ -22,6 +22,7 @@ import com.koncle.imagemanagement.dao.TagAndImageDao;
 import com.koncle.imagemanagement.dao.TagDao;
 import com.koncle.imagemanagement.util.ImageUtils;
 
+import org.greenrobot.greendao.query.QueryBuilder;
 import org.greenrobot.greendao.query.WhereCondition;
 
 import java.text.SimpleDateFormat;
@@ -42,6 +43,8 @@ public class ImageService {
     public static void init(Context context) {
         daoManager = DaoManager.getInstance();
         daoManager.init(context);
+        QueryBuilder.LOG_SQL = true;
+        QueryBuilder.LOG_VALUES = true;
     }
 
     public static void close() {
@@ -100,7 +103,8 @@ public class ImageService {
 
     public static List<Image> getImages() {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
-        List<Image> images = imageDao.loadAll();
+        List<Image> images = imageDao.queryBuilder().orderDesc(ImageDao.Properties.Time).build().list();
+        List<Image> images2 = imageDao.queryBuilder().orderAsc(ImageDao.Properties.Time).build().list();
         if (DEBUG) {
             Log.i(TAG, "get all images : " + images.size());
         }
@@ -118,7 +122,7 @@ public class ImageService {
 
     public static List<Image> getFolders() {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
-        List<Image> images = imageDao.queryRawCreate("where T._id!=? GROUP BY FOLDER", "0").list();
+        List<Image> images = imageDao.queryRawCreate("where T._id!=? GROUP BY T.folder ORDER BY T.folder ASC ", "0").list();
         if (DEBUG) {
             Log.i(TAG, "get folders : " + images.size());
         }
@@ -126,8 +130,11 @@ public class ImageService {
     }
 
     public static List<Image> getImagesFromSameFolders(String folder) {
-        ImageDao imageDao = daoManager.getDaoSession().getImageDao();
-        List<Image> images = imageDao.queryRawCreate("where T.folder = ?", folder).list();
+        List<Image> images = daoManager.getDaoSession().getImageDao()
+                .queryBuilder()
+                .where(ImageDao.Properties.Folder.eq(folder))
+                .orderDesc(ImageDao.Properties.Time)
+                .build().list();
         if (DEBUG) {
             Log.i(TAG, "get images from folder : " + images.size());
         }
@@ -169,10 +176,10 @@ public class ImageService {
         }
     }
 
-    public static List<Event> getEvents() {
-        EventDao eventDao = daoManager.getDaoSession().getEventDao();
-        return eventDao.loadAll();
-    }
+    /*
+    *
+    *       TAGS
+    * */
 
     public static Tag addTagIfNotExists(String tagString) {
         DaoSession daoSession = daoManager.getDaoSession();
@@ -249,6 +256,16 @@ public class ImageService {
         image.__setDaoSession(daoSession);
     }
 
+    /*
+    *
+    *       EVENTs
+    * */
+
+    public static List<Event> getEvents() {
+        EventDao eventDao = daoManager.getDaoSession().getEventDao();
+        return eventDao.loadAll();
+    }
+
     public static Event addEvent(String eventName) {
         eventName = eventName.trim();
         EventDao eventDao = daoManager.getDaoSession().getEventDao();
@@ -263,13 +280,18 @@ public class ImageService {
         return event;
     }
 
+    public static void updateEvent(Event event, String eventName) {
+        event.setName(eventName);
+        EventDao eventDao = daoManager.getDaoSession().getEventDao();
+        eventDao.save(event);
+    }
+
     public static void deleteEvent(Event event) {
         EventDao eventDao = daoManager.getDaoSession().getEventDao();
         eventDao.delete(event);
     }
 
     public static Event addImages2Event(Event event, List<Image> images) {
-
         Long eventId = event.getId();
         List<ImageAndEvent> imageAndEvents = new ArrayList<>();
         for (Image image : images) {
@@ -282,6 +304,15 @@ public class ImageService {
         imageAndEventDao.insertInTx(imageAndEvents);
         event.resetImageList();
         return event;
+    }
+
+    public static void deleteImageFromEvent(Image image, Event event) {
+        ImageAndEventDao imageAndEventDao = daoManager.getDaoSession().getImageAndEventDao();
+        List<ImageAndEvent> imageAndEvents = imageAndEventDao
+                .queryRawCreate(" where T.image_id = ? and T.event_id = ?", image.getId(), event.getId()).list();
+        if (imageAndEvents.size() > 0) {
+            imageAndEventDao.deleteInTx(imageAndEvents);
+        }
     }
 
     public static void recoverDaoSession(List<Image> images) {
@@ -346,4 +377,5 @@ public class ImageService {
         }
         cursor.close();
     }
+
 }

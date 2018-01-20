@@ -135,7 +135,7 @@ public class EventDao extends AbstractDao<Event, Long> {
     protected final boolean isEntityUpdateable() {
         return true;
     }
-
+    
     /** Internal query to resolve the "events" to-many relationship of Image. */
     public List<Event> _queryImage_Events(Long image_id) {
         synchronized (this) {

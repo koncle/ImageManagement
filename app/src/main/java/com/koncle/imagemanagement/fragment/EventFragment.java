@@ -80,33 +80,23 @@ public class EventFragment extends Fragment implements HasName {
                     eventsRecyclerView.smoothScrollToPosition(index);
                 }
             }
-        });
+        }, "Event Name Is Required");
         dialog.show(getActivity().getFragmentManager(), "a");
     }
 
-    public void showPopup(View view, final int position, final InnerEventAdapter innerEventAdapter) {
+    public void showPopup(View view, final int pos, final InnerEventAdapter innerEventAdapter) {
         PopupMenu popupMenu = new PopupMenu(getContext(), view);
-        popupMenu.getMenuInflater().inflate(R.menu.event_op, popupMenu.getMenu());
+        popupMenu.getMenuInflater().inflate(R.menu.event_image_op, popupMenu.getMenu());
         popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
-                    case R.id.event_delete:
-                        ImageService.deleteEvent(events.get(position));
-                        events.remove(position);
-                        eventAdapter.notifyItemRemoved(position);
+                    case R.id.event_image_delete:
+                        ImageService.deleteImageFromEvent(innerEventAdapter.getImageByPosition(pos), innerEventAdapter.getEvent());
+                        innerEventAdapter.deleteImage(pos);
                         break;
-                    case R.id.event_add_image:
-                        ActivityUtil.selectImages(getContext());
-                        eventPositionWaitingForAddImageResult = position;
-                        adapterWaitingForAddImageResult = innerEventAdapter;
                 }
-                return false;
-            }
-        });
-        popupMenu.setOnDismissListener(new PopupMenu.OnDismissListener() {
-            @Override
-            public void onDismiss(PopupMenu menu) {
+                return true;
             }
         });
         popupMenu.show();
@@ -146,7 +136,8 @@ public class EventFragment extends Fragment implements HasName {
             if (getItemViewType(position) == EVENT_TYPE) {
                 final EventHolder finalHolder = (EventHolder) holder;
                 finalHolder.title.setText(events.get(position).getName());
-                finalHolder.innerAdapter.setData(events.get(position).getImageList());
+                finalHolder.innerAdapter.setData(events.get(position).getImageList(), events.get(position));
+
                 finalHolder.add.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -161,6 +152,19 @@ public class EventFragment extends Fragment implements HasName {
                         ImageService.deleteEvent(events.get(position));
                         events.remove(position);
                         eventAdapter.notifyItemRemoved(position);
+                    }
+                });
+                finalHolder.modify.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        EventDialogFragment dialog = EventDialogFragment.newInstance(new EventDialogFragment.OnInputFinished() {
+                            @Override
+                            public void inputFinished(String eventName) {
+                                ImageService.updateEvent(events.get(position), eventName);
+                                finalHolder.title.setText(eventName);
+                            }
+                        }, "A New Title");
+                        dialog.show(getActivity().getFragmentManager(), "modify");
                     }
                 });
             }
@@ -192,6 +196,7 @@ public class EventFragment extends Fragment implements HasName {
             InnerEventAdapter innerAdapter;
             ImageButton add;
             ImageButton delete;
+            ImageButton modify;
 
             EventHolder(View view) {
                 super(view);
@@ -207,6 +212,7 @@ public class EventFragment extends Fragment implements HasName {
                 title = view.findViewById(R.id.event_title);
                 add = view.findViewById(R.id.event_add_image);
                 delete = view.findViewById(R.id.event_delete);
+                modify = view.findViewById(R.id.event_modify_name);
             }
         }
     }
@@ -219,11 +225,32 @@ public class EventFragment extends Fragment implements HasName {
 
         private final int LINE = 1;
         private final int IMAGE = 0;
+        private Event event;
 
-        public void setData(List<Image> images) {
+        void setData(List<Image> images, Event event) {
             this.images = images;
             this.size = images.size() * 2;
             notifyDataSetChanged();
+            this.event = event;
+        }
+
+        void deleteImage(int position) {
+            images.remove(position / 2);
+            this.size -= 2;
+            if (position == size - 4) {
+                notifyItemRangeRemoved(position, 2);
+            } else {
+                notifyDataSetChanged();
+            }
+        }
+
+        // 1 3 5 7 9
+        Image getImageByPosition(int pos) {
+            return images.get(pos / 2);
+        }
+
+        Event getEvent() {
+            return event;
         }
 
         @Override
@@ -247,7 +274,7 @@ public class EventFragment extends Fragment implements HasName {
         }
 
         @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
+        public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
             if (getItemViewType(position) == LINE) {
                 if (position == this.size - 1) {
                     ((EventLineHolder) holder).line.setVisibility(View.GONE);
@@ -266,9 +293,17 @@ public class EventFragment extends Fragment implements HasName {
                         ActivityUtil.showSingleImageWithPos(getContext(), images, position / 2, imageHolder.image);
                     }
                 });
+                imageHolder.image.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        showPopup(imageHolder.image, position, InnerEventAdapter.this);
+                        return true;
+                    }
+                });
                 Log.w("EventFragment", "item : " + position);
             }
         }
+
 
         @Override
         public int getItemCount() {
@@ -311,7 +346,7 @@ public class EventFragment extends Fragment implements HasName {
         if (images != null) {
             ImageService.recoverDaoSession(images);
             Event event = ImageService.addImages2Event(events.get(eventPositionWaitingForAddImageResult), images);
-            adapterWaitingForAddImageResult.setData(event.getImageList());
+            adapterWaitingForAddImageResult.setData(event.getImageList(), event);
         }
     }
 }

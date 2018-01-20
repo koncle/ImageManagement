@@ -19,6 +19,7 @@ import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -63,6 +64,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     @Override
     public void onBindViewHolder(final ImageViewHolder holder, final int position) {
+
         final String path = images.get(position).getPath();
         /*
         * Set the correct Height
@@ -100,6 +102,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 enterSelectMode();
                 toggleImageSelectionAndCheck(holder, position);
                 modeOperator.enterSelectMode();
+                modeOperator.showSelectedNum(1);
                 return true;
             }
         });
@@ -122,6 +125,12 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             }
         });
 
+        // make sure select mode works properly
+        // then if the image has not changed,
+        // following works are useless
+        if (path.equals(holder.frameLayout.getTag())) {
+            return;
+        }
         // put images
         Glide.with(context)
                 .load(path)
@@ -129,13 +138,29 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 .thumbnail(0.00001f)
                 // can't add simple target, cause it costs too much memory
                 .into(holder.image);
+
+        // add tag to decide whether the image needs being loaded again
+        // can't add tag to image when Glide is load its picture
+        // cause Glide is using the tag to make sure images won't
+        // loaded wrongly.
+        holder.frameLayout.setTag(path);
+
     }
 
     public void enterSelectMode() {
-        Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
+        Log.w("items", "Child count : " + gridLayoutManager.getChildCount());
         if (!selectMode) {
-            setOrClearDisplayedImageSelection(false);
+            // change main UI
             modeOperator.enterSelectMode();
+
+            /*
+             * The recyclerView will retain at least 4 images to
+             * have a perfect perfomance which leads to my failure
+             * to recover from select mode to nomal mode,
+             * Thus I have to use this method to refresh data
+             * so that the view can be redrew.
+             */
+            notifyDataSetChangedWithoutFlash();
         }
         selectMode = true;
     }
@@ -145,8 +170,19 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         if (selectMode) {
             selectMode = false;
             selectedImages.clear();
-            Log.i("items", "Child count : " + gridLayoutManager.getChildCount());
+            Log.w("items", "Child count : " + gridLayoutManager.getChildCount());
+
+            // change main UI
             modeOperator.exitSelectMode();
+
+            /*
+             * The recyclerView will retain at least 4 images to
+             * have a perfect perfomance which leads to my failure
+             * to recover from select mode to nomal mode,
+             * Thus I have to use this method to refresh data
+             * so that the view can be redrew.
+             */
+            notifyDataSetChangedWithoutFlash();
             return true;
         } else {
             return false;
@@ -210,8 +246,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         }
 
         //modeOperator.refreshData();
-        notifyDataSetChanged();
-
+        notifyDataSetChangedWithoutFlash();
         modeOperator.showSelectedNum(selectedImages.size());
     }
 
@@ -228,18 +263,15 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         Image image;
         for (Integer pos : selectedImages.keySet()) {
             image = selectedImages.get(pos);
-
             // delete from sd card
             count += ImageService.deleteImage(context, image, false) ? 1 : 0;
             // delete from memory
             images.remove(image);
+            notifyItemRemoved(pos);
             // delete from database,
             // replaced by service
             // ImageService.deleteImage(image);
         }
-
-        if (count > 0)
-            notifyDataSetChanged();
         Log.w(TAG, "delete " + count + " files");
 
         Toast.makeText(context, "delete " + count + " files", Toast.LENGTH_SHORT).show();
@@ -261,7 +293,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         notifyItemChanged(i);
         // delete image from database and broadcast it
         ImageService.deleteImage(context, image, true);
-        //notifyDataSetChanged();
+        //notifyDataSetChangedWithoutFlash();
         Log.w(TAG, "delete 1 invalid file " + image.getPath());
     }
 
@@ -269,13 +301,13 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         for (Image image : imageList) {
             deleteInvalidImage(image);
         }
-        //notifyDataSetChanged();
+        //notifyDataSetChangedWithoutFlash();
         Log.w(TAG, "delete " + imageList.size() + "invalid files");
     }
 
     public void setData(List<Image> images) {
         this.images = images;
-        notifyDataSetChanged();
+        notifyDataSetChangedWithoutFlash();
     }
 
 
@@ -310,5 +342,14 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             selects = itemView.findViewById(R.id.select_button);
             frameLayout = itemView.findViewById(R.id.background);
         }
+    }
+
+    public void toggleImagesOrder() {
+        Collections.reverse(images);
+        notifyDataSetChangedWithoutFlash();
+    }
+
+    public void notifyDataSetChangedWithoutFlash() {
+        notifyItemRangeChanged(0, images.size());
     }
 }

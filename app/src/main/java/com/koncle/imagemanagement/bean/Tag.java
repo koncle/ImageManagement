@@ -171,7 +171,7 @@ public class Tag implements Parcelable {
         this.images = in.createTypedArrayList(Image.CREATOR);
     }
 
-    public static final Parcelable.Creator<Tag> CREATOR = new Parcelable.Creator<Tag>() {
+    public static final Creator<Tag> CREATOR = new Creator<Tag>() {
         @Override
         public Tag createFromParcel(Parcel source) {
             return new Tag(source);

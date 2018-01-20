@@ -9,16 +9,18 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.design.widget.BottomSheetBehavior;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
-import android.widget.TextView;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
@@ -35,22 +37,18 @@ import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
 public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
 
     private static final int ROW = 4;
-
+    boolean selecting = false;
     private RecyclerView recyclerView;
     private List<Image> images;
     private ImageAdaptor imageAdaptor;
     private Toolbar toolbar;
     private Toolbar hidedToolbar;
     private LinearLayout operatoins;
-    private TextView title;
-    private TextView complete;
-    private ImageButton back;
     private RadioButton share;
     private RadioButton delete;
     private RadioButton move;
     private RadioButton tag;
     private BottomSheetBehavior bottomSheetBehavior;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,11 +69,41 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         initRecyclerView();
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_images, menu);
+        return true;
+    }
+
+    // every time invalidateOptionsMenu() is called,
+    // this function is called;
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        if (selecting) {
+            menu.findItem(R.id.all).setVisible(true);
+        } else {
+            menu.findItem(R.id.all).setVisible(false);
+        }
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.order:
+                imageAdaptor.toggleImagesOrder();
+                break;
+            case R.id.all:
+                imageAdaptor.selectAll();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
     private void findViews() {
         hidedToolbar = findViewById(R.id.hide_toolbar);
-        title = findViewById(R.id.select_msg);
-        complete = findViewById(R.id.select_complete);
-        back = findViewById(R.id.select_back);
+        //back = findViewById(R.id.select_back);
 
         recyclerView = findViewById(R.id.recyclerView);
 
@@ -85,32 +113,41 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         move = findViewById(R.id.move);
         tag = findViewById(R.id.tag);
 
-        bottomSheetBehavior = BottomSheetBehavior.from(operatoins);
+        //bottomSheetBehavior = BottomSheetBehavior.from(operatoins);
+    }
+
+    private void showToolbar(Toolbar toolbar) {
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setHomeButtonEnabled(true); //设置返回键可用
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setDisplayShowHomeEnabled(true);
+            actionBar.setTitle(images.get(0).getFolder());
+        }
     }
 
     private void initMode() {
         // init toolbar
         toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("Show");
-        setSupportActionBar(toolbar);
-
-        complete.setOnClickListener(new View.OnClickListener() {
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                imageAdaptor.selectAll();
+                finish();
             }
         });
-
-        back.setOnClickListener(new View.OnClickListener() {
+        hidedToolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 imageAdaptor.exitSelectMode();
             }
         });
+        showToolbar(toolbar);
 
         // init bottom tools
-        bottomSheetBehavior.setHideable(true);
-        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        //bottomSheetBehavior.setHideable(true);
+        //bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        operatoins.setVisibility(View.GONE);
 
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -161,6 +198,9 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         imageAdaptor.setOperater(this);
         recyclerView.setAdapter(imageAdaptor);
         recyclerView.setItemViewCacheSize(0);
+
+        ((SimpleItemAnimator) recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
+        recyclerView.getItemAnimator().setChangeDuration(0);
     }
 
 
@@ -168,30 +208,28 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         // show nomal toolbar
         toolbar.setVisibility(View.VISIBLE);
         hidedToolbar.setVisibility(View.GONE);
-        setSupportActionBar(toolbar);
+        showToolbar(toolbar);
 
         // hide tools
-        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+        operatoins.setVisibility(View.GONE);
 
-        //toggleMode();
-        /*
-         * The recyclerView will retain at least 4 images to
-         * have a perfect perfomance which leads to my failure
-         * to recover from select mode to nomal mode,
-         * Thus I have to use this method to refresh data
-         * so that the view can be redrew.
-         */
-        imageAdaptor.notifyDataSetChanged();
+        // hide menu
+        selecting = false;
+        invalidateOptionsMenu();
     }
 
     public void enterSelectMode() {
         // show hidden toolbar
         toolbar.setVisibility(View.GONE);
         hidedToolbar.setVisibility(View.VISIBLE);
-        setSupportActionBar(hidedToolbar);
+        showToolbar(hidedToolbar);
 
         // show tools
-        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        operatoins.setVisibility(View.VISIBLE);
+
+        // show menu
+        selecting = true;
+        invalidateOptionsMenu();
     }
 
     @Override
@@ -216,7 +254,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
     @Override
     public void showSelectedNum(int num) {
-        this.title.setText("Select " + num + " Pictures");
+        this.hidedToolbar.setTitle(num + " Pictures Selected");
     }
 
     @Override

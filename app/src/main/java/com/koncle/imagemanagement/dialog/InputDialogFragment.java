@@ -1,12 +1,11 @@
 package com.koncle.imagemanagement.dialog;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.app.DialogFragment;
-import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -19,6 +18,7 @@ import com.koncle.imagemanagement.R;
 public class InputDialogFragment extends DialogFragment {
     OnInputFinished onInputFinished;
     String title;
+    private EditText input;
 
     public static InputDialogFragment newInstance(OnInputFinished onInputFinished, String title) {
 
@@ -43,25 +43,30 @@ public class InputDialogFragment extends DialogFragment {
         void inputFinished(String eventName);
     }
 
+    @Nullable
     @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // Get the layout inflater
-        LayoutInflater inflater = getActivity().getLayoutInflater();
-        View view = inflater.inflate(R.layout.event_dialog_layout, null);
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+        View root = inflater.inflate(R.layout.dialog_input_layout, null);
 
-        final EditText input = view.findViewById(R.id.event_input);
-        final TextView title = view.findViewById(R.id.dialog_title);
+        input = root.findViewById(R.id.event_input);
+        final TextView title = root.findViewById(R.id.dialog_title);
         title.setText(this.title);
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setView(view)
-                .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        onInputFinished.inputFinished(input.getText().toString().trim());
-                    }
-                }).setNegativeButton("Cancel", null);
-        return builder.create();
+
+        root.findViewById(R.id.dialog_cancel).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dismiss();
+            }
+        });
+
+        root.findViewById(R.id.dialog_confirm).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onInputFinished.inputFinished(input.getText().toString());
+                dismiss();
+            }
+        });
+        return root;
     }
+
 }

@@ -81,7 +81,7 @@ public class MyMapFragment extends SupportMapFragment
     @Override
     public View onCreateView(LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle) {
         if (mapLayout == null) {
-            mapLayout = layoutInflater.inflate(R.layout.basemap_support_fragment_activity, null);
+            mapLayout = layoutInflater.inflate(R.layout.map_fragment_layout, null);
             mapView = mapLayout.findViewById(R.id.map);
             mapView.onCreate(bundle);
             final ProgressBar progressBar = mapLayout.findViewById(R.id.progressBar);

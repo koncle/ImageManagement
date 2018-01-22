@@ -6,27 +6,16 @@
     <group android:checkableBehavior="single">
         <item
             android:id="@+id/folders_fragment"
-            android:icon="@drawable/ic_event_note_black_24dp"
-            android:title="Folders" />
-        <item
             android:icon="@drawable/ic_folder_open_black_24dp"
+            android:title="@string/nv_item_folder" />
+        <item
             android:id="@+id/events_fragment"
-            android:title="Events" />
+            android:icon="@drawable/ic_event_note_black_24dp"
+            android:title="@string/nv_item_event" />
         <item
             android:id="@+id/map_fragment"
             android:icon="@drawable/ic_map_black_24dp"
-            android:title="Map" />
+            android:title="@string/nv_item_map" />
     </group>
-
-    <item android:title="Communicate">
-        <menu>
-            <item
-                android:id="@+id/nav_share"
-                android:title="Share" />
-            <item
-                android:id="@+id/nav_send"
-                android:title="Send" />
-        </menu>
-    </item>
 
 </menu>

@@ -10,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.SharedElementCallback;
 import android.transition.Explode;
+import android.transition.Fade;
 import android.util.Log;
 import android.view.View;
 
@@ -74,7 +75,10 @@ public class ActivityUtil {
         bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
         bundle.putString(ACTIVITY_MUL_IMAGE_TITLE_TAG, title);
         intent.putExtras(bundle);
-        context.startActivity(intent);
+        ((Activity) context).getWindow().setExitTransition(new Explode());
+        ((Activity) context).getWindow().setExitTransition(new Explode());
+        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
+        ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
     }
 
     public static void showSingleImageWithPos(final Context context, List<Image> images, int currentPos, View view) {
@@ -84,7 +88,7 @@ public class ActivityUtil {
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
 
-        ((Activity) context).getWindow().setExitTransition(new Explode());
+        ((Activity) context).getWindow().setExitTransition(new Fade());
         ((Activity) context).getWindow().setEnterTransition(new Explode());
         ActivityOptionsCompat compat = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, view, context.getString(R.string.m2s_transition));
 
@@ -115,6 +119,7 @@ public class ActivityUtil {
     public static void selectImages(Context context) {
         Intent intent = new Intent(context, SelectImageActivity.class);
         ((Activity) context).getWindow().setExitTransition(new Explode());
+        ((Activity) context).getWindow().setEnterTransition(new Explode());
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
     }

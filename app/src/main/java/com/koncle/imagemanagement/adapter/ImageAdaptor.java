@@ -128,9 +128,11 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         // make sure select mode works properly
         // then if the image has not changed,
         // following works are useless
-        if (path.equals(holder.frameLayout.getTag())) {
+        /*
+        if (selectMode && path.equals(holder.frameLayout.getTag())) {
             return;
         }
+        */
         // put images
         Glide.with(context)
                 .load(path)
@@ -308,6 +310,20 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     public void setData(List<Image> images) {
         this.images = images;
         notifyDataSetChangedWithoutFlash();
+    }
+
+    public void addImage(Image image) {
+        int size = images.size();
+        // desc order
+        if (images.get(0).getTime().getTime() > images.get(size - 1).getTime().getTime()) {
+            // insert into the first place
+            images.add(0, image);
+            notifyItemInserted(0);
+        } else {
+            // append the list
+            images.add(image);
+            notifyItemInserted(size);
+        }
     }
 
 

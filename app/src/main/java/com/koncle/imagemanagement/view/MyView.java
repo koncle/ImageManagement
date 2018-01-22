@@ -7,7 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.View;
+import android.widget.ImageView;
 
 import com.koncle.imagemanagement.R;
 
@@ -15,7 +15,7 @@ import com.koncle.imagemanagement.R;
  * Created by 10976 on 2018/1/16.
  */
 
-public class MyView extends View {
+public class MyView extends ImageView {
     private int defaultSize;
 
     public MyView(Context context) {

@@ -6,12 +6,9 @@ import android.support.v4.view.PagerAdapter;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ImageView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.drawable.GlideDrawable;
-import com.bumptech.glide.request.animation.GlideAnimation;
-import com.bumptech.glide.request.target.SimpleTarget;
+import com.davemorrissey.labs.subscaleview.ImageSource;
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
 
@@ -54,8 +51,48 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
             String path = image.getPath();
 
             //imageView = new FullScreenImageView(this.context);
-            final ImageView imageView = new ImageView(this.context);
+            SubsamplingScaleImageView subsamplingScaleImageView = new SubsamplingScaleImageView(this.context);
+            if (cur == position)
+                subsamplingScaleImageView.setTransitionName(context.getString(R.string.m2s_transition));
+            subsamplingScaleImageView.setImage(ImageSource.uri(path));
+            subsamplingScaleImageView.setOnImageEventListener(new SubsamplingScaleImageView.OnImageEventListener() {
+                @Override
+                public void onReady() {
+                }
 
+                @Override
+                public void onImageLoaded() {
+                }
+
+                @Override
+                public void onPreviewLoadError(Exception e) {
+                    operator.addDeleteImage(image);
+                }
+
+                @Override
+                public void onImageLoadError(Exception e) {
+                }
+
+                @Override
+                public void onTileLoadError(Exception e) {
+                }
+
+                @Override
+                public void onPreviewReleased() {
+                }
+            });
+            subsamplingScaleImageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    operator.toggleMode();
+                }
+            });
+
+            container.addView(subsamplingScaleImageView);
+            return subsamplingScaleImageView;
+
+            /*
+            final ImageView imageView = new ImageView(this.context);
             if (cur == position)
                 imageView.setTransitionName(context.getString(R.string.m2s_transition));
 
@@ -87,13 +124,14 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
 
             container.addView(imageView);
             return imageView;
+            */
         }
         return null;
     }
 
     @Override
     public void destroyItem(ViewGroup container, int position, Object object) {
-        container.removeView((ImageView) object);
+        container.removeView((SubsamplingScaleImageView) object);
     }
 
     public void setOperator(ModeChange operator) {

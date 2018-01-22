@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements Operator {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main_1);
+        setContentView(R.layout.activity_main);
         initDataBase(INIT_TABLES); // 31.12416648864746 : 120.62750244140625
     }
 

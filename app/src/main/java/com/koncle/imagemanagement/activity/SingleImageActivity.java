@@ -85,6 +85,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
                 finish();
             }
         });
+        toolbar.setTitle(images.get(imageViewPager.getCurrentItem()).getName());
         hideTools();
     }
 
@@ -229,7 +230,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         imageViewPager.setBackgroundColor(Color.WHITE);
     }
 
-
     @Override
     public void onBackPressed() {
         Intent intent = new Intent();
@@ -260,6 +260,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RemarkActivity.REMARK_OK) {
             String remark = data.getStringExtra(RemarkActivity.REMARK_INPUT);
+            ImageService.addImageDesc(images.get(imageViewPager.getCurrentItem()), remark);
         }
     }
 }

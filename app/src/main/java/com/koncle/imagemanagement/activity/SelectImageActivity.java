@@ -21,6 +21,8 @@ import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +102,7 @@ public class SelectImageActivity extends AppCompatActivity {
         List<Image> folderImages = ImageService.getFolders();
         for (Image image : folderImages) {
             // get image paths
-            List<Image> images = ImageService.getImagesFromSameFolders(image.getFolder());
+            List<Image> images = ImageService.getImagesFromFolder(image.getFolder());
             List<String> imagePaths = new ArrayList<>();
             for (Image image1 : images) {
                 imagePaths.add(image1.getPath());
@@ -116,6 +118,20 @@ public class SelectImageActivity extends AppCompatActivity {
         spinner = findViewById(R.id.image_select_spinner);
         final FolderSpinnerAdapter fsa = new FolderSpinnerAdapter(this, folderStringMap);
         folderList = fsa.getFloderList();
+        Collections.sort(folderList, new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                int size1 = folderImageMap.get(o1).size();
+                int size2 = folderImageMap.get(o2).size();
+                if (size1 > size2) {
+                    return -1;
+                } else if (size1 == size2) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        });
         spinner.setAdapter(fsa);
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override

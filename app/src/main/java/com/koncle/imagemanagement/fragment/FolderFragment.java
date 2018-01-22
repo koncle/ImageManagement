@@ -45,7 +45,6 @@ public class FolderFragment extends Fragment implements HasName {
     private List<Image> folderCovers;
     private boolean selectMode = false;
     private Map<Integer, Image> selectedFolder = new HashMap<>();
-    private Map<String, List<Image>> folderMap = new HashMap<>();
 
     final int ORANGE = Color.rgb(255, 223, 0);
     final int WHITE = Color.WHITE;
@@ -70,10 +69,11 @@ public class FolderFragment extends Fragment implements HasName {
         RecyclerView recyclerView = view.findViewById(R.id.folder_recycler);
 
         folderCovers = ImageService.getFolders();
+
         folderAdapter = new FolderRecyclerViewAdapter();
         recyclerView.setLayoutManager(new GridLayoutManager(this.getContext(), 2));
         recyclerView.setAdapter(folderAdapter);
-
+        // prevent flash
         ((SimpleItemAnimator) recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
         recyclerView.getItemAnimator().setChangeDuration(0);
 
@@ -110,7 +110,7 @@ public class FolderFragment extends Fragment implements HasName {
             public void onClick(View v) {
                 List<Image> images = new ArrayList<>();
                 for (Image folder : selectedFolder.values()) {
-                    images.addAll(ImageService.getImagesFromSameFolders(folder.getFolder()));
+                    images.addAll(ImageService.getImagesFromFolder(folder.getFolder()));
                     if (images.size() > 100) {
                         Toast.makeText(getContext(), "the number of image should be less than 100", Toast.LENGTH_SHORT).show();
                         return;
@@ -137,7 +137,7 @@ public class FolderFragment extends Fragment implements HasName {
                             Toast.makeText(getContext(), "can't delete...", Toast.LENGTH_SHORT).show();
                         break;
                     case R.id.share:
-                        List<Image> images = ImageService.getImagesFromSameFolders(folder);
+                        List<Image> images = ImageService.getImagesFromFolder(folder);
                         ActivityUtil.shareImages(getContext(), images);
                         break;
                     case R.id.tag:
@@ -173,10 +173,10 @@ public class FolderFragment extends Fragment implements HasName {
 
             holder.textView.setText(folder);
             if (selectMode && selectedFolder.containsKey(position)) {
-                holder.cardView.setCardBackgroundColor(ORANGE);
+                holder.cardView.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
             } else {
                 //holder.cardView.setCardBackgroundColor(WHITE);
-                holder.cardView.setCardBackgroundColor(Color.parseColor("#99FFCC"));
+                holder.cardView.setCardBackgroundColor(getResources().getColor(R.color.md_light_blue_100));
             }
 
             Glide.with(FolderFragment.this.getContext())
@@ -190,22 +190,18 @@ public class FolderFragment extends Fragment implements HasName {
 
         private void initListener(final FolderHolder holder, final String folder, final int position) {
             final Image image = folderCovers.get(position);
-            final List<Image> images;
             // if the data has been refreshed, then get images from database again
             // otherwise use previous data
-            if (refreshed || !folderMap.containsKey(folder)) {
-                images = ImageService.getImagesFromSameFolders(folder);
-                folderMap.put(folder, images);
-            } else {
-                images = folderMap.get(folder);
-            }
+
             holder.imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (selectMode) {
                         toggleFolderSelection(holder.cardView, folderCovers.get(position), position);
                     } else {
+                        List<Image> images = ImageService.getImagesFromFolder(folder);
                         ActivityUtil.showImageList(FolderFragment.this.getContext(), images, folder);
+                        refreshed = true;
                     }
                 }
             });
@@ -225,7 +221,7 @@ public class FolderFragment extends Fragment implements HasName {
                 }
             });
 
-            holder.num.setText(String.format("(%d)", images.size()));
+            holder.num.setText(String.format("(%d)", ImageService.getImageCountFromFolder(folder)));
 
             holder.linearLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -311,6 +307,40 @@ public class FolderFragment extends Fragment implements HasName {
 
         // stop refresh ui
         refresh.setRefreshing(false);
+    }
+
+    public void refreshCover(Image image) {
+        int i = 0;
+        for (; i < folderCovers.size(); i++) {
+            if (folderCovers.get(i).getFolder().equals(image.getFolder())) {
+                folderCovers.set(i, image);
+                break;
+            }
+        }
+        folderAdapter.notifyItemChanged(i);
+    }
+
+    public void handleResult(boolean delete, String changedFolder) {
+        if (!delete) return;
+
+        // get new cover
+        Image image = ImageService.getCoverFromFolder(changedFolder);
+        // if  there is not new cover, it means there is no image in
+        // this folder
+        if (image == null) {
+            // remove it
+            int i = 0;
+            for (; i < folderCovers.size(); i++) {
+                if (folderCovers.get(i).getFolder().equals(changedFolder)) {
+                    folderCovers.remove(i);
+                }
+            }
+            // notify
+            folderAdapter.notifyItemRemoved(i);
+        } else {
+            // refresh cover
+            refreshCover(image);
+        }
     }
 
     public void setOperator(Operator operator) {

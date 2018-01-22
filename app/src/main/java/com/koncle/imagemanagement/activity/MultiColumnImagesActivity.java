@@ -7,8 +7,9 @@ package com.koncle.imagemanagement.activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.StrictMode;
-import android.support.design.widget.BottomSheetBehavior;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -34,23 +35,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
+import static com.koncle.imagemanagement.activity.DrawerActivity.IMAGE_ADDED;
+import static com.koncle.imagemanagement.activity.DrawerActivity.IMAGE_DELETED;
 
 public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
 
     private static final int ROW = 4;
+
     boolean selecting = false;
     private RecyclerView recyclerView;
     private List<Image> images;
     private ImageAdaptor imageAdaptor;
     private Toolbar toolbar;
-    private Toolbar hidedToolbar;
     private LinearLayout operatoins;
     private RadioButton share;
     private RadioButton delete;
     private RadioButton move;
     private RadioButton tag;
-    private BottomSheetBehavior bottomSheetBehavior;
-    private String title;
+    private String folderName;
+
+    private boolean deleteImage = false;
+    public static final int RESULT_DELETE_IMAGE = -4;
+    public static final String RESULT_DELETE_IMAGE_FOLDER = "folder";
+    public static final String RESULT_DELETE_IMAGE_NUM = "num";
+
+    private MyHandler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,13 +75,13 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         Bundle bundle = this.getIntent().getExtras();
         if (bundle != null) {
             images = bundle.getParcelableArrayList(ActivityUtil.ACTIVITY_MUL_IMAGE_TAG);
-            title = bundle.getString(ActivityUtil.ACTIVITY_MUL_IMAGE_TITLE_TAG);
+            folderName = bundle.getString(ActivityUtil.ACTIVITY_MUL_IMAGE_TITLE_TAG);
             if (images == null) {
                 images = new ArrayList<>();
             }
         } else {
             images = new ArrayList<>();
-            title = "Error";
+            folderName = "Error";
         }
 
         ImageService.recoverDaoSession(images);
@@ -80,6 +89,36 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         findViews();
         initMode();
         initRecyclerView();
+        initFileObserver();
+    }
+
+    public class MyHandler extends Handler {
+        public void handleMessage(Message msg) {
+            Image image;
+            switch (msg.what) {
+                // notify folder to change images
+                case IMAGE_ADDED:
+                    image = msg.getData().getParcelable("image");
+                    if (image != null && folderName.equals(image.getFolder())) {
+                        imageAdaptor.addImage(image);
+                    }
+                    break;
+                case IMAGE_DELETED:
+                    image = msg.getData().getParcelable("image");
+                    break;
+            }
+        }
+    }
+
+    private void initFileObserver() {
+        handler = new MyHandler();
+        MsgCenter.addHandler(handler);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        MsgCenter.removeHandler(handler);
     }
 
     @Override
@@ -115,7 +154,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     }
 
     private void findViews() {
-        hidedToolbar = findViewById(R.id.hide_toolbar);
+        //hidedToolbar = findViewById(R.id.hide_toolbar);
         //back = findViewById(R.id.select_back);
 
         recyclerView = findViewById(R.id.recyclerView);
@@ -129,51 +168,27 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         //bottomSheetBehavior = BottomSheetBehavior.from(operatoins);
     }
 
-    private void showToolbar(Toolbar toolbar) {
-        hidedToolbar.setVisibility(View.GONE);
-        toolbar.setVisibility(View.VISIBLE);
-
-
-        // call before set onclick listener
-        setSupportActionBar(toolbar);
-
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setTitle(title);
-        }
-
-    }
-
-    private void showHideToolbar(Toolbar toolbar) {
-        toolbar.setVisibility(View.GONE);
-        hidedToolbar.setVisibility(View.VISIBLE);
-
-        setSupportActionBar(hidedToolbar);
-        hidedToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                imageAdaptor.exitSelectMode();
-            }
-        });
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setTitle(title);
-        }
-
-    }
-
     private void initMode() {
         // init toolbar
         toolbar = findViewById(R.id.toolbar);
-        showToolbar(toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (selecting) {
+                    exitSelectMode();
+                } else {
+                    finish();
+                }
+            }
+        });
+
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setDisplayShowHomeEnabled(true);
+            actionBar.setTitle(folderName);
+        }
 
         // init bottom tools
         //bottomSheetBehavior.setHideable(true);
@@ -184,6 +199,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
             @Override
             public void onClick(View v) {
                 imageAdaptor.deleteSelectedImages();
+                deleteImage = true;
                 imageAdaptor.exitSelectMode();
             }
         });
@@ -236,26 +252,22 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
 
     public void exitSelectMode() {
-        // show nomal toolbar
-        showToolbar(toolbar);
-
         // hide tools
         operatoins.setVisibility(View.GONE);
 
         // hide menu
         selecting = false;
         invalidateOptionsMenu();
+        toolbar.setTitle(folderName);
     }
 
     public void enterSelectMode() {
-        // show hidden toolbar
-        showHideToolbar(hidedToolbar);
+        selecting = true;
 
         // show tools
         operatoins.setVisibility(View.VISIBLE);
 
         // show menu
-        selecting = true;
         invalidateOptionsMenu();
     }
 
@@ -263,6 +275,10 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     public void onBackPressed() {
         // if there is no selected mode, then close the activity
         if (!imageAdaptor.exitSelectMode()) {
+            Intent intent = new Intent();
+            intent.putExtra(RESULT_DELETE_IMAGE_FOLDER, images.get(0).getFolder());
+            intent.putExtra(RESULT_DELETE_IMAGE_NUM, deleteImage);
+            setResult(RESULT_DELETE_IMAGE, intent);
             super.onBackPressed();
         }
     }
@@ -281,7 +297,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
     @Override
     public void showSelectedNum(int num) {
-        this.hidedToolbar.setTitle(num + " Pictures Selected");
+        this.toolbar.setTitle(num + " Pictures Selected");
     }
 
     @Override
@@ -305,6 +321,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                 if (data.getBooleanExtra(SingleImageActivity.RESULT_TAG, false)) {
                     Image image = data.getExtras().getParcelable(SingleImageActivity.DELETE_IMAGE);
                     imageAdaptor.deleteImageItem(image);
+                    deleteImage = true;
                 }
                 break;
             }

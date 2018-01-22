@@ -4,7 +4,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -23,49 +26,56 @@ public class RemarkActivity extends AppCompatActivity {
     private ImageButton back;
     private Button complete;
     private EditText input;
+    private Toolbar toolbar;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mark_layout);
 
-        findViews();
         initListeners();
     }
 
-    private void initListeners() {
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent();
-                setResult(REMARK_CANCEL, intent);
-                RemarkActivity.this.finish();
-            }
-        });
-
-        complete.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String remark = input.getText().toString().trim();
-                if (TextUtils.isEmpty(remark)) {
-                    show();
-                } else {
-                    Intent intent = new Intent();
-                    intent.putExtra(REMARK_INPUT, remark);
-                    setResult(REMARK_OK, intent);
-                    RemarkActivity.this.finish();
-                }
-            }
-
-            private void show() {
-
-            }
-        });
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.remark_menu, menu);
+        return true;
     }
 
-    private void findViews() {
-        back = findViewById(R.id.remark_back);
-        complete = findViewById(R.id.remark_complete);
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.remark_menu_item_complete) {
+            String remark = input.getText().toString().trim();
+            if (!TextUtils.isEmpty(remark)) {
+                Intent intent = new Intent();
+                intent.putExtra(REMARK_INPUT, remark);
+                setResult(REMARK_OK, intent);
+                RemarkActivity.this.finish();
+            } else {
+                cancelAction();
+            }
+        }
+        return true;
+    }
+
+    private void initListeners() {
         input = findViewById(R.id.remark_input);
+
+        toolbar = findViewById(R.id.mark_toolbar);
+        setSupportActionBar(toolbar);
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cancelAction();
+            }
+        });
+        toolbar.setTitle("Remark");
+    }
+
+    private void cancelAction() {
+        Intent intent = new Intent();
+        setResult(REMARK_CANCEL, intent);
+        RemarkActivity.this.finish();
     }
 }

@@ -15,7 +15,7 @@
 
     <item
         android:id="@+id/tag"
-        android:title="@string/add_tag"
+        android:title="@string/operations_item_tag"
         app:showAsAction="never"
         android:orderInCategory="100" />
 </menu>

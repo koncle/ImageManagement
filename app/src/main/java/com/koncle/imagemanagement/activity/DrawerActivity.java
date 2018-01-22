@@ -39,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static android.view.View.GONE;
+
 /**
  * Created by Koncle on 2018/1/20.
  */
@@ -49,12 +51,17 @@ public class DrawerActivity extends AppCompatActivity
     public static final String WATCH_TAG = "folders";
     private static final boolean INIT_TABLES = false;
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final int SCAN_OK_SHOW = 2;
+
     private static final int FOLDER_FRAGMENT = 0;
     private static final int EVENT_FRAGMENT = 1;
     private static final int MAP_FRAGMENT = 2;
-    private final int SCAN_OK = 1;
-    private int curFragmentIndex = FOLDER_FRAGMENT;
+
+    public static final int SCAN_OK = 1;
+    public static final int SCAN_OK_SHOW = 2;
+    public static final int IMAGE_ADDED = 3;
+    public static final int IMAGE_DELETED = 4;
+
+    private int curFragment = FOLDER_FRAGMENT;
     private ProgressDialog progressDialog;
     private List<Fragment> fragments;
 
@@ -63,12 +70,14 @@ public class DrawerActivity extends AppCompatActivity
     private List<MySearchSuggestion> searchHistory = new ArrayList<>();
     private FloatingSearchView fsv;
 
+    private MyHandler handler;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.drawer_layout);
 
-        initDataBase(INIT_TABLES); // 31.12416648864746 : 120.62750244140625
+        initDataBase(INIT_TABLES);
     }
 
     private void initDataBase(boolean refresh) {
@@ -104,7 +113,20 @@ public class DrawerActivity extends AppCompatActivity
     private void show() {
         initToolbar();
         initFragments();
-        initWatcher();
+        //initWatcher();
+        initFileObserver();
+    }
+
+    private void initFileObserver() {
+        MsgCenter.init(this);
+        handler = new MyHandler();
+        MsgCenter.addHandler(handler);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        MsgCenter.close(this);
     }
 
     private void initToolbar() {
@@ -158,10 +180,17 @@ public class DrawerActivity extends AppCompatActivity
                 } else {
                     leftIcon.setImageDrawable(getDrawable(R.drawable.search));
                 }
+                StringBuilder sb = new StringBuilder();
+                int type = ((MySearchSuggestion) item).getType();
+                if (type == MySearchSuggestion.TYPE_EVENT) {
+                    sb.append("<strong>E:</strong> ");
+                } else if (type == MySearchSuggestion.TYPE_TAG) {
+                    sb.append("<strong>T:</strong> ");
+                }
                 String text = Pattern.compile(fsv.getQuery(), Pattern.CASE_INSENSITIVE)
                         .matcher(item.getBody())
                         .replaceFirst("<font color=\"#000\">" + fsv.getQuery() + "</font>");
-                textView.setText(Html.fromHtml(text));
+                textView.setText(Html.fromHtml(sb.append(text).toString()));
             }
         });
 
@@ -242,13 +271,13 @@ public class DrawerActivity extends AppCompatActivity
         // show first fragment
         getSupportFragmentManager()
                 .beginTransaction()
-                .add(R.id.main_fragment, fragments.get(curFragmentIndex), ((HasName) fragments.get(curFragmentIndex)).getName())
+                .add(R.id.main_fragment, fragments.get(curFragment), ((HasName) fragments.get(curFragment)).getName())
                 .commit();
     }
 
     private void switchFragment(int pos) {
-        if (pos != curFragmentIndex) {
-            Fragment curF = fragments.get(curFragmentIndex);
+        if (pos != curFragment) {
+            Fragment curF = fragments.get(curFragment);
             Fragment nextF = fragments.get(pos);
             if (nextF.isAdded()) {
                 getSupportFragmentManager()
@@ -263,7 +292,7 @@ public class DrawerActivity extends AppCompatActivity
                         .add(R.id.main_fragment, nextF, ((HasName) nextF).getName())
                         .commit();
             }
-            curFragmentIndex = pos;
+            curFragment = pos;
         }
     }
 
@@ -275,8 +304,8 @@ public class DrawerActivity extends AppCompatActivity
         } else if (fsv.isSearchBarFocused()) {
             fsv.clearSearchFocus();
         } else {
-            Fragment fragment = fragments.get(curFragmentIndex);
-            switch (curFragmentIndex) {
+            Fragment fragment = fragments.get(curFragment);
+            switch (curFragment) {
                 case FOLDER_FRAGMENT:
                     if (!((FolderFragment) fragment).exitSelectMode())
                         super.onBackPressed();
@@ -294,40 +323,6 @@ public class DrawerActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (resultCode == SelectImageActivity.RESULT_CODE) {
-            List<Image> images = data.getExtras().getParcelableArrayList(SelectImageActivity.IMAGES);
-            ((EventFragment) fragments.get(1)).handleResult(images);
-        }
-    }
-
-    /*
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        switch (id) {
-            case R.id.map:
-                ActivityUtil.showMap(this, ImageService.getImagesWithLoc());
-                break;
-            case R.id.refresh_data:
-                refreshData();
-                break;
-            case R.id.search:
-
-        }
-        return super.onOptionsItemSelected(item);
-    }
-    */
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -335,15 +330,29 @@ public class DrawerActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.folders_fragment) {
-            switchFragment(0);
+            switchFragment(FOLDER_FRAGMENT);
         } else if (id == R.id.events_fragment) {
-            switchFragment(1);
+            switchFragment(EVENT_FRAGMENT);
         } else if (id == R.id.map_fragment) {
-            switchFragment(2);
+            switchFragment(MAP_FRAGMENT);
         }
 
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode == SelectImageActivity.RESULT_CODE) {
+            List<Image> images = data.getExtras().getParcelableArrayList(SelectImageActivity.IMAGES);
+            ((EventFragment) fragments.get(1)).handleResult(images);
+        } else if (resultCode == MultiColumnImagesActivity.RESULT_DELETE_IMAGE) {
+            boolean deleteNum = data.getBooleanExtra(MultiColumnImagesActivity.RESULT_DELETE_IMAGE_NUM, false);
+            String deleteFolder = data.getStringExtra(MultiColumnImagesActivity.RESULT_DELETE_IMAGE_FOLDER);
+            ((FolderFragment) fragments.get(0)).handleResult(deleteNum, deleteFolder);
+        }
     }
 
     @Override
@@ -359,7 +368,7 @@ public class DrawerActivity extends AppCompatActivity
 
     @Override
     public void hideToolbar() {
-        fsv.setVisibility(View.GONE);
+        fsv.setVisibility(GONE);
     }
 
     @Override
@@ -367,8 +376,9 @@ public class DrawerActivity extends AppCompatActivity
         fsv.setVisibility(View.VISIBLE);
     }
 
-    private class MyHandler extends Handler {
+    public class MyHandler extends Handler {
         public void handleMessage(Message msg) {
+            Image image;
             switch (msg.what) {
                 case SCAN_OK_SHOW:
                     progressDialog.dismiss();
@@ -377,6 +387,15 @@ public class DrawerActivity extends AppCompatActivity
                 case SCAN_OK:
                     List<Image> folders = ImageService.getFolders();
                     ((FolderFragment) fragments.get(0)).setFolderCovers(folders);
+                    break;
+                // notify folder to change images
+                case IMAGE_ADDED:
+                    image = msg.getData().getParcelable("image");
+                    ((FolderFragment) fragments.get(0)).refreshCover(image);
+                    break;
+                case IMAGE_DELETED:
+                    image = msg.getData().getParcelable("image");
+                    ((FolderFragment) fragments.get(0)).refreshCover(image);
                     break;
             }
         }

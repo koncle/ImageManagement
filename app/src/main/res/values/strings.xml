@@ -8,10 +8,9 @@
     <string name="delete">delete</string>
     <string name="share">share</string>
     <string name="main_menu_item_map">map</string>
-    <string name="add_tag">tag</string>
+    <string name="operations_item_tag">tag</string>
     <string name="dialog_add_tag">add new tags</string>
     <string name="main_menu_item_refresh">refresh</string>
-    <string name="event_input_msg">please input event name</string>
     <string name="add_image">add image</string>
     <string name="add_image_desc">add image</string>
     <string name="delete_image_desc">delete image</string>
@@ -21,6 +20,16 @@
     <string name="navigation_drawer_close">close</string>
     <string name="dialog_confirm">Confirm</string>
     <string name="dialog_cancel">Cancel</string>
-    <string name="dialog_input_hint">input new tag</string>
+    <string name="dialog_tag_input_hint">input new tag</string>
     <string name="dialog_select_tag_title">Select Tags</string>
+    <string name="operations_item_delete">delete</string>
+    <string name="operations_item_move">move</string>
+    <string name="operations_item_share">share</string>
+    <string name="operations_item_mark">mark</string>
+    <string name="operatoins_item_tag">tag</string>
+    <string name="dialog_input_hint">input</string>
+    <string name="nv_item_folder">Folders</string>
+    <string name="nv_item_event">Events</string>
+    <string name="nv_item_map">Map</string>
+    <string name="toolbar_complete_actoin">complete</string>
 </resources>

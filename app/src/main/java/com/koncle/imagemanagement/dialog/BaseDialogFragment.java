@@ -53,7 +53,7 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.tag_dialog_layout, null);
+        View view = inflater.inflate(R.layout.dialog_tag_layout, null);
         initViews(view);
         return view;
     }
@@ -123,7 +123,7 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
 
         @Override
         public TagHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = getActivity().getLayoutInflater().inflate(R.layout.tag_dialog_item_layout, parent, false);
+            View v = getActivity().getLayoutInflater().inflate(R.layout.dialog_tag_item_layout, parent, false);
             return new TagHolder(v);
         }
 

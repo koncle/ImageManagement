@@ -42,7 +42,7 @@ public class FolderDialogFragment extends BaseDialogFragment {
         for (Tag tag : getSelectedTags().values()) {
             sb.append(tag.getTag().toString());
             sb.append(" ");
-            List<Image> images = ImageService.getImagesFromSameFolders(folder);
+            List<Image> images = ImageService.getImagesFromFolder(folder);
             ImageService.addTag2Images(images, tag);
         }
         Toast.makeText(getContext(), " " + sb.toString(), Toast.LENGTH_SHORT).show();

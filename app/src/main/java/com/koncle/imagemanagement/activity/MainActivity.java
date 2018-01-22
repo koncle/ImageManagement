@@ -21,7 +21,7 @@ import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.fragment.EventFragment;
 import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
-import com.koncle.imagemanagement.fragment.Operater;
+import com.koncle.imagemanagement.fragment.Operator;
 import com.koncle.imagemanagement.fragment.TagFragment;
 import com.koncle.imagemanagement.service.ImageListenerService;
 import com.koncle.imagemanagement.util.ActivityUtil;
@@ -29,7 +29,7 @@ import com.koncle.imagemanagement.util.ActivityUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements Operater {
+public class MainActivity extends AppCompatActivity implements Operator {
 
     private static final boolean INIT_TABLES = false;
 
@@ -197,6 +197,16 @@ public class MainActivity extends AppCompatActivity implements Operater {
                 mHandler.sendEmptyMessage(SCAN_OK);
             }
         }).start();
+    }
+
+    @Override
+    public void hideToolbar() {
+
+    }
+
+    @Override
+    public void showToolbar() {
+
     }
 
     private void initToolbar() {

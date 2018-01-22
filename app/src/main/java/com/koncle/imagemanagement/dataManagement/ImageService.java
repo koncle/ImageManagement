@@ -11,6 +11,7 @@ import android.util.Log;
 import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.bean.ImageAndEvent;
+import com.koncle.imagemanagement.bean.MySearchSuggestion;
 import com.koncle.imagemanagement.bean.Tag;
 import com.koncle.imagemanagement.bean.TagAndImage;
 import com.koncle.imagemanagement.dao.DaoMaster;
@@ -316,6 +317,7 @@ public class ImageService {
     }
 
     public static void recoverDaoSession(List<Image> images) {
+        if (images.size() == 0) return;
         DaoSession daoSession = daoManager.getDaoSession();
         for (Image image : images) {
             image.__setDaoSession(daoSession);
@@ -378,4 +380,56 @@ public class ImageService {
         cursor.close();
     }
 
+    public static Tag searchTagByName(String name) {
+        List<Tag> tags = daoManager.getDaoSession().getTagDao()
+                .queryBuilder()
+                .where(TagDao.Properties.Tag.eq(name))
+                .build()
+                .list();
+        if (tags.size() > 0) {
+            return tags.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    public static Event searchEventByName(String name) {
+        List<Event> events = daoManager.getDaoSession().getEventDao()
+                .queryBuilder()
+                .where(EventDao.Properties.Name.eq(name))
+                .build()
+                .list();
+        if (events.size() > 0) {
+            return events.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    public static List<MySearchSuggestion> findSuggestions(String query) {
+        List<MySearchSuggestion> suggestions = new ArrayList<>();
+        if ("".equals(query)) return suggestions;
+
+        DaoSession daoSession = daoManager.getDaoSession();
+        TagDao tagDao = daoSession.getTagDao();
+        EventDao eventDao = daoSession.getEventDao();
+
+        List<Tag> tags = tagDao.queryBuilder()
+                .where(TagDao.Properties.Tag.like("%" + query + "%"))
+                .build().list();
+
+        List<Event> events = eventDao.queryBuilder()
+                .where(EventDao.Properties.Name.like("%" + query + "%"))
+                .build().list();
+
+        for (Tag tag : tags) {
+            suggestions.add(new MySearchSuggestion(tag.getTag(), MySearchSuggestion.TYPE_TAG));
+        }
+
+        for (Event event : events) {
+            suggestions.add(new MySearchSuggestion(event.getName(), MySearchSuggestion.TYPE_EVENT));
+        }
+
+        return suggestions;
+    }
 }

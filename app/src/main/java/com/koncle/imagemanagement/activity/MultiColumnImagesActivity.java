@@ -26,10 +26,11 @@ import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.fragment.MultipleImageDialogFragment;
-import com.koncle.imagemanagement.fragment.SingleImageDIalogFragment;
+import com.koncle.imagemanagement.dialog.MultipleImageDialogFragment;
+import com.koncle.imagemanagement.dialog.SingleImageDIalogFragment;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
@@ -49,6 +50,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     private RadioButton move;
     private RadioButton tag;
     private BottomSheetBehavior bottomSheetBehavior;
+    private String title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +63,18 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
             StrictMode.setVmPolicy(builder.build());
         }
 
-        images = this.getIntent().getExtras().getParcelableArrayList("images");
+        Bundle bundle = this.getIntent().getExtras();
+        if (bundle != null) {
+            images = bundle.getParcelableArrayList(ActivityUtil.ACTIVITY_MUL_IMAGE_TAG);
+            title = bundle.getString(ActivityUtil.ACTIVITY_MUL_IMAGE_TITLE_TAG);
+            if (images == null) {
+                images = new ArrayList<>();
+            }
+        } else {
+            images = new ArrayList<>();
+            title = "Error";
+        }
+
         ImageService.recoverDaoSession(images);
 
         findViews();
@@ -117,31 +130,49 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     }
 
     private void showToolbar(Toolbar toolbar) {
-        setSupportActionBar(toolbar);
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setHomeButtonEnabled(true); //设置返回键可用
-            actionBar.setDisplayHomeAsUpEnabled(true);
-            actionBar.setDisplayShowHomeEnabled(true);
-            actionBar.setTitle(images.get(0).getFolder());
-        }
-    }
+        hidedToolbar.setVisibility(View.GONE);
+        toolbar.setVisibility(View.VISIBLE);
 
-    private void initMode() {
-        // init toolbar
-        toolbar = findViewById(R.id.toolbar);
+
+        // call before set onclick listener
+        setSupportActionBar(toolbar);
+
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 finish();
             }
         });
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setTitle(title);
+        }
+
+    }
+
+    private void showHideToolbar(Toolbar toolbar) {
+        toolbar.setVisibility(View.GONE);
+        hidedToolbar.setVisibility(View.VISIBLE);
+
+        setSupportActionBar(hidedToolbar);
         hidedToolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 imageAdaptor.exitSelectMode();
             }
         });
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setTitle(title);
+        }
+
+    }
+
+    private void initMode() {
+        // init toolbar
+        toolbar = findViewById(R.id.toolbar);
         showToolbar(toolbar);
 
         // init bottom tools
@@ -206,8 +237,6 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
     public void exitSelectMode() {
         // show nomal toolbar
-        toolbar.setVisibility(View.VISIBLE);
-        hidedToolbar.setVisibility(View.GONE);
         showToolbar(toolbar);
 
         // hide tools
@@ -220,9 +249,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
     public void enterSelectMode() {
         // show hidden toolbar
-        toolbar.setVisibility(View.GONE);
-        hidedToolbar.setVisibility(View.VISIBLE);
-        showToolbar(hidedToolbar);
+        showHideToolbar(hidedToolbar);
 
         // show tools
         operatoins.setVisibility(View.VISIBLE);

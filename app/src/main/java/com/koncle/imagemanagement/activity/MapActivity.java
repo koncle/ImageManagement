@@ -47,7 +47,7 @@ public class MapActivity extends AppCompatActivity implements GeocodeSearch.OnGe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_fragment);
 
-        images = getIntent().getExtras().getParcelableArrayList(ActivityUtil.ACTIVITY_IMAGE_TAG);
+        images = getIntent().getExtras().getParcelableArrayList(ActivityUtil.ACTIVITY_MUL_IMAGE_TAG);
 
         mapView = findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);// 此方法必须重写

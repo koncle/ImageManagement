@@ -1,9 +1,9 @@
-package com.koncle.imagemanagement.fragment;
+package com.koncle.imagemanagement.dialog;
 
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+import android.view.View;
 import android.widget.Toast;
 
 import com.koncle.imagemanagement.bean.Image;
@@ -33,18 +33,17 @@ public class MultipleImageDialogFragment extends BaseDialogFragment {
         this.images = images;
     }
 
-    @Override
-    public void onClick(DialogInterface dialog, int which) {
+    public void show(FragmentManager fragmentManager) {
+        super.show(fragmentManager, "Multi");
+    }
 
+    @Override
+    public void onClick(View v) {
         StringBuilder sb = new StringBuilder();
         for (Tag tag : getSelectedTags().values()) {
-            sb.append(tag.getTag().toString());
+            sb.append(tag.getTag());
             ImageService.addTag2Images(images, tag);
         }
         Toast.makeText(getContext(), " " + sb.toString(), Toast.LENGTH_SHORT).show();
-    }
-
-    public void show(FragmentManager fragmentManager) {
-        super.show(fragmentManager, "Multi");
     }
 }

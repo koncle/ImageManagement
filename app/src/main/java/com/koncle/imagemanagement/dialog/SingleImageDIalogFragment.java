@@ -1,8 +1,8 @@
-package com.koncle.imagemanagement.fragment;
+package com.koncle.imagemanagement.dialog;
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+import android.view.View;
 import android.widget.Toast;
 
 import com.koncle.imagemanagement.bean.Image;
@@ -26,24 +26,24 @@ public class SingleImageDIalogFragment extends BaseDialogFragment {
     }
 
     public void setData(Image image) {
-        //image.resetTags();
+        // in case the tag related to the images has been added,
+        // this image has to be refreshed to get new data;
         image.resetTags();// refresh();
         super.setData(image.getTags());
         this.image = image;
     }
 
-    @Override
-    public void onClick(DialogInterface dialog, int which) {
+    public void show(FragmentManager fragmentManager) {
+        super.show(fragmentManager, "Single");
+    }
 
+    @Override
+    public void onClick(View v) {
         StringBuilder sb = new StringBuilder();
         for (Tag tag : getSelectedTags().values()) {
             sb.append(tag.getTag().toString());
             ImageService.addTag2Image(image, tag);
         }
         Toast.makeText(getContext(), " " + sb.toString(), Toast.LENGTH_SHORT).show();
-    }
-
-    public void show(FragmentManager fragmentManager) {
-        super.show(fragmentManager, "Single");
     }
 }

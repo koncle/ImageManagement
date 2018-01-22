@@ -4,10 +4,12 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
+import com.amap.api.maps.model.LatLng;
 import com.koncle.imagemanagement.dao.DaoSession;
 import com.koncle.imagemanagement.dao.EventDao;
 import com.koncle.imagemanagement.dao.ImageDao;
 import com.koncle.imagemanagement.dao.TagDao;
+import com.koncle.imagemanagement.markerClusters.ClusterItem;
 
 import org.greenrobot.greendao.DaoException;
 import org.greenrobot.greendao.annotation.Entity;
@@ -16,6 +18,7 @@ import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.annotation.ToMany;
+import org.greenrobot.greendao.annotation.Transient;
 
 import java.util.Date;
 import java.util.List;
@@ -25,7 +28,7 @@ import java.util.List;
  */
 
 @Entity
-public class Image implements Parcelable, Comparable<Image> {
+public class Image implements Parcelable, Comparable<Image>, ClusterItem {
     @Id(autoincrement = true)
     private Long id;
 
@@ -61,6 +64,18 @@ public class Image implements Parcelable, Comparable<Image> {
     private String lat;
 
     private String lng;
+
+    @Transient
+    private LatLng pos;
+
+    public void setPos(LatLng pos) {
+        this.pos = pos;
+    }
+
+    @Override
+    public LatLng getPosition() {
+        return pos;
+    }
 
     @Override
     public boolean equals(Object obj) {

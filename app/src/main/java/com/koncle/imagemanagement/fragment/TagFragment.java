@@ -16,7 +16,7 @@ import com.koncle.imagemanagement.R;
 public class TagFragment extends Fragment implements HasName {
     private String name;
 
-    public static Fragment newInstance(String name, Operater operater) {
+    public static Fragment newInstance(String name, Operator operator) {
         TagFragment f = new TagFragment();
         f.setName(name);
         return f;

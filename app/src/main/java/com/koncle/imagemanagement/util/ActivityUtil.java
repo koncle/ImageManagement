@@ -30,8 +30,11 @@ import java.util.Map;
  */
 
 public class ActivityUtil {
-    public static final String ACTIVITY_IMAGE_TAG = "images";
+    public static final String ACTIVITY_MUL_IMAGE_TAG = "images";
+    public static final String ACTIVITY_MUL_IMAGE_TITLE_TAG = "title";
+
     public static final String ACTIVITY_POS_TAG = "pos";
+
     public static void shareImages(Context context, List<Image> images) {
 
         ArrayList<Uri> imageUris = new ArrayList<Uri>();
@@ -65,10 +68,11 @@ public class ActivityUtil {
         context.startActivity(intent);
     }
 
-    public static void showImageList(Context context, List<Image> images) {
+    public static void showImageList(Context context, List<Image> images, String title) {
         Intent intent = new Intent(context, MultiColumnImagesActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(ACTIVITY_IMAGE_TAG, (ArrayList<Image>) images);
+        bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
+        bundle.putString(ACTIVITY_MUL_IMAGE_TITLE_TAG, title);
         intent.putExtras(bundle);
         context.startActivity(intent);
     }
@@ -76,7 +80,7 @@ public class ActivityUtil {
     public static void showSingleImageWithPos(final Context context, List<Image> images, int currentPos, View view) {
         Intent intent = new Intent(context, SingleImageActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(ACTIVITY_IMAGE_TAG, (ArrayList<Image>) images);
+        bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
 
@@ -97,7 +101,7 @@ public class ActivityUtil {
 
         Intent intent = new Intent(context, MapActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(ACTIVITY_IMAGE_TAG, (ArrayList<Image>) images);
+        bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
         intent.putExtras(bundle);
 
         //((Activity) context).startActivityForResult(intent, 1);

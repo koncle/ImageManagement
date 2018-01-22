@@ -19,4 +19,8 @@
     <string name="drawer_close">close</string>
     <string name="navigation_drawer_open">open</string>
     <string name="navigation_drawer_close">close</string>
+    <string name="dialog_confirm">Confirm</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_input_hint">input new tag</string>
+    <string name="dialog_select_tag_title">Select Tags</string>
 </resources>

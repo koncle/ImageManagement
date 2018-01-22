@@ -11,7 +11,8 @@
     app:cardCornerRadius="2dp"
     app:cardElevation="3dp"
     app:contentPadding="5dp"
-    app:cardBackgroundColor="@color/orange"
+
+    app:cardBackgroundColor="#fff"
 
     android:id="@+id/folder_card"
 
@@ -23,57 +24,57 @@
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/shape">
+        android:background="@drawable/shape"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
+        android:focusable="true">
 
         <ImageView
             android:id="@+id/folder_image"
             android:layout_width="match_parent"
             android:layout_height="110dp"
-            android:scaleType="centerCrop"
-            android:background="#ffff" />
+            android:background="#fff"
+            android:scaleType="centerCrop" />
 
         <LinearLayout
+            android:id="@+id/folder_item_text_area"
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp">
 
             <TextView
                 android:id="@+id/folder_text"
                 android:layout_width="match_parent"
-                android:layout_height="20dp"
-                android:textSize="14sp"
+                android:layout_height="18dp"
+                android:textSize="@dimen/folder_title_text_size"
                 android:textStyle="bold"
                 android:textColor="#000"
                 android:textAlignment="center" />
 
             <RelativeLayout
                 android:layout_width="match_parent"
-                android:layout_height="20dp">
+                android:layout_height="16dp">
 
                 <TextView
                     android:id="@+id/folder_number"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:textSize="12sp"
+                    android:textSize="@dimen/folder_num_text_size"
                     android:textAlignment="center"
                     android:layout_alignParentStart="true" />
 
                 <ImageButton
                     android:id="@+id/folder_more"
                     android:src="@drawable/more"
-                    android:layout_width="25dp"
+                    android:layout_width="@dimen/folder_image_operation"
                     android:layout_height="match_parent"
                     android:layout_alignParentEnd="true"
-                    android:background="#fff"
-                    android:clickable="true"
+                    android:background="@color/folder_image_operation_bg"
                     android:foreground="?attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
                     android:focusable="true" />
             </RelativeLayout>
         </LinearLayout>
-
-
     </LinearLayout>
 </android.support.v7.widget.CardView>

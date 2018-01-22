@@ -1,9 +1,7 @@
-package com.koncle.imagemanagement.fragment;
+package com.koncle.imagemanagement.dialog;
 
-import android.app.AlertDialog;
-import android.app.Dialog;
-import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -31,7 +29,7 @@ import java.util.Map;
  * Created by 10976 on 2018/1/17.
  */
 
-public abstract class BaseDialogFragment extends DialogFragment implements DialogInterface.OnClickListener {
+public abstract class BaseDialogFragment extends DialogFragment implements View.OnClickListener {
 
     private List<Tag> allTags;
 
@@ -52,23 +50,13 @@ public abstract class BaseDialogFragment extends DialogFragment implements Dialo
         }
     }
 
+    @Nullable
     @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // Get the layout inflater
-        LayoutInflater inflater = getActivity().getLayoutInflater();
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.tag_dialog_layout, null);
-
-        // init views in layout
         initViews(view);
-
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setView(view)
-                .setPositiveButton("Confirm", this).setNegativeButton("Cancel", null);
-        return builder.create();
+        return view;
     }
-
 
     private void initViews(View root) {
         // tag list
@@ -108,8 +96,25 @@ public abstract class BaseDialogFragment extends DialogFragment implements Dialo
                     if (!allTags.contains(tag))
                         allTags.add(tag);
                     tagAdapter.notifyDataSetChanged();
+                    tagInput.setText("");
                 }
                 inputLayout.setVisibility(View.GONE);
+            }
+        });
+
+        Button cancel = root.findViewById(R.id.dialog_cancel);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dismiss();
+            }
+        });
+
+        root.findViewById(R.id.dialog_confirm).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                BaseDialogFragment.this.onClick(v);
+                dismiss();
             }
         });
     }

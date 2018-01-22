@@ -25,20 +25,20 @@ public class DaoMaster extends AbstractDaoMaster {
     public static void createAllTables(Database db, boolean ifNotExists) {
         EventDao.createTable(db, ifNotExists);
         ImageDao.createTable(db, ifNotExists);
+        ImageAndEventDao.createTable(db, ifNotExists);
         LocationDao.createTable(db, ifNotExists);
         TagDao.createTable(db, ifNotExists);
         TagAndImageDao.createTable(db, ifNotExists);
-        ImageAndEventDao.createTable(db, ifNotExists);
     }
 
     /** Drops underlying database table using DAOs. */
     public static void dropAllTables(Database db, boolean ifExists) {
         EventDao.dropTable(db, ifExists);
         ImageDao.dropTable(db, ifExists);
+        ImageAndEventDao.dropTable(db, ifExists);
         LocationDao.dropTable(db, ifExists);
         TagDao.dropTable(db, ifExists);
         TagAndImageDao.dropTable(db, ifExists);
-        ImageAndEventDao.dropTable(db, ifExists);
     }
 
     /**
@@ -59,10 +59,10 @@ public class DaoMaster extends AbstractDaoMaster {
         super(db, SCHEMA_VERSION);
         registerDaoClass(EventDao.class);
         registerDaoClass(ImageDao.class);
+        registerDaoClass(ImageAndEventDao.class);
         registerDaoClass(LocationDao.class);
         registerDaoClass(TagDao.class);
         registerDaoClass(TagAndImageDao.class);
-        registerDaoClass(ImageAndEventDao.class);
     }
 
     public DaoSession newSession() {

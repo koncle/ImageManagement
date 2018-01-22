@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/line_shape">
 
+    <!--
     <ImageButton
         android:id="@+id/select_back"
         android:layout_width="wrap_content"
@@ -12,6 +13,7 @@
 
         android:layout_centerVertical="true"
         android:layout_alignParentStart="true" />
+    -->
 
     <TextView
         android:id="@+id/select_msg"
@@ -23,21 +25,4 @@
         android:gravity="center"
 
         android:layout_centerHorizontal="true" />
-
-    <Button
-        android:id="@+id/select_complete"
-
-        android:text="@string/right_top_button"
-        android:textSize="15dp"
-        android:textAllCaps="false"
-        android:textColor="#5222"
-        android:gravity="center"
-        android:background="@drawable/button_shape"
-
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-
-        android:paddingStart="3dp"
-        android:paddingEnd="3dp"
-        android:layout_alignParentEnd="true" />
 </RelativeLayout>

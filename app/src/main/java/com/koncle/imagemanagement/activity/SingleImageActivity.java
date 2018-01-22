@@ -6,7 +6,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
-import android.support.design.widget.BottomSheetBehavior;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -19,7 +18,7 @@ import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.SingleImageViewPagerAdapter;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.fragment.SingleImageDIalogFragment;
+import com.koncle.imagemanagement.dialog.SingleImageDIalogFragment;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
@@ -43,13 +42,12 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     private LinearLayout toolLayout;
     private SingleImageViewPagerAdapter pagerAdapter;
 
-    private boolean toolMode = true;
+    private boolean toolMode = false;
 
     public static final String RESULT_TAG = "result";
     public static final int IMAGE_VIEWER_DELETE = 2;
     public static final int IMAGE_VIWER_SCROLL = 3;
     private List<Image> deleteImages;
-    private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
     private RadioButton tag;
 
     @Override
@@ -76,6 +74,18 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
 
     private void initToolbar() {
         this.setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayShowHomeEnabled(true);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
+        hideTools();
     }
 
     private void hideStatusBarAndActionBar() {
@@ -103,11 +113,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         mark = findViewById(R.id.mark);
         tag = findViewById(R.id.single_tag);
         toolLayout = findViewById(R.id.tool_layout);
-
-        bottomSheetBehavior = BottomSheetBehavior.from(toolLayout);
-        bottomSheetBehavior.setHideable(true);
-        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-        hideTools();
     }
 
     private void initViewPager(int position) {
@@ -199,13 +204,12 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     }
 
     public void toggleMode() {
-        if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED) {
+        if (toolMode) {
             hideTools();
-            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
         } else {
             showTools();
-            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         }
+        toolMode = !toolMode;
     }
 
     @Override
@@ -214,13 +218,13 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     }
 
     public void showTools() {
-        //toolLayout.setVisibility(View.VISIBLE);
+        toolLayout.setVisibility(View.VISIBLE);
         toolbar.setVisibility(View.VISIBLE);
         imageViewPager.setBackgroundColor(Color.BLACK);
     }
 
     public void hideTools() {
-        //toolLayout.setVisibility(View.GONE);
+        toolLayout.setVisibility(View.GONE);
         toolbar.setVisibility(View.GONE);
         imageViewPager.setBackgroundColor(Color.WHITE);
     }

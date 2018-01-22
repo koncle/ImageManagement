@@ -26,6 +26,7 @@ import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
+import com.koncle.imagemanagement.dialog.FolderDialogFragment;
 import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.ImageUtils;
 
@@ -48,17 +49,17 @@ public class FolderFragment extends Fragment implements HasName {
 
     final int ORANGE = Color.rgb(255, 223, 0);
     final int WHITE = Color.WHITE;
-    private Operater operater;
+    private Operator operator;
     private SwipeRefreshLayout refresh;
     private BottomSheetBehavior<View> bottomSheetBehavior;
     private LinearLayout operations;
     private boolean refreshed = false;
 
 
-    public static Fragment newInstance(String name, Operater operater) {
+    public static Fragment newInstance(String name, Operator operator) {
         FolderFragment f = new FolderFragment();
         f.setName(name);
-        f.setOperater(operater);
+        f.setOperator(operator);
         return f;
     }
 
@@ -80,7 +81,7 @@ public class FolderFragment extends Fragment implements HasName {
         refresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                operater.refreshData();
+                operator.refreshData();
             }
         });
 
@@ -174,7 +175,8 @@ public class FolderFragment extends Fragment implements HasName {
             if (selectMode && selectedFolder.containsKey(position)) {
                 holder.cardView.setCardBackgroundColor(ORANGE);
             } else {
-                holder.cardView.setCardBackgroundColor(WHITE);
+                //holder.cardView.setCardBackgroundColor(WHITE);
+                holder.cardView.setCardBackgroundColor(Color.parseColor("#99FFCC"));
             }
 
             Glide.with(FolderFragment.this.getContext())
@@ -203,7 +205,7 @@ public class FolderFragment extends Fragment implements HasName {
                     if (selectMode) {
                         toggleFolderSelection(holder.cardView, folderCovers.get(position), position);
                     } else {
-                        ActivityUtil.showImageList(FolderFragment.this.getContext(), images);
+                        ActivityUtil.showImageList(FolderFragment.this.getContext(), images, folder);
                     }
                 }
             });
@@ -224,6 +226,13 @@ public class FolderFragment extends Fragment implements HasName {
             });
 
             holder.num.setText(String.format("(%d)", images.size()));
+
+            holder.linearLayout.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showPopup(holder.more, folder, folderCovers.get(position));
+                }
+            });
         }
 
         private void toggleFolderSelection(CardView card, Image image, int pos) {
@@ -261,6 +270,7 @@ public class FolderFragment extends Fragment implements HasName {
             CardView cardView;
             ImageButton more;
             TextView num;
+            LinearLayout linearLayout;
 
             FolderHolder(View view) {
                 super(view);
@@ -269,6 +279,7 @@ public class FolderFragment extends Fragment implements HasName {
                 cardView = view.findViewById(R.id.folder_card);
                 more = view.findViewById(R.id.folder_more);
                 num = view.findViewById(R.id.folder_number);
+                linearLayout = view.findViewById(R.id.folder_item_text_area);
             }
         }
     }
@@ -302,8 +313,8 @@ public class FolderFragment extends Fragment implements HasName {
         refresh.setRefreshing(false);
     }
 
-    public void setOperater(Operater operater) {
-        this.operater = operater;
+    public void setOperator(Operator operator) {
+        this.operator = operator;
     }
 
     @Override

@@ -22,9 +22,12 @@ import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
+import com.koncle.imagemanagement.dialog.InputDialogFragment;
 import com.koncle.imagemanagement.util.ActivityUtil;
+import com.koncle.imagemanagement.util.DESCComparator;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -39,16 +42,17 @@ public class EventFragment extends Fragment implements HasName {
 
     final int ORANGE = Color.rgb(255, 223, 0);
     final int WHITE = Color.WHITE;
-    private Operater operater;
+    private Operator operator;
     private SwipeRefreshLayout refresh;
 
     private int eventPositionWaitingForAddImageResult;
     private InnerEventAdapter adapterWaitingForAddImageResult;
+    private DESCComparator descComparator = new DESCComparator();
 
-    public static Fragment newInstance(String name, Operater operater) {
+    public static Fragment newInstance(String name, Operator operator) {
         EventFragment f = new EventFragment();
         f.setName(name);
-        f.setOperater(operater);
+        f.setOperator(operator);
         return f;
     }
 
@@ -68,7 +72,7 @@ public class EventFragment extends Fragment implements HasName {
     }
 
     private void addEvent() {
-        EventDialogFragment dialog = EventDialogFragment.newInstance(new EventDialogFragment.OnInputFinished() {
+        InputDialogFragment dialog = InputDialogFragment.newInstance(new InputDialogFragment.OnInputFinished() {
             @Override
             public void inputFinished(String eventName) {
                 Event e = ImageService.addEvent(eventName);
@@ -157,7 +161,7 @@ public class EventFragment extends Fragment implements HasName {
                 finalHolder.modify.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        EventDialogFragment dialog = EventDialogFragment.newInstance(new EventDialogFragment.OnInputFinished() {
+                        InputDialogFragment dialog = InputDialogFragment.newInstance(new InputDialogFragment.OnInputFinished() {
                             @Override
                             public void inputFinished(String eventName) {
                                 ImageService.updateEvent(events.get(position), eventName);
@@ -229,6 +233,7 @@ public class EventFragment extends Fragment implements HasName {
 
         void setData(List<Image> images, Event event) {
             this.images = images;
+            Collections.sort(images, descComparator);
             this.size = images.size() * 2;
             notifyDataSetChanged();
             this.event = event;
@@ -329,8 +334,8 @@ public class EventFragment extends Fragment implements HasName {
         }
     }
 
-    public void setOperater(Operater operater) {
-        this.operater = operater;
+    public void setOperator(Operator operator) {
+        this.operator = operator;
     }
     @Override
     public void setName(String s) {

@@ -23,8 +23,8 @@ public class MsgCenter {
             for (Handler handler : handlers) {
                 Message newMsg = new Message();
                 newMsg.what = msg.what;
-                Bundle bundle = new Bundle();
-                bundle.putParcelable("image", msg.getData().getParcelable("image"));
+                Bundle bundle = msg.getData();
+                //bundle.putParcelable("image", msg.getData().getParcelable("image"));
                 newMsg.setData(bundle);
                 handler.sendMessage(newMsg);
             }

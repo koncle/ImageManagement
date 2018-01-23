@@ -1,9 +1,10 @@
 package com.koncle.imagemanagement.fragment;
 
+import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.design.widget.BottomSheetBehavior;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.CardView;
@@ -11,6 +12,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,9 +26,10 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.activity.DrawerActivity;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.dialog.FolderDialogFragment;
+import com.koncle.imagemanagement.dialog.TagSelectDialog;
 import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.ImageUtils;
 
@@ -40,7 +43,8 @@ import java.util.Map;
  */
 
 public class FolderFragment extends Fragment implements HasName {
-    private String name;
+    private final String TAG = getClass().getSimpleName();
+    private final String name = DrawerActivity.FOLDER_FRAGMENT_NAME;
     private FolderRecyclerViewAdapter folderAdapter;
     private List<Image> folderCovers;
     private boolean selectMode = false;
@@ -50,16 +54,24 @@ public class FolderFragment extends Fragment implements HasName {
     final int WHITE = Color.WHITE;
     private Operator operator;
     private SwipeRefreshLayout refresh;
-    private BottomSheetBehavior<View> bottomSheetBehavior;
     private LinearLayout operations;
-    private boolean refreshed = false;
 
 
-    public static Fragment newInstance(String name, Operator operator) {
-        FolderFragment f = new FolderFragment();
-        f.setName(name);
-        f.setOperator(operator);
-        return f;
+    public static Fragment newInstance() {
+        return new FolderFragment();
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        operator = (Operator) context;
+        Log.w(TAG, "onAttach");
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.w(TAG, "onSaveInstanceState");
     }
 
     @Nullable
@@ -68,11 +80,22 @@ public class FolderFragment extends Fragment implements HasName {
         View view = inflater.inflate(R.layout.folder_fragment, null);
         RecyclerView recyclerView = view.findViewById(R.id.folder_recycler);
 
+        int spanCount;
+        if (getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            spanCount = 2;
+        } else {
+            spanCount = 4;
+        }
+
         folderCovers = ImageService.getFolders();
 
         folderAdapter = new FolderRecyclerViewAdapter();
-        recyclerView.setLayoutManager(new GridLayoutManager(this.getContext(), 2));
+        recyclerView.setLayoutManager(new GridLayoutManager(this.getContext(), spanCount));
         recyclerView.setAdapter(folderAdapter);
+
+        // refresh data
+        operator.refreshData();
+
         // prevent flash
         ((SimpleItemAnimator) recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
         recyclerView.getItemAnimator().setChangeDuration(0);
@@ -141,7 +164,8 @@ public class FolderFragment extends Fragment implements HasName {
                         ActivityUtil.shareImages(getContext(), images);
                         break;
                     case R.id.tag:
-                        FolderDialogFragment dialog = FolderDialogFragment.newInstance(null, folder);
+                        TagSelectDialog dialog = TagSelectDialog.newInstance(ImageService.getImagesFromFolder(folder));
+                        dialog.addNote("It will overwrite previous tags");
                         dialog.show(getFragmentManager(), "Folder");
                         break;
                 }
@@ -201,7 +225,6 @@ public class FolderFragment extends Fragment implements HasName {
                     } else {
                         List<Image> images = ImageService.getImagesFromFolder(folder);
                         ActivityUtil.showImageList(FolderFragment.this.getContext(), images, folder);
-                        refreshed = true;
                     }
                 }
             });
@@ -302,8 +325,8 @@ public class FolderFragment extends Fragment implements HasName {
     public void setFolderCovers(List<Image> folderCovers) {
         // change data set
         this.folderCovers = folderCovers;
+        if (folderAdapter == null) return;
         this.folderAdapter.notifyDataSetChangedWithoutFlash();
-        this.refreshed = true;
 
         // stop refresh ui
         refresh.setRefreshing(false);
@@ -345,11 +368,6 @@ public class FolderFragment extends Fragment implements HasName {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
-    }
-
-    @Override
-    public void setName(String s) {
-        this.name = s;
     }
 
     @Override

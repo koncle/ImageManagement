@@ -32,6 +32,7 @@ import com.amap.api.services.geocoder.GeocodeSearch;
 import com.amap.api.services.geocoder.RegeocodeQuery;
 import com.amap.api.services.geocoder.RegeocodeResult;
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.activity.DrawerActivity;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.markerClusters.ClusterClickListener;
@@ -52,7 +53,7 @@ import java.util.Map;
 public class MyMapFragment extends SupportMapFragment
         implements HasName, AMap.OnCameraChangeListener,
         GeocodeSearch.OnGeocodeSearchListener, ClusterRender, ClusterClickListener {
-    String name;
+    final String name = DrawerActivity.MAP_FRAGMENT_NAME;
     Operator operator;
     AMap aMap;
     List<Image> images;
@@ -67,14 +68,12 @@ public class MyMapFragment extends SupportMapFragment
     private int clusterRadius = 50;
     private ClusterOverlay clusterOverlay;
 
-    public static MyMapFragment newInstance(String name, Operator operator) {
+    public static MyMapFragment newInstance() {
 
         Bundle args = new Bundle();
 
         MyMapFragment fragment = new MyMapFragment();
         fragment.setArguments(args);
-        fragment.setName(name);
-        fragment.setOperator(operator);
         return fragment;
     }
 
@@ -182,12 +181,6 @@ public class MyMapFragment extends SupportMapFragment
 
     @Override
     public void onGeocodeSearched(GeocodeResult geocodeResult, int i) {
-    }
-
-
-    @Override
-    public void setName(String s) {
-        this.name = s;
     }
 
     @Override

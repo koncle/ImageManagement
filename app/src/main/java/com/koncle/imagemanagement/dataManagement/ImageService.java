@@ -96,7 +96,7 @@ public class ImageService {
         return imageInDatabase;
     }
 
-    public static void deleteImage(Image image) {
+    public static void deleteImageInDataBase(Image image) {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         imageDao.delete(image);
         if (DEBUG) {
@@ -129,7 +129,6 @@ public class ImageService {
     public static List<Image> getImages() {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         List<Image> images = imageDao.queryBuilder().orderDesc(ImageDao.Properties.Time).build().list();
-        List<Image> images2 = imageDao.queryBuilder().orderAsc(ImageDao.Properties.Time).build().list();
         if (DEBUG) {
             Log.i(TAG, "get all images : " + images.size());
         }
@@ -189,7 +188,7 @@ public class ImageService {
         DaoMaster.createAllTables(daoSession.getDatabase(), true);
     }
 
-    public static boolean deleteImage(Context context, Image image, boolean invalidImage) {
+    public static boolean deleteImageInFileSystem(Context context, Image image, boolean invalidImage) {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         imageDao.delete(image);
         boolean ret = ImageUtils.deleteFile(image.getPath());
@@ -197,17 +196,21 @@ public class ImageService {
         // or meet invalid image
         //
         if (invalidImage || ret) {
-            Intent mediaScannerIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-            Uri uri = Uri.fromFile(new File(image.getPath()));
-            mediaScannerIntent.setData(uri);
-            context.sendBroadcast(mediaScannerIntent);
 
+            broadcastToNotifySystem(context, image.getPath());
             // this function would cause memory leak when the activity finished and the service is
             // still scanning file
 
             // MediaScannerConnection.scanFile(context, new String[]{image.getPath()}, null,null);
         }
         return ret;
+    }
+
+    public static void broadcastToNotifySystem(Context context, String path) {
+        Intent mediaScannerIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        Uri uri = Uri.fromFile(new File(path));
+        mediaScannerIntent.setData(uri);
+        context.sendBroadcast(mediaScannerIntent);
     }
 
     public static boolean deleteImageByPath(String path) {
@@ -263,11 +266,22 @@ public class ImageService {
         return tag;
     }
 
-    public static void addTag2Image(Image image, Tag tag) {
-        Long tagId = tag.getId();
-        TagAndImage tagAndImage = new TagAndImage(null, tagId, image.getId());
+    public static void overwriteImageTag(Image image, List<Tag> tags) {
+        // delete
         TagAndImageDao tagAndImageDao = daoManager.getDaoSession().getTagAndImageDao();
-        tagAndImageDao.insertInTx(tagAndImage);
+        List<TagAndImage> tagAndImages = tagAndImageDao.queryBuilder()
+                .where(TagAndImageDao.Properties.Image_id.eq(image.getId()))
+                .build().list();
+        tagAndImageDao.deleteInTx(tagAndImages);
+
+        // add
+        tagAndImages.clear();
+        for (Tag tag : tags) {
+            Long tagId = tag.getId();
+            TagAndImage tagAndImage = new TagAndImage(null, tagId, image.getId());
+            tagAndImages.add(tagAndImage);
+        }
+        tagAndImageDao.insertInTx(tagAndImages);
     }
 
     public static void addTags(List<Image> images, String tagString) {
@@ -405,9 +419,7 @@ public class ImageService {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
             String folder;
             try {
-                String[] f = path.split("/");
-                folder = f[f.length - 2];
-
+                folder = ImageUtils.getFolderNameFromPath(path);
                 image = new Image();
                 image.setName(name);
                 image.setFolder(folder);
@@ -423,6 +435,13 @@ public class ImageService {
             }
         }
         cursor.close();
+    }
+
+    public static boolean moveFile(Image image, String folder) {
+        String des = folder + "/" + image.getName();
+        String src = image.getPath();
+        boolean b = ImageUtils.copyFile(src, des);
+        return b && ImageUtils.deleteFile(src);
     }
 
     public static Tag searchTagByName(String name) {
@@ -481,5 +500,14 @@ public class ImageService {
     public static void addImageDesc(Image image, String remark) {
         image.setDesc(remark);
         daoManager.getDaoSession().getImageDao().save(image);
+    }
+
+    public static void updateImagePath(Context context, Image image, String folderPath) {
+        broadcastToNotifySystem(context, image.getPath());
+        String path = folderPath + "/" + image.getName();
+        image.setPath(path);
+        image.setFolder(ImageUtils.getFolderNameFromPath(path));
+        daoManager.getDaoSession().getImageDao().save(image);
+        broadcastToNotifySystem(context, image.getPath());
     }
 }

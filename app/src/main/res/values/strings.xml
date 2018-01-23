@@ -32,4 +32,6 @@
     <string name="nv_item_event">Events</string>
     <string name="nv_item_map">Map</string>
     <string name="toolbar_complete_actoin">complete</string>
+    <string name="dialog_note_msg">NOTE : </string>
+    <string name="dialog_select_folder_title">select a folder</string>
 </resources>

@@ -92,7 +92,7 @@ public class FileChangeObserver extends ContentObserver {
                 // which means the image has been deleted
                 if (!f.exists()) {
                     // delete the image from database
-                    ImageService.deleteImage(imageInDatabase);
+                    ImageService.deleteImageInDataBase(imageInDatabase);
                     Log.w(TAG, "delete image from database : " + path);
                 } else {
                     Log.w(TAG, "did nothing to : " + path);

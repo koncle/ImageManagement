@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout style="@style/dialog_outer_linear_layout">
+
+        <TextView
+            android:text="@string/dialog_select_folder_title"
+            android:gravity="center"
+            android:background="#2aaa"
+            android:textColor="#000"
+            android:textSize="13sp"
+            android:layout_width="match_parent"
+            android:layout_height="30dp" />
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/folder_list"
+            android:layout_width="match_parent"
+            android:layout_height="160dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/dialog_cancel"
+                android:text="@string/dialog_cancel"
+                style="@style/dialog_bottom_button" />
+
+            <Button
+                android:id="@+id/dialog_confirm"
+                android:text="@string/dialog_confirm"
+                style="@style/dialog_bottom_button" />
+
+        </LinearLayout>
+    </LinearLayout>
+</android.support.design.widget.CoordinatorLayout>

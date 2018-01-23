@@ -1,6 +1,8 @@
 package com.koncle.imagemanagement.dialog;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
@@ -21,6 +23,7 @@ import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Tag;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +37,25 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
     private List<Tag> allTags;
 
     private Map<Integer, Tag> selectedTags;
+    private String note = null;
 
     public Map<Integer, Tag> getSelectedTags() {
         return selectedTags;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList("tags", (ArrayList<? extends Parcelable>) allTags);
+
+        List<Integer> posList = new ArrayList<>();
+        List<Tag> tagList = new ArrayList<>();
+        posList.addAll(selectedTags.keySet());
+        for (Integer integer : posList) {
+            tagList.add(selectedTags.get(integer));
+        }
+        outState.putIntegerArrayList("pos", (ArrayList<Integer>) posList);
+        outState.putParcelableArrayList("selectedTags", (ArrayList<? extends Parcelable>) tagList);
     }
 
     public void setData(List<Tag> tags) {
@@ -50,10 +69,32 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
         }
     }
 
+    public void addNote(String note) {
+        this.note = note.trim();
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.dialog_tag_layout, null);
+        if (savedInstanceState != null) {
+            allTags = savedInstanceState.getParcelableArrayList("tags");
+
+            List<Integer> posList = savedInstanceState.getIntegerArrayList("pos");
+            List<Tag> tagList = savedInstanceState.getParcelableArrayList("selectedTags");
+
+            selectedTags = new HashMap<>();
+            for (int i = 0; i < posList.size(); i++) {
+                selectedTags.put(posList.get(i), tagList.get(i));
+            }
+        }
+
+        View view;
+        if (getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            view = inflater.inflate(R.layout.dialog_tag_layout, null);
+        } else {
+            view = inflater.inflate(R.layout.dialog_tag_layout_land, null);
+        }
+
         initViews(view);
         return view;
     }
@@ -117,6 +158,14 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
                 dismiss();
             }
         });
+
+        if (note != null && !"".equals(note)) {
+            StringBuilder sb = new StringBuilder(getString(R.string.dialog_note_msg));
+            sb.append(note);
+            ((TextView) root.findViewById(R.id.dialog_note)).setText(sb.toString());
+        } else {
+            root.findViewById(R.id.dialog_note).setVisibility(View.GONE);
+        }
     }
 
     class TagAdapter extends RecyclerView.Adapter<TagAdapter.TagHolder> {
@@ -170,7 +219,7 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
                 super(itemView);
                 tag = itemView.findViewById(R.id.dialog_tag);
                 select = itemView.findViewById(R.id.dialog_select);
-                layout = itemView.findViewById(R.id.dialog_relativelayout);
+                layout = itemView.findViewById(R.id.dialog_folder_layout);
             }
         }
     }

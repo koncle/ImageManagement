@@ -13,6 +13,7 @@ import org.greenrobot.greendao.annotation.Generated;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
+import org.greenrobot.greendao.annotation.OrderBy;
 import org.greenrobot.greendao.annotation.ToMany;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class Tag implements Parcelable {
             sourceProperty = "tag_id",
             targetProperty = "image_id"
     )
+    @OrderBy("time DESC")
     private List<Image> images;
 
     @Override

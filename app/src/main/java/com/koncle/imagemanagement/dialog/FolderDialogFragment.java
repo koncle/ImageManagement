@@ -3,11 +3,8 @@ package com.koncle.imagemanagement.dialog;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.view.View;
-import android.widget.Toast;
 
-import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.bean.Tag;
-import com.koncle.imagemanagement.dataManagement.ImageService;
 
 import java.util.List;
 
@@ -38,13 +35,5 @@ public class FolderDialogFragment extends BaseDialogFragment {
 
     @Override
     public void onClick(View v) {
-        StringBuilder sb = new StringBuilder();
-        for (Tag tag : getSelectedTags().values()) {
-            sb.append(tag.getTag().toString());
-            sb.append(" ");
-            List<Image> images = ImageService.getImagesFromFolder(folder);
-            ImageService.addTag2Images(images, tag);
-        }
-        Toast.makeText(getContext(), " " + sb.toString(), Toast.LENGTH_SHORT).show();
     }
 }

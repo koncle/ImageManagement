@@ -5,7 +5,6 @@ package com.koncle.imagemanagement.fragment;
  */
 
 public interface HasName {
-    void setName(String s);
 
     String getName();
 }

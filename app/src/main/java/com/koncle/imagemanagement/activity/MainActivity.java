@@ -22,7 +22,6 @@ import com.koncle.imagemanagement.fragment.EventFragment;
 import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
 import com.koncle.imagemanagement.fragment.Operator;
-import com.koncle.imagemanagement.fragment.TagFragment;
 import com.koncle.imagemanagement.service.ImageListenerService;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
@@ -117,9 +116,9 @@ public class MainActivity extends AppCompatActivity implements Operator {
 
     private void initFragments() {
         fragments = new ArrayList<>();
-        fragments.add(FolderFragment.newInstance("Main", this));
-        fragments.add(EventFragment.newInstance("Events", this));
-        fragments.add(TagFragment.newInstance("Map", this));
+        // fragments.add(FolderFragment.newInstance("Main"));
+        //fragments.add(EventFragment.newInstance("Events"));
+        //fragments.add(MyMapFragment.newInstance("Map"));
     }
 
     private void initViewPager() {

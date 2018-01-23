@@ -7,14 +7,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.SharedElementCallback;
 import android.transition.Explode;
-import android.transition.Fade;
 import android.util.Log;
 import android.view.View;
 
-import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.activity.MapActivity;
 import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
 import com.koncle.imagemanagement.activity.SelectImageActivity;
@@ -75,8 +72,6 @@ public class ActivityUtil {
         bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
         bundle.putString(ACTIVITY_MUL_IMAGE_TITLE_TAG, title);
         intent.putExtras(bundle);
-        ((Activity) context).getWindow().setExitTransition(new Explode());
-        ((Activity) context).getWindow().setExitTransition(new Explode());
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
     }
@@ -88,15 +83,15 @@ public class ActivityUtil {
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
 
-        ((Activity) context).getWindow().setExitTransition(new Fade());
-        ((Activity) context).getWindow().setEnterTransition(new Explode());
-        ActivityOptionsCompat compat = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, view, context.getString(R.string.m2s_transition));
+        //ActivityOptionsCompat compat = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, view, context.getString(R.string.m2s_transition));
+
 
         SharedElementCallback s = new ECallback();
         ActivityCompat.setEnterSharedElementCallback((Activity) context, s);
         ActivityCompat.setExitSharedElementCallback((Activity) context, s);
 
-        ActivityCompat.startActivityForResult((Activity) context, intent, 1, compat.toBundle());
+        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
+        ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
 
         //((Activity) context).startActivityForResult(intent, 1); // lager than 0
     }
@@ -118,8 +113,7 @@ public class ActivityUtil {
 
     public static void selectImages(Context context) {
         Intent intent = new Intent(context, SelectImageActivity.class);
-        ((Activity) context).getWindow().setExitTransition(new Explode());
-        ((Activity) context).getWindow().setEnterTransition(new Explode());
+
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
     }

@@ -5,6 +5,7 @@ package com.koncle.imagemanagement.activity;
  */
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -16,6 +17,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SimpleItemAnimator;
 import android.support.v7.widget.Toolbar;
+import android.transition.Explode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,8 +29,7 @@ import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.dialog.MultipleImageDialogFragment;
-import com.koncle.imagemanagement.dialog.SingleImageDIalogFragment;
+import com.koncle.imagemanagement.dialog.TagSelectDialog;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
@@ -39,8 +40,6 @@ import static com.koncle.imagemanagement.activity.DrawerActivity.IMAGE_ADDED;
 import static com.koncle.imagemanagement.activity.DrawerActivity.IMAGE_DELETED;
 
 public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
-
-    private static final int ROW = 4;
 
     boolean selecting = false;
     private RecyclerView recyclerView;
@@ -56,6 +55,8 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
     private boolean deleteImage = false;
     public static final int RESULT_DELETE_IMAGE = -4;
+    public
+    static final int IMAGE_MOVED = -10;
     public static final String RESULT_DELETE_IMAGE_FOLDER = "folder";
     public static final String RESULT_DELETE_IMAGE_NUM = "num";
 
@@ -90,6 +91,9 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         initMode();
         initRecyclerView();
         initFileObserver();
+
+        getWindow().setExitTransition(new Explode());
+        getWindow().setEnterTransition(new Explode());
     }
 
     public class MyHandler extends Handler {
@@ -100,12 +104,13 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                 case IMAGE_ADDED:
                     image = msg.getData().getParcelable("image");
                     if (image != null && folderName.equals(image.getFolder())) {
-                        imageAdaptor.addImage(image);
+                        imageAdaptor.addNewImage(image);
                     }
                     break;
                 case IMAGE_DELETED:
                     image = msg.getData().getParcelable("image");
                     break;
+
             }
         }
     }
@@ -227,11 +232,9 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                 List<Image> images = imageAdaptor.getSelections();
                 //ImageService.addTags(images, );
                 if (images.size() > 1) {
-                    MultipleImageDialogFragment dialog = MultipleImageDialogFragment.newInstance(images);
+                    TagSelectDialog dialog = TagSelectDialog.newInstance(images);
+                    dialog.addNote("It will overwrite previous tags");
                     dialog.show(getSupportFragmentManager(), "Multi");
-                } else {
-                    SingleImageDIalogFragment dialog = SingleImageDIalogFragment.newInstance(images.get(0));
-                    dialog.show(getSupportFragmentManager());
                 }
                 imageAdaptor.exitSelectMode();
             }
@@ -239,7 +242,13 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     }
 
     private void initRecyclerView() {
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 4);
+        int spanCount;
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            spanCount = 4;
+        } else {
+            spanCount = 6;
+        }
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this, spanCount);
         recyclerView.setLayoutManager(gridLayoutManager);
         imageAdaptor = new ImageAdaptor(this, gridLayoutManager, images);
         imageAdaptor.setOperater(this);
@@ -292,7 +301,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
          * Thus I have to use this method to refresh data
          * so that the view can be redrew.
          */
-        imageAdaptor.notifyDataSetChanged();
+        imageAdaptor.notifyDataSetChangedWithoutFlash();
     }
 
     @Override
@@ -321,6 +330,24 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                 if (data.getBooleanExtra(SingleImageActivity.RESULT_TAG, false)) {
                     Image image = data.getExtras().getParcelable(SingleImageActivity.DELETE_IMAGE);
                     imageAdaptor.deleteImageItem(image);
+                    deleteImage = true;
+                }
+                break;
+            }
+            case (SingleImageActivity.IMAGE_VIEWER_MOVE): {
+                if (data.getBooleanExtra(SingleImageActivity.RESULT_TAG, false)) {
+                    Image preImage = data.getExtras().getParcelable(SingleImageActivity.DELETE_IMAGE);
+                    Image rearImage = data.getExtras().getParcelable(SingleImageActivity.MOVE_IMAGE);
+
+                    Message msg = new Message();
+                    msg.what = IMAGE_MOVED;
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelable("image", rearImage);
+                    bundle.putParcelable("refresh", bundle);
+                    msg.setData(bundle);
+                    handler.sendMessage(msg);
+
+                    imageAdaptor.deleteImageItem(preImage);
                     deleteImage = true;
                 }
                 break;

@@ -1,5 +1,7 @@
 package com.koncle.imagemanagement.fragment;
 
+import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -16,9 +18,11 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.activity.DrawerActivity;
 import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
@@ -27,7 +31,6 @@ import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.DESCComparator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -35,7 +38,8 @@ import java.util.List;
  */
 
 public class EventFragment extends Fragment implements HasName {
-    private String name;
+    private static final String TAG = EventFragment.class.getSimpleName();
+    private final String name = DrawerActivity.EVENT_FRAGMENT_NAME;
     private RecyclerView eventsRecyclerView;
     private EventRecyclerViewAdapter eventAdapter;
     private List<Event> events;
@@ -49,11 +53,14 @@ public class EventFragment extends Fragment implements HasName {
     private InnerEventAdapter adapterWaitingForAddImageResult;
     private DESCComparator descComparator = new DESCComparator();
 
-    public static Fragment newInstance(String name, Operator operator) {
+    public static Fragment newInstance() {
         EventFragment f = new EventFragment();
-        f.setName(name);
-        f.setOperator(operator);
         return f;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
     }
 
     @Nullable
@@ -75,6 +82,11 @@ public class EventFragment extends Fragment implements HasName {
         InputDialogFragment dialog = InputDialogFragment.newInstance(new InputDialogFragment.OnInputFinished() {
             @Override
             public void inputFinished(String eventName) {
+                if ("".equals(eventName)) {
+                    Toast.makeText(getContext(), "Event name can't be empty", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 Event e = ImageService.addEvent(eventName);
                 int index = events.indexOf(e);
                 if (-1 == index) {
@@ -233,7 +245,6 @@ public class EventFragment extends Fragment implements HasName {
 
         void setData(List<Image> images, Event event) {
             this.images = images;
-            Collections.sort(images, descComparator);
             this.size = images.size() * 2;
             notifyDataSetChanged();
             this.event = event;
@@ -334,23 +345,22 @@ public class EventFragment extends Fragment implements HasName {
         }
     }
 
-    public void setOperator(Operator operator) {
-        this.operator = operator;
-    }
     @Override
-    public void setName(String s) {
-        this.name = s;
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        operator = (Operator) context;
+        Log.w(TAG, "onAttach");
     }
 
-    @Override
     public String getName() {
-        return this.name;
+        return name;
     }
 
     public void handleResult(List<Image> images) {
         if (images != null) {
             ImageService.recoverDaoSession(images);
             Event event = ImageService.addImages2Event(events.get(eventPositionWaitingForAddImageResult), images);
+            event.resetImageList();
             adapterWaitingForAddImageResult.setData(event.getImageList(), event);
         }
     }

@@ -3,15 +3,18 @@ package com.koncle.imagemanagement.activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -32,7 +35,6 @@ import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
 import com.koncle.imagemanagement.fragment.MyMapFragment;
 import com.koncle.imagemanagement.fragment.Operator;
-import com.koncle.imagemanagement.service.ImageListenerService;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
@@ -61,23 +63,43 @@ public class DrawerActivity extends AppCompatActivity
     public static final int IMAGE_ADDED = 3;
     public static final int IMAGE_DELETED = 4;
 
-    private int curFragment = FOLDER_FRAGMENT;
+    public static final String FOLDER_FRAGMENT_NAME = "folder";
+    public static final String EVENT_FRAGMENT_NAME = "event";
+    public static final String MAP_FRAGMENT_NAME = "map";
+
+    private int curFragmentIndex = FOLDER_FRAGMENT;
     private ProgressDialog progressDialog;
     private List<Fragment> fragments;
 
-    private Handler mHandler = new MyHandler();
     private DrawerLayout drawer;
     private List<MySearchSuggestion> searchHistory = new ArrayList<>();
     private FloatingSearchView fsv;
 
     private MyHandler handler;
+    private List<String> names;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.drawer_layout);
 
+        if (savedInstanceState != null) {
+            curFragmentIndex = savedInstanceState.getInt("cur");
+        }
+
         initDataBase(INIT_TABLES);
+        Log.w(TAG, "onCreate");
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("cur", curFragmentIndex);
     }
 
     private void initDataBase(boolean refresh) {
@@ -104,7 +126,7 @@ public class DrawerActivity extends AppCompatActivity
                 @Override
                 public void run() {
                     ImageService.getSystemPhotoList(DrawerActivity.this);
-                    mHandler.sendEmptyMessage(SCAN_OK_SHOW);
+                    handler.sendEmptyMessage(SCAN_OK_SHOW);
                 }
             }).start();
         }
@@ -248,36 +270,51 @@ public class DrawerActivity extends AppCompatActivity
         ActivityUtil.showImageList(DrawerActivity.this, null, "No Result for : " + query);
     }
 
-    private void initWatcher() {
-        List<String> folders = new ArrayList<>();
-        for (Image i : ImageService.getFolders()) {
-            int index = i.getPath().lastIndexOf("/");
-            folders.add(i.getPath().substring(0, index));
+    private Fragment getFragment(String name) {
+        android.support.v4.app.FragmentManager fm = getSupportFragmentManager();
+        Fragment fragment = fm.findFragmentByTag(name);
+        if (fragment == null) {
+            switch (name) {
+                case EVENT_FRAGMENT_NAME:
+                    fragment = EventFragment.newInstance();
+                    break;
+                case FOLDER_FRAGMENT_NAME:
+                    fragment = FolderFragment.newInstance();
+                    break;
+                case MAP_FRAGMENT_NAME:
+                    fragment = MyMapFragment.newInstance();
+                    break;
+
+            }
         }
-        Intent intent = new Intent(this, ImageListenerService.class);
-        Bundle bundle = new Bundle();
-        bundle.putStringArrayList(WATCH_TAG, (ArrayList<String>) folders);
-        intent.putExtras(bundle);
-        startService(intent);
+        return fragment;
     }
 
     private void initFragments() {
-        // init
-        fragments = new ArrayList<>();
-        fragments.add(FolderFragment.newInstance("folder", this));
-        fragments.add(EventFragment.newInstance("event", this));
-        fragments.add(MyMapFragment.newInstance("map", this));
+        names = new ArrayList<>();
+        names.add(FOLDER_FRAGMENT_NAME);
+        names.add(EVENT_FRAGMENT_NAME);
+        names.add(MAP_FRAGMENT_NAME);
 
-        // show first fragment
-        getSupportFragmentManager()
-                .beginTransaction()
-                .add(R.id.main_fragment, fragments.get(curFragment), ((HasName) fragments.get(curFragment)).getName())
-                .commit();
+        // ensure when the phone has been rotated,
+        // the fragments can be loaded again from original manager
+        fragments = new ArrayList<>();
+        for (String name : names) {
+            fragments.add(getFragment(name));
+        }
+        Fragment f = fragments.get(curFragmentIndex);
+        if (!f.isAdded()) {
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.main_fragment, f, ((HasName) f).getName())
+                    .commit();
+        }
+
+        Log.w(TAG, "init Fragment");
     }
 
     private void switchFragment(int pos) {
-        if (pos != curFragment) {
-            Fragment curF = fragments.get(curFragment);
+        if (pos != curFragmentIndex) {
+            Fragment curF = fragments.get(curFragmentIndex);
             Fragment nextF = fragments.get(pos);
             if (nextF.isAdded()) {
                 getSupportFragmentManager()
@@ -288,11 +325,12 @@ public class DrawerActivity extends AppCompatActivity
             } else {
                 getSupportFragmentManager()
                         .beginTransaction()
+                        .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
                         .hide(curF)
                         .add(R.id.main_fragment, nextF, ((HasName) nextF).getName())
                         .commit();
             }
-            curFragment = pos;
+            curFragmentIndex = pos;
         }
     }
 
@@ -304,8 +342,8 @@ public class DrawerActivity extends AppCompatActivity
         } else if (fsv.isSearchBarFocused()) {
             fsv.clearSearchFocus();
         } else {
-            Fragment fragment = fragments.get(curFragment);
-            switch (curFragment) {
+            Fragment fragment = fragments.get(curFragmentIndex);
+            switch (curFragmentIndex) {
                 case FOLDER_FRAGMENT:
                     if (!((FolderFragment) fragment).exitSelectMode())
                         super.onBackPressed();
@@ -361,7 +399,7 @@ public class DrawerActivity extends AppCompatActivity
             @Override
             public void run() {
                 ImageService.getSystemPhotoList(DrawerActivity.this);
-                mHandler.sendEmptyMessage(SCAN_OK);
+                handler.sendEmptyMessage(SCAN_OK);
             }
         }).start();
     }
@@ -379,13 +417,14 @@ public class DrawerActivity extends AppCompatActivity
     public class MyHandler extends Handler {
         public void handleMessage(Message msg) {
             Image image;
+            List<Image> folders;
             switch (msg.what) {
                 case SCAN_OK_SHOW:
                     progressDialog.dismiss();
                     show();
                     break;
                 case SCAN_OK:
-                    List<Image> folders = ImageService.getFolders();
+                    folders = ImageService.getFolders();
                     ((FolderFragment) fragments.get(0)).setFolderCovers(folders);
                     break;
                 // notify folder to change images
@@ -396,6 +435,10 @@ public class DrawerActivity extends AppCompatActivity
                 case IMAGE_DELETED:
                     image = msg.getData().getParcelable("image");
                     ((FolderFragment) fragments.get(0)).refreshCover(image);
+                    break;
+                case MultiColumnImagesActivity.IMAGE_MOVED:
+                    //image = msg.getData().getParcelable("image");
+                    refreshData();
                     break;
             }
         }

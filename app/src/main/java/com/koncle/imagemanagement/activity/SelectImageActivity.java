@@ -9,6 +9,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.transition.Slide;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -61,6 +63,12 @@ public class SelectImageActivity extends AppCompatActivity {
         findViews();
         initData();
         initSpinner();
+
+        Slide slide = new Slide();
+        slide.setSlideEdge(Gravity.BOTTOM);
+        slide.setDuration(300);
+        getWindow().setEnterTransition(slide);
+
         initRecyclerView();
     }
 
@@ -75,7 +83,7 @@ public class SelectImageActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 returnImages();
-                finish();
+                onBackPressed();
             }
         });
 
@@ -83,7 +91,7 @@ public class SelectImageActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish();
+                onBackPressed();
             }
         });
     }

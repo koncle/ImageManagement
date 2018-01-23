@@ -1,5 +1,7 @@
 package com.koncle.imagemanagement.activity;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
@@ -11,19 +13,25 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.Toast;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.SingleImageViewPagerAdapter;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.dialog.SingleImageDIalogFragment;
+import com.koncle.imagemanagement.dialog.FolderSelectDialogFragment;
+import com.koncle.imagemanagement.dialog.TagSelectDialog;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.view.View.GONE;
 import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
 
 /**
@@ -32,6 +40,8 @@ import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
 
 public class SingleImageActivity extends AppCompatActivity implements SingleImageViewPagerAdapter.ModeChange {
     public static final String DELETE_IMAGE = "image";
+    public static final int IMAGE_VIEWER_MOVE = 4;
+    public static final String MOVE_IMAGE = "move_image";
     private ViewPager imageViewPager;
     private List<Image> images;
     private View delete;
@@ -42,13 +52,15 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     private LinearLayout toolLayout;
     private SingleImageViewPagerAdapter pagerAdapter;
 
-    private boolean toolMode = false;
+    private boolean toolMode = true;
 
     public static final String RESULT_TAG = "result";
     public static final int IMAGE_VIEWER_DELETE = 2;
     public static final int IMAGE_VIWER_SCROLL = 3;
     private List<Image> deleteImages;
     private RadioButton tag;
+    private ViewGroup container;
+    private boolean show;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -69,7 +81,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         initViewPager(position);
         initToolbar();
         initOperatoins();
-        //hideStatusBarAndActionBar();
     }
 
     private void initToolbar() {
@@ -86,7 +97,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             }
         });
         toolbar.setTitle(images.get(imageViewPager.getCurrentItem()).getName());
-        hideTools();
+        //hideTools();
     }
 
     private void hideStatusBarAndActionBar() {
@@ -114,6 +125,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         mark = findViewById(R.id.mark);
         tag = findViewById(R.id.single_tag);
         toolLayout = findViewById(R.id.tool_layout);
+        container = findViewById(R.id.single_view_transition_container);
     }
 
     private void initViewPager(int position) {
@@ -158,6 +170,14 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         move.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                FolderSelectDialogFragment dialogFragment = FolderSelectDialogFragment.newInstance(new FolderSelectDialogFragment.OnSelectFinishedListener() {
+                    @Override
+                    public void selectFinished(String folderPath) {
+                        Image image = images.get(imageViewPager.getCurrentItem());
+                        moveImage(image, folderPath);
+                    }
+                });
+                dialogFragment.show(getSupportFragmentManager(), "folder dialog");
             }
         });
 
@@ -172,22 +192,34 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         tag.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SingleImageDIalogFragment dialog = SingleImageDIalogFragment.newInstance(images.get(imageViewPager.getCurrentItem()));
+                TagSelectDialog dialog = TagSelectDialog.newInstance(images.get(imageViewPager.getCurrentItem()));
                 dialog.show(getSupportFragmentManager(), "Single");
             }
         });
     }
 
+    private void moveImage(Image image, String folderPath) {
+        boolean success = ImageService.moveFile(image, folderPath);
+        if (success) {
+            Image preImage = new Image();
+            preImage.setPath(image.getPath());
+            ImageService.updateImagePath(getApplicationContext(), image, folderPath);
+            Image rearImage = image;
+            notifyImageMoved(preImage, rearImage, true);
+        }
+        Toast.makeText(getApplicationContext(), success + " folder : " + folderPath, Toast.LENGTH_SHORT).show();
+        finish();
+    }
+
     public void deleteImage(Image currentImage) {
         // delete from sd card
-        boolean result = true;
-        ImageService.deleteImage(this, currentImage, false);
+        ImageService.deleteImageInFileSystem(this, currentImage, false);
+        notifyImageDelete(currentImage, true);
+        // notify multi activity to change its data set
+        finish();
+    }
 
-        // delete from database
-        // replaced by service
-        // ImageService.deleteImage(currentImage);
-
-        // don't need to delete from memory, cause this activity will be destroyed
+    public void notifyImageDelete(Image currentImage, boolean result) {
         Intent intent = new Intent();
         intent.putExtra(RESULT_TAG, result);
         if (result) {
@@ -196,12 +228,24 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             intent.putExtras(bundle);
         }
         setResult(IMAGE_VIEWER_DELETE, intent);
-        finish();
+    }
+
+    public void notifyImageMoved(Image preImage, Image rearImage, boolean result) {
+        Intent intent = new Intent();
+        intent.putExtra(RESULT_TAG, result);
+        if (result) {
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(DELETE_IMAGE, preImage);
+            bundle.putParcelable(MOVE_IMAGE, rearImage);
+            intent.putExtras(bundle);
+        }
+        setResult(IMAGE_VIEWER_MOVE, intent);
     }
 
     @Override
     public void addDeleteImage(Image image) {
-        this.deleteImages.add(image);
+        if (!deleteImages.contains(image))
+            this.deleteImages.add(image);
     }
 
     public void toggleMode() {
@@ -219,15 +263,31 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     }
 
     public void showTools() {
+        show = true;
         toolLayout.setVisibility(View.VISIBLE);
         toolbar.setVisibility(View.VISIBLE);
-        imageViewPager.setBackgroundColor(Color.BLACK);
+
+        Animation down = AnimationUtils.loadAnimation(this, R.anim.toolbar_enter);
+        Animation up = AnimationUtils.loadAnimation(this, R.anim.operations_enter);
+        Animator toWhite = AnimatorInflater.loadAnimator(this, R.animator.bg_to_white);
+        toolLayout.startAnimation(up);
+        toolbar.startAnimation(down);
+
+        toWhite.setTarget(imageViewPager);
     }
 
     public void hideTools() {
+        show = false;
+        Animation up = AnimationUtils.loadAnimation(this, R.anim.toolbar_exit);
+        Animation down = AnimationUtils.loadAnimation(this, R.anim.operations_exit);
+        Animator toBlack = AnimatorInflater.loadAnimator(this, R.animator.bg_to_black);
+        toolbar.startAnimation(up);
+        toolLayout.startAnimation(down);
+
         toolLayout.setVisibility(View.GONE);
         toolbar.setVisibility(View.GONE);
-        imageViewPager.setBackgroundColor(Color.WHITE);
+
+        toBlack.setTarget(imageViewPager);
     }
 
     @Override
@@ -252,6 +312,12 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             intent.putExtra("delete", false);
         }
         setResult(IMAGE_VIWER_SCROLL, intent);
+
+        // prevent toolbar show again when the activity finished
+        if (show)
+            hideTools();
+        toolbar.setVisibility(GONE);
+        toolLayout.setVisibility(GONE);
         super.onBackPressed();
     }
 

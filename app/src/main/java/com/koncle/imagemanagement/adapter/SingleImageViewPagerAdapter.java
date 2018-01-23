@@ -3,9 +3,11 @@ package com.koncle.imagemanagement.adapter;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.support.v4.view.PagerAdapter;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
@@ -24,6 +26,7 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
     private int width;
     private ModeChange operator;
     int cur;
+    private final String TAG = getClass().getSimpleName();
 
     public SingleImageViewPagerAdapter(Context context, List<Image> images, int cur) {
         this.images = images;
@@ -66,15 +69,21 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
 
                 @Override
                 public void onPreviewLoadError(Exception e) {
+
+                    Log.w(TAG, "Preview Load Error");
                     operator.addDeleteImage(image);
                 }
 
                 @Override
                 public void onImageLoadError(Exception e) {
+                    Toast.makeText(context, "This image has been deleted by other Appes", Toast.LENGTH_SHORT).show();
+                    operator.addDeleteImage(image);
+                    Log.w(TAG, "Load Error");
                 }
 
                 @Override
                 public void onTileLoadError(Exception e) {
+                    Log.w(TAG, "Title Load Error");
                 }
 
                 @Override

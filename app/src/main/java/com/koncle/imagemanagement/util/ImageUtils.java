@@ -43,6 +43,15 @@ public class ImageUtils {
         return bitmap;
     }
 
+    public static String getFolderNameFromPath(String path) {
+        String[] f = path.split("/");
+        return f[f.length - 2];
+    }
+
+    public static String getFolderPathFromPath(String path) {
+        return path.substring(0, path.lastIndexOf('/'));
+    }
+
     public static boolean copyFile(String srcFilePath, String desDirPath) {
         File srcFile = new File(srcFilePath);
         if (!srcFile.exists()) {

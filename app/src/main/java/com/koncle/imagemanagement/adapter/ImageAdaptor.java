@@ -43,6 +43,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     private boolean selectMode = false;
     private ModeOperator modeOperator;
+    private boolean descOrder = true;
 
     public ImageAdaptor(Context context, GridLayoutManager gridLayoutManager, List<Image> images) {
         this.context = context;
@@ -128,11 +129,11 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         // make sure select mode works properly
         // then if the image has not changed,
         // following works are useless
-        /*
+
         if (selectMode && path.equals(holder.frameLayout.getTag())) {
             return;
         }
-        */
+
         // put images
         Glide.with(context)
                 .load(path)
@@ -266,13 +267,13 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         for (Integer pos : selectedImages.keySet()) {
             image = selectedImages.get(pos);
             // delete from sd card
-            count += ImageService.deleteImage(context, image, false) ? 1 : 0;
+            count += ImageService.deleteImageInFileSystem(context, image, false) ? 1 : 0;
             // delete from memory
             images.remove(image);
             notifyItemRemoved(pos);
             // delete from database,
             // replaced by service
-            // ImageService.deleteImage(image);
+            // ImageService.deleteImageInFileSystem(image);
         }
         Log.w(TAG, "delete " + count + " files");
 
@@ -284,6 +285,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         int i = images.indexOf(image);
         images.remove(i);
         notifyItemRemoved(i);
+        notifyItemRangeChanged(i, images.size() - i);
         Log.w(TAG, "delete image items");
     }
 
@@ -293,8 +295,9 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         int i = images.indexOf(image);
         images.remove(i);
         notifyItemChanged(i);
+        notifyItemRangeChanged(i, images.size() - i);
         // delete image from database and broadcast it
-        ImageService.deleteImage(context, image, true);
+        ImageService.deleteImageInFileSystem(context, image, true);
         //notifyDataSetChangedWithoutFlash();
         Log.w(TAG, "delete 1 invalid file " + image.getPath());
     }
@@ -312,16 +315,47 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         notifyDataSetChangedWithoutFlash();
     }
 
+    // image added from other apps
+    public void addNewImage(Image image) {
+        if (descOrder) {
+            images.add(0, image);
+            // prevent wrong position for views
+            // because when call notifyItemInserted() method, the Items below this
+            // item will be moved, thus position changed and the most important
+            // point is the method : onBindView will not be called,
+            // so that listener that were added to these items will not be
+            // updated.
+            // If use notifyItemRangeChanged, the animation will not displayed
+            // but the position is correct.
+            // There use both them to ensure the animation and position
+            notifyItemInserted(0);
+            notifyItemRangeChanged(0, images.size());
+        } else {
+            images.add(image);
+            notifyItemInserted(images.size());
+        }
+    }
+
     public void addImage(Image image) {
         int size = images.size();
         // desc order
-        if (images.get(0).getTime().getTime() > images.get(size - 1).getTime().getTime()) {
+        if (descOrder) {
             // insert into the first place
-            images.add(0, image);
+            int i = 0;
+            for (; i < images.size(); ++i)
+                if (image.getTime().getTime() >= images.get(i).getTime().getTime())
+                    break;
+            images.add(i, image);
+
             notifyItemInserted(0);
+            notifyItemRangeChanged(0, images.size());
         } else {
+            int i = 0;
+            for (; i < images.size(); ++i)
+                if (image.getTime().getTime() <= images.get(i).getTime().getTime())
+                    break;
             // append the list
-            images.add(image);
+            images.add(i, image);
             notifyItemInserted(size);
         }
     }
@@ -361,6 +395,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     }
 
     public void toggleImagesOrder() {
+        descOrder = !descOrder;
         Collections.reverse(images);
         notifyDataSetChangedWithoutFlash();
     }

@@ -73,8 +73,6 @@ public class TagSelectDialog extends BaseDialogFragment {
     public void onClick(View v) {
         List<Tag> tags = new ArrayList<>();
         tags.addAll(getSelectedTags().values());
-        for (Image image : images) {
-            ImageService.overwriteImageTag(image, tags);
-        }
+        ImageService.overwriteImageTagInThread(images, tags);
     }
 }

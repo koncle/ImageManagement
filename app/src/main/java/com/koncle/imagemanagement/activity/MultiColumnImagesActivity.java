@@ -36,10 +36,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
-import static com.koncle.imagemanagement.activity.DrawerActivity.IMAGE_ADDED;
-import static com.koncle.imagemanagement.activity.DrawerActivity.IMAGE_DELETED;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED;
 
 public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
+
+    public static final String className = MultiColumnImagesActivity.class.getSimpleName();
 
     boolean selecting = false;
     private RecyclerView recyclerView;
@@ -55,8 +57,6 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
     private boolean deleteImage = false;
     public static final int RESULT_DELETE_IMAGE = -4;
-    public
-    static final int IMAGE_MOVED = -10;
     public static final String RESULT_DELETE_IMAGE_FOLDER = "folder";
     public static final String RESULT_DELETE_IMAGE_NUM = "num";
 
@@ -108,22 +108,21 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                     }
                     break;
                 case IMAGE_DELETED:
-                    image = msg.getData().getParcelable("image");
                     break;
-
             }
         }
     }
 
     private void initFileObserver() {
         handler = new MyHandler();
-        MsgCenter.addHandler(handler);
+        MsgCenter.addHandler(handler, className);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        MsgCenter.removeHandler(handler);
+        MsgCenter.removeHandler(className);
+        handler.removeMessages(IMAGE_ADDED);
     }
 
     @Override
@@ -250,7 +249,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         }
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, spanCount);
         recyclerView.setLayoutManager(gridLayoutManager);
-        imageAdaptor = new ImageAdaptor(this, gridLayoutManager, images);
+        imageAdaptor = new ImageAdaptor(this, handler, gridLayoutManager, images);
         imageAdaptor.setOperater(this);
         recyclerView.setAdapter(imageAdaptor);
         recyclerView.setItemViewCacheSize(0);
@@ -284,10 +283,14 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     public void onBackPressed() {
         // if there is no selected mode, then close the activity
         if (!imageAdaptor.exitSelectMode()) {
-            Intent intent = new Intent();
-            intent.putExtra(RESULT_DELETE_IMAGE_FOLDER, images.get(0).getFolder());
-            intent.putExtra(RESULT_DELETE_IMAGE_NUM, deleteImage);
-            setResult(RESULT_DELETE_IMAGE, intent);
+            if (deleteImage) {
+                Intent intent = new Intent();
+                intent.putExtra(RESULT_DELETE_IMAGE_FOLDER, folderName);
+                intent.putExtra(RESULT_DELETE_IMAGE_NUM, deleteImage);
+                setResult(RESULT_DELETE_IMAGE, intent);
+
+                handler.sendEmptyMessage(IMAGE_DELETED);
+            }
             super.onBackPressed();
         }
     }
@@ -318,14 +321,20 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
             // can the system know whether the image is valid.
             case (SingleImageActivity.IMAGE_VIWER_SCROLL): {
                 Log.w("Share", "return");
+                // get scrol pos
                 int pos = data.getIntExtra("pos", 0);
                 recyclerView.scrollToPosition(pos); // //scroll to next 2 rows
+
+                // delete invalid image item
                 if (data.getBooleanExtra("delete", false)) {
                     List<Image> images = data.getExtras().getParcelableArrayList("deletes");
                     imageAdaptor.deleteInvalidImages(images);
+
+                    deleteImage = true;
                 }
                 break;
             }
+            // user click the delete button in single view
             case (SingleImageActivity.IMAGE_VIEWER_DELETE): {
                 if (data.getBooleanExtra(SingleImageActivity.RESULT_TAG, false)) {
                     Image image = data.getExtras().getParcelable(SingleImageActivity.DELETE_IMAGE);
@@ -338,14 +347,6 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                 if (data.getBooleanExtra(SingleImageActivity.RESULT_TAG, false)) {
                     Image preImage = data.getExtras().getParcelable(SingleImageActivity.DELETE_IMAGE);
                     Image rearImage = data.getExtras().getParcelable(SingleImageActivity.MOVE_IMAGE);
-
-                    Message msg = new Message();
-                    msg.what = IMAGE_MOVED;
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelable("image", rearImage);
-                    bundle.putParcelable("refresh", bundle);
-                    msg.setData(bundle);
-                    handler.sendMessage(msg);
 
                     imageAdaptor.deleteImageItem(preImage);
                     deleteImage = true;

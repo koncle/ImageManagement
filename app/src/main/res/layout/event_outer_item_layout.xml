@@ -22,54 +22,45 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="20dp"
-            android:layout_marginBottom="10dp">
+            android:layout_height="25dp">
 
             <TextView
                 android:id="@+id/event_title"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:textColor="#000"
                 android:textSize="16sp"
                 android:layout_alignParentStart="true"
                 android:layout_toStartOf="@+id/event_modify_name" />
 
             <ImageButton
+                android:id="@+id/event_show_list"
+                android:src="@drawable/event_show_list"
+                android:layout_toStartOf="@+id/event_modify_name"
+                style="@style/event_operation_item"
+                android:contentDescription="@string/show_image_desc" />
+
+            <ImageButton
                 android:id="@+id/event_modify_name"
                 android:src="@drawable/ic_pencil"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="10dp"
-                android:background="#fff"
+                style="@style/event_operation_item"
                 android:layout_toStartOf="@+id/event_delete"
-                android:clickable="true"
-                android:foreground="?attr/selectableItemBackgroundBorderless"
-                android:focusable="true"
-                android:contentDescription="@string/delete_image_desc" />
+                android:contentDescription="@string/modify_image_desc" />
 
             <ImageButton
                 android:id="@+id/event_delete"
                 android:src="@drawable/delete"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="10dp"
-                android:background="#fff"
+                style="@style/event_operation_item"
                 android:layout_toStartOf="@+id/event_add_image"
-                android:clickable="true"
-                android:foreground="?attr/selectableItemBackgroundBorderless"
-                android:focusable="true"
                 android:contentDescription="@string/delete_image_desc" />
 
             <ImageButton
                 android:id="@+id/event_add_image"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
+                style="@style/event_operation_item"
+                android:layout_marginEnd="0dp"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentTop="true"
-                android:background="#fff"
-                android:clickable="true"
                 android:contentDescription="@string/add_image_desc"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/add" />
 
         </RelativeLayout>

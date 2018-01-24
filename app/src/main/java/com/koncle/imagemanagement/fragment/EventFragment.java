@@ -28,7 +28,6 @@ import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dialog.InputDialogFragment;
 import com.koncle.imagemanagement.util.ActivityUtil;
-import com.koncle.imagemanagement.util.DESCComparator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +38,8 @@ import java.util.List;
 
 public class EventFragment extends Fragment implements HasName {
     private static final String TAG = EventFragment.class.getSimpleName();
+    public static String className = EventFragment.class.getSimpleName();
+
     private final String name = DrawerActivity.EVENT_FRAGMENT_NAME;
     private RecyclerView eventsRecyclerView;
     private EventRecyclerViewAdapter eventAdapter;
@@ -51,7 +52,6 @@ public class EventFragment extends Fragment implements HasName {
 
     private int eventPositionWaitingForAddImageResult;
     private InnerEventAdapter adapterWaitingForAddImageResult;
-    private DESCComparator descComparator = new DESCComparator();
 
     public static Fragment newInstance() {
         EventFragment f = new EventFragment();
@@ -147,12 +147,19 @@ public class EventFragment extends Fragment implements HasName {
             return events.size() + 1;
         }
 
+
+        public void refreshData() {
+            events = ImageService.getEvents();
+            notifyItemRangeChanged(0, events.size() + 1);
+        }
+
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
             if (getItemViewType(position) == EVENT_TYPE) {
                 final EventHolder finalHolder = (EventHolder) holder;
-                finalHolder.title.setText(events.get(position).getName());
-                finalHolder.innerAdapter.setData(events.get(position).getImageList(), events.get(position));
+                final Event event = events.get(position);
+                finalHolder.title.setText(event.getName());
+                finalHolder.innerAdapter.setData(event);
 
                 finalHolder.add.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -165,7 +172,7 @@ public class EventFragment extends Fragment implements HasName {
                 finalHolder.delete.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        ImageService.deleteEvent(events.get(position));
+                        ImageService.deleteEvent(event);
                         events.remove(position);
                         eventAdapter.notifyItemRemoved(position);
                     }
@@ -176,11 +183,18 @@ public class EventFragment extends Fragment implements HasName {
                         InputDialogFragment dialog = InputDialogFragment.newInstance(new InputDialogFragment.OnInputFinished() {
                             @Override
                             public void inputFinished(String eventName) {
-                                ImageService.updateEvent(events.get(position), eventName);
+                                ImageService.updateEvent(event, eventName);
                                 finalHolder.title.setText(eventName);
                             }
                         }, "A New Title");
                         dialog.show(getActivity().getFragmentManager(), "modify");
+                    }
+                });
+                finalHolder.show.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        event.resetImageList();
+                        ActivityUtil.showImageList(getContext(), event.getImageList(), event.getName());
                     }
                 });
             }
@@ -213,6 +227,7 @@ public class EventFragment extends Fragment implements HasName {
             ImageButton add;
             ImageButton delete;
             ImageButton modify;
+            ImageButton show;
 
             EventHolder(View view) {
                 super(view);
@@ -229,6 +244,7 @@ public class EventFragment extends Fragment implements HasName {
                 add = view.findViewById(R.id.event_add_image);
                 delete = view.findViewById(R.id.event_delete);
                 modify = view.findViewById(R.id.event_modify_name);
+                show = view.findViewById(R.id.event_show_list);
             }
         }
     }
@@ -243,11 +259,19 @@ public class EventFragment extends Fragment implements HasName {
         private final int IMAGE = 0;
         private Event event;
 
-        void setData(List<Image> images, Event event) {
-            this.images = images;
+        void setData(Event event) {
+            event.resetImageList();
+            this.images = event.getImageList();
             this.size = images.size() * 2;
             notifyDataSetChanged();
             this.event = event;
+        }
+
+        void refreData() {
+            event.resetImageList();
+            this.images = event.getImageList();
+            this.size = images.size() * 2;
+            notifyDataSetChanged();
         }
 
         void deleteImage(int position) {
@@ -299,14 +323,23 @@ public class EventFragment extends Fragment implements HasName {
                 }
             } else {
                 final EventImageHolder imageHolder = (EventImageHolder) holder;
+                Image image = this.images.get(position / 2);
                 Glide.with(EventFragment.this)
-                        .load(this.images.get(position / 2).getPath())
+                        .load(image.getPath())
+                        .asBitmap()
                         .into(imageHolder.image);
+                if (image.getType() == Image.TYPE_GIF) {
+                    ((EventImageHolder) holder).gifText.setVisibility(View.VISIBLE);
+                } else {
+                    ((EventImageHolder) holder).gifText.setVisibility(View.GONE);
+                }
                 holder.itemView.setTag(position);
                 imageHolder.image.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         ActivityUtil.showSingleImageWithPos(getContext(), images, position / 2, imageHolder.image);
+
+                        adapterWaitingForAddImageResult = InnerEventAdapter.this;
                     }
                 });
                 imageHolder.image.setOnLongClickListener(new View.OnLongClickListener() {
@@ -327,11 +360,13 @@ public class EventFragment extends Fragment implements HasName {
         }
 
         class EventImageHolder extends RecyclerView.ViewHolder {
-            public ImageView image;
+            ImageView image;
+            TextView gifText;
 
             public EventImageHolder(View itemView) {
                 super(itemView);
                 image = itemView.findViewById(R.id.event_image);
+                gifText = itemView.findViewById(R.id.gif_text);
             }
         }
 
@@ -343,6 +378,16 @@ public class EventFragment extends Fragment implements HasName {
                 line = itemView.findViewById(R.id.line);
             }
         }
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
     }
 
     @Override
@@ -359,9 +404,48 @@ public class EventFragment extends Fragment implements HasName {
     public void handleResult(List<Image> images) {
         if (images != null) {
             ImageService.recoverDaoSession(images);
-            Event event = ImageService.addImages2Event(events.get(eventPositionWaitingForAddImageResult), images);
-            event.resetImageList();
-            adapterWaitingForAddImageResult.setData(event.getImageList(), event);
+            ImageService.addImages2EventInThread(events.get(eventPositionWaitingForAddImageResult), images);
         }
+    }
+
+    public void onImageDeleted(Image image) {
+        if (eventAdapter == null) return;
+
+        List<Event> concernedEvents = image.getEvents();
+        if (concernedEvents.size() > 0) {
+            eventAdapter.refreshData();
+        }
+    }
+
+    public void onImageDeleted(List<Image> images) {
+        if (eventAdapter == null) return;
+        for (Image image : images) {
+            List<Event> concernedEvents = image.getEvents();
+            if (concernedEvents.size() > 0) {
+                eventAdapter.refreshData();
+                break;
+            }
+        }
+    }
+
+    public void onImageMoved(Image oldImage, Image newImage) {
+        eventAdapter.refreshData();
+    }
+
+    public void onImageAddedToAnEvent() {
+        if (adapterWaitingForAddImageResult == null) return;
+
+        Event event = events.get(eventPositionWaitingForAddImageResult);
+        event.resetImageList();
+        adapterWaitingForAddImageResult.setData(event);
+        Toast.makeText(getContext(), "image added", Toast.LENGTH_SHORT).show();
+
+        eventPositionWaitingForAddImageResult = -1;
+        adapterWaitingForAddImageResult = null;
+    }
+
+    public void onImageDeleted() {
+        if (adapterWaitingForAddImageResult == null) return;
+        adapterWaitingForAddImageResult.refreData();
     }
 }

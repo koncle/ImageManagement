@@ -29,11 +29,15 @@ import java.util.List;
 
 @Entity
 public class Image implements Parcelable, Comparable<Image>, ClusterItem {
+    public static final int TYPE_NORNAL = 0;
+    public static final int TYPE_GIF = 1;
+
     @Id(autoincrement = true)
     private Long id;
 
     @NotNull
     private String path;
+    private String thumbnailPath;
     @NotNull
     private String folder;
     @NotNull
@@ -65,8 +69,11 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
 
     private String lng;
 
+    private int type;
+
     @Transient
     private LatLng pos;
+
 
     public void setPos(LatLng pos) {
         this.pos = pos;
@@ -93,6 +100,100 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
         }
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public String getThumbnailPath() {
+        return thumbnailPath;
+    }
+
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
+    }
+
+    public String getFolder() {
+        return folder;
+    }
+
+    public void setFolder(String folder) {
+        this.folder = folder;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+
+    public Date getTime() {
+        return time;
+    }
+
+    public void setTime(Date time) {
+        this.time = time;
+    }
+
+
+    public Long getLoc_id() {
+        return loc_id;
+    }
+
+    public void setLoc_id(Long loc_id) {
+        this.loc_id = loc_id;
+    }
+
+    public String getLat() {
+        return lat;
+    }
+
+    public void setLat(String lat) {
+        this.lat = lat;
+    }
+
+    public String getLng() {
+        return lng;
+    }
+
+    public void setLng(String lng) {
+        this.lng = lng;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public LatLng getPos() {
+        return pos;
+    }
+
+
     @Override
     public int describeContents() {
         return 0;
@@ -102,6 +203,7 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeValue(this.id);
         dest.writeString(this.path);
+        dest.writeString(this.thumbnailPath);
         dest.writeString(this.folder);
         dest.writeString(this.name);
         dest.writeString(this.desc);
@@ -111,78 +213,8 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
         dest.writeValue(this.loc_id);
         dest.writeString(this.lat);
         dest.writeString(this.lng);
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getPath() {
-        return this.path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public String getFolder() {
-        return this.folder;
-    }
-
-    public void setFolder(String folder) {
-        this.folder = folder;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDesc() {
-        return this.desc;
-    }
-
-    public void setDesc(String desc) {
-        this.desc = desc;
-    }
-
-    public Date getTime() {
-        return this.time;
-    }
-
-    public void setTime(Date time) {
-        this.time = time;
-    }
-
-    public Long getLoc_id() {
-        return this.loc_id;
-    }
-
-    public void setLoc_id(Long loc_id) {
-        this.loc_id = loc_id;
-    }
-
-    public String getLat() {
-        return this.lat;
-    }
-
-    public void setLat(String lat) {
-        this.lat = lat;
-    }
-
-    public String getLng() {
-        return this.lng;
-    }
-
-    public void setLng(String lng) {
-        this.lng = lng;
+        dest.writeInt(this.type);
+        dest.writeParcelable(this.pos, flags);
     }
 
     /**
@@ -237,9 +269,7 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
         return events;
     }
 
-    /**
-     * Resets a to-many relationship, making the next get call to query for a fresh result.
-     */
+    /** Resets a to-many relationship, making the next get call to query for a fresh result. */
     @Generated(hash = 1830105409)
     public synchronized void resetEvents() {
         events = null;
@@ -288,12 +318,10 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
         myDao = daoSession != null ? daoSession.getImageDao() : null;
     }
 
-    public Image() {
-    }
-
     protected Image(Parcel in) {
         this.id = (Long) in.readValue(Long.class.getClassLoader());
         this.path = in.readString();
+        this.thumbnailPath = in.readString();
         this.folder = in.readString();
         this.name = in.readString();
         this.desc = in.readString();
@@ -304,14 +332,17 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
         this.loc_id = (Long) in.readValue(Long.class.getClassLoader());
         this.lat = in.readString();
         this.lng = in.readString();
+        this.type = in.readInt();
+        this.pos = in.readParcelable(LatLng.class.getClassLoader());
     }
 
-    @Generated(hash = 550789930)
-    public Image(Long id, @NotNull String path, @NotNull String folder,
-                 @NotNull String name, String desc, Date time, Long loc_id, String lat,
-                 String lng) {
+    @Generated(hash = 1256681410)
+    public Image(Long id, @NotNull String path, String thumbnailPath,
+                 @NotNull String folder, @NotNull String name, String desc, Date time,
+                 Long loc_id, String lat, String lng, int type) {
         this.id = id;
         this.path = path;
+        this.thumbnailPath = thumbnailPath;
         this.folder = folder;
         this.name = name;
         this.desc = desc;
@@ -319,6 +350,11 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
         this.loc_id = loc_id;
         this.lat = lat;
         this.lng = lng;
+        this.type = type;
+    }
+
+    @Generated(hash = 1590301345)
+    public Image() {
     }
 
     public static final Creator<Image> CREATOR = new Creator<Image>() {
@@ -332,13 +368,18 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
             return new Image[size];
         }
     };
-
     /** Used to resolve relations */
     @Generated(hash = 2040040024)
     private transient DaoSession daoSession;
-
     /** Used for active entity operations. */
     @Generated(hash = 1428462909)
     private transient ImageDao myDao;
 
+    @Override
+    public String toString() {
+        return "Image{" +
+                "id=" + id +
+                ", path='" + path + '\'' +
+                '}';
+    }
 }

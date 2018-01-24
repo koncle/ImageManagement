@@ -3,9 +3,11 @@ package com.koncle.imagemanagement.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
+import android.transition.Slide;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,12 +29,19 @@ public class RemarkActivity extends AppCompatActivity {
     private Button complete;
     private EditText input;
     private Toolbar toolbar;
+    private String desc;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.mark_layout);
 
+        Slide slide = new Slide(Gravity.BOTTOM);
+        getWindow().setEnterTransition(slide);
+        Slide slide1 = new Slide(Gravity.TOP);
+        getWindow().setExitTransition(slide1);
+
+        desc = getIntent().getExtras().getString(SingleImageActivity.INTENT_DESC_STRING);
         initListeners();
     }
 
@@ -47,29 +56,32 @@ public class RemarkActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == R.id.remark_menu_item_complete) {
             String remark = input.getText().toString().trim();
-            if (!TextUtils.isEmpty(remark)) {
-                Intent intent = new Intent();
-                intent.putExtra(REMARK_INPUT, remark);
-                setResult(REMARK_OK, intent);
-                RemarkActivity.this.finish();
-            } else {
-                cancelAction();
-            }
+            Intent intent = new Intent();
+            intent.putExtra(REMARK_INPUT, remark);
+            setResult(REMARK_OK, intent);
+            RemarkActivity.this.finish();
         }
         return true;
     }
 
     private void initListeners() {
         input = findViewById(R.id.remark_input);
+        input.setText(desc);
 
         toolbar = findViewById(R.id.mark_toolbar);
         setSupportActionBar(toolbar);
+        toolbar.setNavigationIcon(R.drawable.back);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 cancelAction();
             }
         });
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setDisplayShowHomeEnabled(true);
+            actionBar.setDisplayShowHomeEnabled(true);
+        }
         toolbar.setTitle("Remark");
     }
 

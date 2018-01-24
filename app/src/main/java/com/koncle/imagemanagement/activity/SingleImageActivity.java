@@ -1,7 +1,5 @@
 package com.koncle.imagemanagement.activity;
 
-import android.animation.Animator;
-import android.animation.AnimatorInflater;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
@@ -18,6 +16,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.koncle.imagemanagement.R;
@@ -42,6 +41,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     public static final String DELETE_IMAGE = "image";
     public static final int IMAGE_VIEWER_MOVE = 4;
     public static final String MOVE_IMAGE = "move_image";
+    public static final java.lang.String INTENT_DESC_STRING = "desc";
     private ViewPager imageViewPager;
     private List<Image> images;
     private View delete;
@@ -61,6 +61,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     private RadioButton tag;
     private ViewGroup container;
     private boolean show;
+    private TextView desc;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -93,11 +94,12 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish();
+                onBackPressed();
             }
         });
         toolbar.setTitle(images.get(imageViewPager.getCurrentItem()).getName());
         //hideTools();
+        changeTitle(images.get(0).getName());
     }
 
     private void hideStatusBarAndActionBar() {
@@ -126,6 +128,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         tag = findViewById(R.id.single_tag);
         toolLayout = findViewById(R.id.tool_layout);
         container = findViewById(R.id.single_view_transition_container);
+        desc = findViewById(R.id.single_image_desc);
     }
 
     private void initViewPager(int position) {
@@ -143,12 +146,14 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             @Override
             public void onPageSelected(int position) {
                 changeTitle(images.get(position).getName());
+                changeDesc(images.get(position).getDesc());
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
             }
         });
+        changeDesc(images.get(position).getDesc());
     }
 
     private void initOperatoins() {
@@ -184,7 +189,11 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         mark.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivityForResult(new Intent(SingleImageActivity.this, RemarkActivity.class), 0);
+                Intent intent = new Intent(getApplicationContext(), RemarkActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString(INTENT_DESC_STRING, getCurrentItem().getDesc());
+                intent.putExtras(bundle);
+                SingleImageActivity.this.startActivityForResult(intent, 1);
             }
         });
 
@@ -198,6 +207,10 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         });
     }
 
+    private Image getCurrentItem() {
+        return images.get(imageViewPager.getCurrentItem());
+    }
+
     private void moveImage(Image image, String folderPath) {
         boolean success = ImageService.moveFile(image, folderPath);
         if (success) {
@@ -207,37 +220,44 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             Image rearImage = image;
             notifyImageMoved(preImage, rearImage, true);
         }
-        Toast.makeText(getApplicationContext(), success + " folder : " + folderPath, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "move to folder : " + folderPath, Toast.LENGTH_SHORT).show();
         finish();
     }
 
     public void deleteImage(Image currentImage) {
         // delete from sd card
-        ImageService.deleteImageInFileSystem(this, currentImage, false);
+        ImageService.deleteImageInFileSystemAndBroadcast(this, currentImage, true);
         notifyImageDelete(currentImage, true);
         // notify multi activity to change its data set
         finish();
     }
 
-    public void notifyImageDelete(Image currentImage, boolean result) {
+    public void notifyImageDelete(Image currentImage, boolean sucess) {
         Intent intent = new Intent();
-        intent.putExtra(RESULT_TAG, result);
-        if (result) {
+        intent.putExtra(RESULT_TAG, sucess);
+        if (sucess) {
             Bundle bundle = new Bundle();
             bundle.putParcelable(DELETE_IMAGE, currentImage);
             intent.putExtras(bundle);
+
+            // send msg to all other activities
+            List<Image> deletedImages = new ArrayList<>();
+            deletedImages.add(currentImage);
+            MsgCenter.notifyDataDeletedInner(deletedImages);
         }
         setResult(IMAGE_VIEWER_DELETE, intent);
     }
 
-    public void notifyImageMoved(Image preImage, Image rearImage, boolean result) {
+    public void notifyImageMoved(Image preImage, Image rearImage, boolean success) {
         Intent intent = new Intent();
-        intent.putExtra(RESULT_TAG, result);
-        if (result) {
+        intent.putExtra(RESULT_TAG, success);
+        if (success) {
             Bundle bundle = new Bundle();
             bundle.putParcelable(DELETE_IMAGE, preImage);
             bundle.putParcelable(MOVE_IMAGE, rearImage);
             intent.putExtras(bundle);
+
+            MsgCenter.notifyDataMovedInner(preImage, rearImage);
         }
         setResult(IMAGE_VIEWER_MOVE, intent);
     }
@@ -255,39 +275,53 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             showTools();
         }
         toolMode = !toolMode;
+        changeDesc(getCurrentItem().getDesc());
     }
 
-    @Override
     public void changeTitle(String s) {
         this.toolbar.setTitle(s);
+    }
+
+    public void changeDesc(String s) {
+        if (s != null && !"".equals(s) && toolMode) {
+            desc.setVisibility(View.VISIBLE);
+            desc.setText(s);
+        } else {
+            desc.setText("");
+            desc.setVisibility(GONE);
+        }
     }
 
     public void showTools() {
         show = true;
         toolLayout.setVisibility(View.VISIBLE);
         toolbar.setVisibility(View.VISIBLE);
+        toolLayout.setClickable(true);
 
         Animation down = AnimationUtils.loadAnimation(this, R.anim.toolbar_enter);
         Animation up = AnimationUtils.loadAnimation(this, R.anim.operations_enter);
-        Animator toWhite = AnimatorInflater.loadAnimator(this, R.animator.bg_to_white);
+        //Animator toWhite = AnimatorInflater.loadAnimator(this, R.animator.bg_to_white);
         toolLayout.startAnimation(up);
         toolbar.startAnimation(down);
 
-        toWhite.setTarget(imageViewPager);
+        //toWhite.setTarget(imageViewPager);
+        //toWhite.start();
     }
 
     public void hideTools() {
         show = false;
         Animation up = AnimationUtils.loadAnimation(this, R.anim.toolbar_exit);
         Animation down = AnimationUtils.loadAnimation(this, R.anim.operations_exit);
-        Animator toBlack = AnimatorInflater.loadAnimator(this, R.animator.bg_to_black);
+        //Animator toBlack = AnimatorInflater.loadAnimator(this, R.animator.bg_to_black);
         toolbar.startAnimation(up);
         toolLayout.startAnimation(down);
 
         toolLayout.setVisibility(View.GONE);
         toolbar.setVisibility(View.GONE);
+        toolLayout.setClickable(false);
 
-        toBlack.setTarget(imageViewPager);
+        //toBlack.setTarget(imageViewPager);
+        //toBlack.start();
     }
 
     @Override
@@ -304,10 +338,18 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         * show the change of a data set
         */
         if (deleteImages.size() > 0) {
+            for (Image image : deleteImages) {
+                //ImageService.deleteImageInFileSystemAndBroadcast(getApplicationContext(), image, true);
+                ImageService.deleteImageInFileSystemAndBroadcast(getApplication(), image, false);
+            }
+
             intent.putExtra("delete", true);
             Bundle bundle = new Bundle();
             bundle.putParcelableArrayList("deletes", (ArrayList<? extends Parcelable>) deleteImages);
             intent.putExtras(bundle);
+
+            MsgCenter.notifyDataDeletedInner(deleteImages);
+
         } else {
             intent.putExtra("delete", false);
         }
@@ -318,6 +360,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             hideTools();
         toolbar.setVisibility(GONE);
         toolLayout.setVisibility(GONE);
+
         super.onBackPressed();
     }
 
@@ -325,8 +368,9 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RemarkActivity.REMARK_OK) {
-            String remark = data.getStringExtra(RemarkActivity.REMARK_INPUT);
+            String remark = data.getStringExtra(RemarkActivity.REMARK_INPUT).trim();
             ImageService.addImageDesc(images.get(imageViewPager.getCurrentItem()), remark);
+            changeDesc(remark);
         }
     }
 }

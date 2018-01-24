@@ -42,6 +42,14 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static android.view.View.GONE;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADD_TO_EVENT;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED_BY_SELF;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_MOVED;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_TAG_ADDED;
+import static com.koncle.imagemanagement.activity.MyHandler.SCAN_OK;
+import static com.koncle.imagemanagement.activity.MyHandler.SCAN_OK_SHOW;
 
 /**
  * Created by Koncle on 2018/1/20.
@@ -52,16 +60,11 @@ public class DrawerActivity extends AppCompatActivity
 
     public static final String WATCH_TAG = "folders";
     private static final boolean INIT_TABLES = false;
-    private static final String TAG = MainActivity.class.getSimpleName();
+    public static final String className = MainActivity.class.getSimpleName();
 
     private static final int FOLDER_FRAGMENT = 0;
     private static final int EVENT_FRAGMENT = 1;
     private static final int MAP_FRAGMENT = 2;
-
-    public static final int SCAN_OK = 1;
-    public static final int SCAN_OK_SHOW = 2;
-    public static final int IMAGE_ADDED = 3;
-    public static final int IMAGE_DELETED = 4;
 
     public static final String FOLDER_FRAGMENT_NAME = "folder";
     public static final String EVENT_FRAGMENT_NAME = "event";
@@ -88,7 +91,7 @@ public class DrawerActivity extends AppCompatActivity
         }
 
         initDataBase(INIT_TABLES);
-        Log.w(TAG, "onCreate");
+        Log.w(className, "onCreate");
     }
 
     @Override
@@ -104,6 +107,8 @@ public class DrawerActivity extends AppCompatActivity
 
     private void initDataBase(boolean refresh) {
         ImageService.init(this);
+        handler = new MyHandler();
+        MsgCenter.addHandler(handler, className);
 
         SharedPreferences sp = this.getSharedPreferences("dbPre", MODE_PRIVATE);
         if (refresh || !sp.getBoolean("create", false)) {
@@ -135,20 +140,12 @@ public class DrawerActivity extends AppCompatActivity
     private void show() {
         initToolbar();
         initFragments();
-        //initWatcher();
-        initFileObserver();
-    }
-
-    private void initFileObserver() {
-        MsgCenter.init(this);
-        handler = new MyHandler();
-        MsgCenter.addHandler(handler);
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        MsgCenter.close(this);
+        ImageService.close(this);
     }
 
     private void initToolbar() {
@@ -309,7 +306,7 @@ public class DrawerActivity extends AppCompatActivity
                     .commit();
         }
 
-        Log.w(TAG, "init Fragment");
+        Log.w(className, "init Fragment");
     }
 
     private void switchFragment(int pos) {
@@ -400,6 +397,7 @@ public class DrawerActivity extends AppCompatActivity
             public void run() {
                 ImageService.getSystemPhotoList(DrawerActivity.this);
                 handler.sendEmptyMessage(SCAN_OK);
+                ImageService.testFile(getApplicationContext());
             }
         }).start();
     }
@@ -415,6 +413,7 @@ public class DrawerActivity extends AppCompatActivity
     }
 
     public class MyHandler extends Handler {
+
         public void handleMessage(Message msg) {
             Image image;
             List<Image> folders;
@@ -423,22 +422,42 @@ public class DrawerActivity extends AppCompatActivity
                     progressDialog.dismiss();
                     show();
                     break;
+
                 case SCAN_OK:
                     folders = ImageService.getFolders();
                     ((FolderFragment) fragments.get(0)).setFolderCovers(folders);
                     break;
+
                 // notify folder to change images
                 case IMAGE_ADDED:
                     image = msg.getData().getParcelable("image");
                     ((FolderFragment) fragments.get(0)).refreshCover(image);
                     break;
+
                 case IMAGE_DELETED:
                     image = msg.getData().getParcelable("image");
                     ((FolderFragment) fragments.get(0)).refreshCover(image);
+                    ((EventFragment) fragments.get(1)).onImageDeleted(image);
                     break;
-                case MultiColumnImagesActivity.IMAGE_MOVED:
-                    //image = msg.getData().getParcelable("image");
-                    refreshData();
+
+                case IMAGE_TAG_ADDED:
+                    ((FolderFragment) fragments.get(0)).onTagAdded();
+                    break;
+
+                case IMAGE_ADD_TO_EVENT:
+                    ((EventFragment) fragments.get(1)).onImageAddedToAnEvent();
+                    break;
+
+                case IMAGE_DELETED_BY_SELF:
+                    List<Image> images = msg.getData().getParcelableArrayList("images");
+                    ((EventFragment) fragments.get(1)).onImageDeleted(images);
+
+                case IMAGE_MOVED:
+                    Image newImage = msg.getData().getParcelable(MsgCenter.MOVE_REARIMAGE);
+                    Image oldImage = msg.getData().getParcelable(MsgCenter.MOVE_PREIMAGE);
+                    ((FolderFragment) fragments.get(0)).refreshCover(oldImage);
+                    ((FolderFragment) fragments.get(0)).refreshCover(newImage);
+                    ((EventFragment) fragments.get(1)).onImageMoved(oldImage, newImage);
                     break;
             }
         }

@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
@@ -105,11 +106,22 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
             }
         });
 
-        // put images
-        Glide.with(context)
-                .load(path)
-                // can't add simple target, cause it costs too much memory
-                .into(holder.image);
+        if (image.getType() == Image.TYPE_GIF) {
+            // put images
+            Glide.with(context)
+                    .load(path)
+                    .asBitmap()
+                    // can't add simple target, cause it costs too much memory
+                    .into(holder.image);
+            holder.gifText.setVisibility(View.VISIBLE);
+        } else {
+            // put images
+            Glide.with(context)
+                    .load(path)
+                    // can't add simple target, cause it costs too much memory
+                    .into(holder.image);
+            holder.gifText.setVisibility(View.GONE);
+        }
     }
 
     /*
@@ -189,12 +201,14 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
         public ImageView image;
         public CheckBox selects;
         public FrameLayout frameLayout;
+        TextView gifText;
 
         public ImageViewHolder(View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.image);
             selects = itemView.findViewById(R.id.select_button);
             frameLayout = itemView.findViewById(R.id.background);
+            gifText = itemView.findViewById(R.id.gif_text);
         }
     }
 }

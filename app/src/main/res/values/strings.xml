@@ -34,4 +34,7 @@
     <string name="toolbar_complete_actoin">complete</string>
     <string name="dialog_note_msg">NOTE : </string>
     <string name="dialog_select_folder_title">select a folder</string>
+    <string name="show_image_desc">show</string>
+    <string name="modify_image_desc">modify</string>
+    <string name="gif">GIF</string>
 </resources>

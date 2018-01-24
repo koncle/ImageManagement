@@ -14,7 +14,11 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
 
+import java.io.IOException;
 import java.util.List;
+
+import pl.droidsonroids.gif.GifDrawable;
+import pl.droidsonroids.gif.GifImageView;
 
 /**
  * Created by 10976 on 2018/1/10.
@@ -49,98 +53,104 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
     @Override
     public Object instantiateItem(ViewGroup container, final int position) {
         if (images.size() >= position) {
-
             final Image image = images.get(position);
             String path = image.getPath();
 
             //imageView = new FullScreenImageView(this.context);
-            SubsamplingScaleImageView subsamplingScaleImageView = new SubsamplingScaleImageView(this.context);
-            if (cur == position)
-                subsamplingScaleImageView.setTransitionName(context.getString(R.string.m2s_transition));
-            subsamplingScaleImageView.setImage(ImageSource.uri(path));
-            subsamplingScaleImageView.setOnImageEventListener(new SubsamplingScaleImageView.OnImageEventListener() {
-                @Override
-                public void onReady() {
-                }
+            if (Image.TYPE_NORNAL == image.getType()) {
+                SubsamplingScaleImageView subsamplingScaleImageView = new SubsamplingScaleImageView(this.context);
+                if (cur == position)
+                    subsamplingScaleImageView.setTransitionName(context.getString(R.string.m2s_transition));
+                subsamplingScaleImageView.setImage(ImageSource.uri(path));
+                subsamplingScaleImageView.setOnImageEventListener(new SubsamplingScaleImageView.OnImageEventListener() {
+                    @Override
+                    public void onReady() {
+                    }
 
-                @Override
-                public void onImageLoaded() {
-                }
+                    @Override
+                    public void onImageLoaded() {
+                    }
 
-                @Override
-                public void onPreviewLoadError(Exception e) {
+                    @Override
+                    public void onPreviewLoadError(Exception e) {
 
-                    Log.w(TAG, "Preview Load Error");
-                    operator.addDeleteImage(image);
-                }
+                        Log.w(TAG, "Preview Load Error");
+                        operator.addDeleteImage(image);
+                    }
 
-                @Override
-                public void onImageLoadError(Exception e) {
-                    Toast.makeText(context, "This image has been deleted by other Appes", Toast.LENGTH_SHORT).show();
-                    operator.addDeleteImage(image);
-                    Log.w(TAG, "Load Error");
-                }
+                    @Override
+                    public void onImageLoadError(Exception e) {
+                        Toast.makeText(context, "This image has been deleted by other Appes", Toast.LENGTH_SHORT).show();
+                        operator.addDeleteImage(image);
+                        Log.w(TAG, "Load Error");
+                    }
 
-                @Override
-                public void onTileLoadError(Exception e) {
-                    Log.w(TAG, "Title Load Error");
-                }
+                    @Override
+                    public void onTileLoadError(Exception e) {
+                        Log.w(TAG, "Title Load Error");
+                    }
 
-                @Override
-                public void onPreviewReleased() {
-                }
-            });
-            subsamplingScaleImageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    operator.toggleMode();
-                }
-            });
+                    @Override
+                    public void onPreviewReleased() {
+                    }
+                });
+                subsamplingScaleImageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        operator.toggleMode();
+                    }
+                });
 
-            container.addView(subsamplingScaleImageView);
-            return subsamplingScaleImageView;
-
-            /*
-            final ImageView imageView = new ImageView(this.context);
-            if (cur == position)
-                imageView.setTransitionName(context.getString(R.string.m2s_transition));
-
-            Glide.with(this.context)
-                    .load(path)
-                    //   .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .error(R.drawable.error)
-                    .into(new SimpleTarget<GlideDrawable>(imageView.getMaxWidth(), imageView.getMaxHeight()) {
+                container.addView(subsamplingScaleImageView);
+                return subsamplingScaleImageView;
+            } else {
+                final GifImageView imageView = new GifImageView(this.context);
+                try {
+                    GifDrawable gifDrawable = new GifDrawable(image.getPath());
+                    imageView.setImageDrawable(gifDrawable);
+                    imageView.setOnClickListener(new View.OnClickListener() {
                         @Override
-                        public void onResourceReady(GlideDrawable glideDrawable, GlideAnimation<? super GlideDrawable> glideAnimation) {
-                            imageView.setImageDrawable(glideDrawable.getCurrent());
-                        }
-
-                        @Override
-                        public void onLoadFailed(Exception e, Drawable errorDrawable) {
-                            operator.addDeleteImage(image);
+                        public void onClick(View v) {
+                            operator.toggleMode();
                         }
                     });
-
-            imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);  // 充满容器
-
-
-            imageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    operator.toggleMode();
+                } catch (IOException e) {
+                    Log.w(TAG, " load gif image error " + image.getPath());
+                    Toast.makeText(context, "This image has been deleted by other Appes", Toast.LENGTH_SHORT).show();
+                    operator.addDeleteImage(image);
                 }
-            });
+                if (cur == position)
+                    imageView.setTransitionName(context.getString(R.string.m2s_transition));
 
-            container.addView(imageView);
-            return imageView;
-            */
+                /*
+                Glide.with(context)
+                        .load(image.getPath())
+                        .into(new SimpleTarget<GlideDrawable>() {
+                            @Override
+                            public void onResourceReady(GlideDrawable glideDrawable, GlideAnimation<? super GlideDrawable> glideAnimation) {
+                                imageView.setImageDrawable(glideDrawable.getCurrent());
+                            }
+
+                            @Override
+                            public void onLoadFailed(Exception e, Drawable errorDrawable) {
+                                Toast.makeText(context, "This image has been deleted by other Appes", Toast.LENGTH_SHORT).show();
+                                operator.addDeleteImage(image);
+                                Log.w(TAG, "Load Error");
+                            }
+                        });
+                        */
+
+
+                container.addView(imageView);
+                return imageView;
+            }
         }
         return null;
     }
 
     @Override
     public void destroyItem(ViewGroup container, int position, Object object) {
-        container.removeView((SubsamplingScaleImageView) object);
+        container.removeView((View) object);
     }
 
     public void setOperator(ModeChange operator) {
@@ -149,8 +159,6 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
 
     public interface ModeChange {
         void toggleMode();
-
-        void changeTitle(String s);
 
         void deleteImage(Image image);
 

@@ -18,38 +18,59 @@
         android:layout_gravity="top" />
 
     <LinearLayout
-        app:layout_behavior="@string/bottom_sheet_behavior"
-        android:id="@+id/tool_layout"
-        style="@style/operationsStyle">
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom">
 
-        <RadioButton
-            android:id="@+id/share"
-            style="@style/operationItem"
-            android:drawableTop="@drawable/share"
-            android:text="@string/operations_item_share" />
+        <TextView
+            android:id="@+id/single_image_desc"
+            android:text="hhh"
+            android:textColor="#fff"
+            android:textSize="15sp"
+            android:maxLines="6"
+            android:background="#a000"
 
-        <RadioButton
-            android:id="@+id/move"
-            style="@style/operationItem"
-            android:drawableTop="@drawable/move"
-            android:text="@string/operations_item_move" />
+            android:padding="5dp"
 
-        <RadioButton
-            android:id="@+id/event_delete"
-            style="@style/operationItem"
-            android:drawableTop="@drawable/delete"
-            android:text="@string/operations_item_delete" />
+            android:layout_gravity="bottom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
-        <RadioButton
-            android:id="@+id/mark"
-            style="@style/operationItem"
-            android:drawableTop="@drawable/ic_pencil"
-            android:text="@string/operations_item_mark" />
+        <LinearLayout
+            app:layout_behavior="@string/bottom_sheet_behavior"
+            android:id="@+id/tool_layout"
+            style="@style/operationsStyle">
 
-        <RadioButton
-            android:id="@+id/single_tag"
-            style="@style/operationItem"
-            android:drawableTop="@drawable/tag"
-            android:text="@string/operatoins_item_tag" />
+            <RadioButton
+                android:id="@+id/share"
+                style="@style/operationItem"
+                android:drawableTop="@drawable/share"
+                android:text="@string/operations_item_share" />
+
+            <RadioButton
+                android:id="@+id/move"
+                style="@style/operationItem"
+                android:drawableTop="@drawable/move"
+                android:text="@string/operations_item_move" />
+
+            <RadioButton
+                android:id="@+id/event_delete"
+                style="@style/operationItem"
+                android:drawableTop="@drawable/delete"
+                android:text="@string/operations_item_delete" />
+
+            <RadioButton
+                android:id="@+id/mark"
+                style="@style/operationItem"
+                android:drawableTop="@drawable/ic_pencil"
+                android:text="@string/operations_item_mark" />
+
+            <RadioButton
+                android:id="@+id/single_tag"
+                style="@style/operationItem"
+                android:drawableTop="@drawable/tag"
+                android:text="@string/operatoins_item_tag" />
+        </LinearLayout>
     </LinearLayout>
 </FrameLayout>

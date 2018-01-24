@@ -44,7 +44,9 @@ public class ImageUtils {
     }
 
     public static String getFolderNameFromPath(String path) {
+        if (path == null) return null;
         String[] f = path.split("/");
+        if (f.length < 2) return null;
         return f[f.length - 2];
     }
 

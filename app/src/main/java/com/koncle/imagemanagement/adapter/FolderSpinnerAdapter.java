@@ -46,9 +46,9 @@ public class FolderSpinnerAdapter implements SpinnerAdapter {
         }
 
         String folder = folderList.get(position);
-
         Glide.with(context)
                 .load(folderMap.get(folder).get(0))
+                .asBitmap()
                 .into(viewHolder.imageView);
         viewHolder.textView.setText(String.format(new Locale("zh"), "%s (%d) ", folder, folderMap.get(folder).size()));
         return convertView;

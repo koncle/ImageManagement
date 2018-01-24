@@ -46,12 +46,15 @@
         <activity android:name=".activity.MainActivity" />
         <activity android:name=".activity.MapActivity" />
         <activity android:name=".activity.MultiColumnImagesActivity" />
-        <activity android:name=".activity.RemarkActivity" />
         <activity android:name=".activity.SelectImageActivity" />
+
         <activity
             android:name=".activity.SingleImageActivity"
             android:theme="@style/FullscreenTheme" />
 
+        <activity
+            android:name=".activity.RemarkActivity"
+            android:theme="@style/FullscreenTheme" />
         <service
             android:name=".service.ImageListenerService"
             android:enabled="true" />

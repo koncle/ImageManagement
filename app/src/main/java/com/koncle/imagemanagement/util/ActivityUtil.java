@@ -84,11 +84,9 @@ public class ActivityUtil {
         intent.putExtras(bundle);
 
         //ActivityOptionsCompat compat = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, view, context.getString(R.string.m2s_transition));
-
-
-        SharedElementCallback s = new ECallback();
-        ActivityCompat.setEnterSharedElementCallback((Activity) context, s);
-        ActivityCompat.setExitSharedElementCallback((Activity) context, s);
+        //SharedElementCallback s = new ECallback();
+        //ActivityCompat.setEnterSharedElementCallback((Activity) context, s);
+        //ActivityCompat.setExitSharedElementCallback((Activity) context, s);
 
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());

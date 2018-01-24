@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements Operator {
 
         mHandler.removeCallbacksAndMessages(null);
 
-        ImageService.close();
+        ImageService.close(this);
 
         Intent intent = new Intent(this, ImageListenerService.class);
         stopService(intent);

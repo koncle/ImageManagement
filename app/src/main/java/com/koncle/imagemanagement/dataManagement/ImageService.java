@@ -8,12 +8,16 @@ import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import com.koncle.imagemanagement.activity.DrawerActivity;
+import com.koncle.imagemanagement.activity.MsgCenter;
+import com.koncle.imagemanagement.activity.MyHandler;
 import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.bean.ImageAndEvent;
 import com.koncle.imagemanagement.bean.MySearchSuggestion;
 import com.koncle.imagemanagement.bean.Tag;
 import com.koncle.imagemanagement.bean.TagAndImage;
+import com.koncle.imagemanagement.bean.VideoInfo;
 import com.koncle.imagemanagement.dao.DaoMaster;
 import com.koncle.imagemanagement.dao.DaoSession;
 import com.koncle.imagemanagement.dao.EventDao;
@@ -27,11 +31,11 @@ import org.greenrobot.greendao.query.QueryBuilder;
 import org.greenrobot.greendao.query.WhereCondition;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADD_TO_EVENT;
 import static com.koncle.imagemanagement.util.TagUtil.DEBUG;
 
 /**
@@ -45,13 +49,16 @@ public class ImageService {
     public static void init(Context context) {
         daoManager = DaoManager.getInstance();
         daoManager.init(context);
+        MsgCenter.init(context);
+
         QueryBuilder.LOG_SQL = true;
         QueryBuilder.LOG_VALUES = true;
     }
 
-    public static void close() {
+    public static void close(Context context) {
         daoManager.closeConnection();
         daoManager = null;
+        MsgCenter.close(context);
     }
 
     public static void createTables() {
@@ -92,6 +99,7 @@ public class ImageService {
         if (imageInDatabase == null) {
             imageDao.insertInTx(image);
             imageInDatabase = image;
+            Log.w("IMAGE SERVICE", "insert a image : " + image);
         }
         return imageInDatabase;
     }
@@ -100,7 +108,7 @@ public class ImageService {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         imageDao.delete(image);
         if (DEBUG) {
-            Log.i(TAG, "delete image : " + image.getPath());
+            Log.i(TAG, "delete image : " + image);
         }
     }
 
@@ -188,21 +196,22 @@ public class ImageService {
         DaoMaster.createAllTables(daoSession.getDatabase(), true);
     }
 
-    public static boolean deleteImageInFileSystem(Context context, Image image, boolean invalidImage) {
+    public static boolean deleteImageInFileSystemAndBroadcast(Context context, Image image, boolean deleteSystemFile) {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         imageDao.delete(image);
-        boolean ret = ImageUtils.deleteFile(image.getPath());
         // if the action of delete is successful
         // or meet invalid image
         //
-        if (invalidImage || ret) {
-
-            broadcastToNotifySystem(context, image.getPath());
-            // this function would cause memory leak when the activity finished and the service is
-            // still scanning file
-
-            // MediaScannerConnection.scanFile(context, new String[]{image.getPath()}, null,null);
+        boolean ret = true;
+        if (deleteSystemFile) {
+            ret = ImageUtils.deleteFile(image.getPath());
         }
+
+        // this function would cause memory leak when the activity finished and the service is
+        // still scanning file
+
+        // MediaScannerConnection.scanFile(context, new String[]{image.getPath()}, null,null);
+        broadcastToNotifySystem(context, image.getPath());
         return ret;
     }
 
@@ -266,22 +275,36 @@ public class ImageService {
         return tag;
     }
 
-    public static void overwriteImageTag(Image image, List<Tag> tags) {
-        // delete
-        TagAndImageDao tagAndImageDao = daoManager.getDaoSession().getTagAndImageDao();
-        List<TagAndImage> tagAndImages = tagAndImageDao.queryBuilder()
-                .where(TagAndImageDao.Properties.Image_id.eq(image.getId()))
-                .build().list();
-        tagAndImageDao.deleteInTx(tagAndImages);
+    public static void overwriteImageTagInThread(final List<Image> images, final List<Tag> tags) {
+        daoManager.getDaoSession().runInTx(new Runnable() {
+            @Override
+            public void run() {
+                TagAndImageDao tagAndImageDao = daoManager.getDaoSession().getTagAndImageDao();
+                List<TagAndImage> tagAndImages = null;
 
-        // add
-        tagAndImages.clear();
-        for (Tag tag : tags) {
-            Long tagId = tag.getId();
-            TagAndImage tagAndImage = new TagAndImage(null, tagId, image.getId());
-            tagAndImages.add(tagAndImage);
-        }
-        tagAndImageDao.insertInTx(tagAndImages);
+                // delete
+                for (Image image : images) {
+                    tagAndImages = tagAndImageDao.queryBuilder()
+                            .where(TagAndImageDao.Properties.Image_id.eq(image.getId()))
+                            .build().list();
+                    tagAndImageDao.deleteInTx(tagAndImages);
+                }
+                // add
+                tagAndImages.clear();
+                for (Image image : images) {
+                    for (Tag tag : tags) {
+                        Long tagId = tag.getId();
+                        TagAndImage tagAndImage = new TagAndImage(null, tagId, image.getId());
+                        tagAndImages.add(tagAndImage);
+                    }
+                }
+                // insert
+                for (TagAndImage tagAndImage : tagAndImages) {
+                    tagAndImageDao.insert(tagAndImage);
+                }
+                MsgCenter.sendEmptyMessage(MyHandler.IMAGE_TAG_ADDED, null, DrawerActivity.className);
+            }
+        });
     }
 
     public static void addTags(List<Image> images, String tagString) {
@@ -352,7 +375,7 @@ public class ImageService {
         eventDao.delete(event);
     }
 
-    public static Event addImages2Event(Event event, List<Image> images) {
+    public static Event addImages2Event(final Event event, final List<Image> images) {
         Long eventId = event.getId();
         List<ImageAndEvent> imageAndEvents = new ArrayList<>();
         for (Image image : images) {
@@ -365,6 +388,26 @@ public class ImageService {
         imageAndEventDao.insertInTx(imageAndEvents);
         event.resetImageList();
         return event;
+    }
+
+    public static void addImages2EventInThread(final Event event, final List<Image> images) {
+        daoManager.getDaoSession().runInTx(new Runnable() {
+            @Override
+            public void run() {
+                Long eventId = event.getId();
+                List<ImageAndEvent> imageAndEvents = new ArrayList<>();
+                for (Image image : images) {
+                    if (!image.getEvents().contains(event)) {
+                        ImageAndEvent imageAndEvent = new ImageAndEvent(null, eventId, image.getId());
+                        imageAndEvents.add(imageAndEvent);
+                    }
+                }
+                ImageAndEventDao imageAndEventDao = daoManager.getDaoSession().getImageAndEventDao();
+                imageAndEventDao.insertInTx(imageAndEvents);
+                event.resetImageList();
+                MsgCenter.sendEmptyMessage(IMAGE_ADD_TO_EVENT, null, DrawerActivity.className);
+            }
+        });
     }
 
     public static void deleteImageFromEvent(Image image, Event event) {
@@ -384,6 +427,7 @@ public class ImageService {
         }
     }
 
+    // load all images
     public static void getSystemPhotoList(Context context) {
 
         Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
@@ -392,49 +436,123 @@ public class ImageService {
 
         Cursor cursor = contentResolver.query(uri, null,
                 MediaStore.Images.Media.MIME_TYPE + "=? or "
+                        + MediaStore.Images.Media.MIME_TYPE + "=? or "
                         + MediaStore.Images.Media.MIME_TYPE + "=?",
-                new String[]{"image/jpeg", "image/png"}, MediaStore.Images.Media.DATE_MODIFIED);
+                new String[]{"image/jpeg", "image/png", "image/gif"}, MediaStore.Images.Media.DATE_MODIFIED);
 
         if (cursor == null || cursor.getCount() <= 0) return; // 没有图片
 
         String path;
         Image image;
-        DaoSession daoSession = DaoManager.getInstance().getDaoSession();
 
-        int index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-
+        int pathIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        int thumnailIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MINI_THUMB_MAGIC);
         int timeIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN);
         int nameIndex = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME);
         int latIndex = cursor.getColumnIndex(MediaStore.Images.Media.LATITUDE);
         int lngIndex = cursor.getColumnIndex(MediaStore.Images.Media.LONGITUDE);
-        int despIndex = cursor.getColumnIndex(MediaStore.Images.Media.DESCRIPTION);
+        int descIndex = cursor.getColumnIndex(MediaStore.Images.Media.DESCRIPTION);
+        int mineTypeIndex = cursor.getColumnIndex(MediaStore.Images.Media.MIME_TYPE);
 
         while (cursor.moveToNext()) {
-            path = cursor.getString(index); // 文件地址
-            String name = cursor.getString(nameIndex);
-            long time = cursor.getLong(timeIndex);
-            double lat = cursor.getDouble(latIndex);
-            double lng = cursor.getDouble(lngIndex);
-            String desp = cursor.getString(despIndex);
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            String folder;
-            try {
-                folder = ImageUtils.getFolderNameFromPath(path);
-                image = new Image();
+            path = cursor.getString(pathIndex); // 文件地址
+
+            /*
+            int thumnailId = cursor.getInt(thumnailIndex);
+            Cursor thumbCursor = contentResolver.query(
+                    MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI,
+                    null, MediaStore.Images.Thumbnails.IMAGE_ID
+                            + "=" + thumnailId, null, null);
+            String thumbnail = path;
+            if (thumbCursor != null){
+                if (thumbCursor.moveToNext()) {
+                    thumbnail = thumbCursor.getString(thumbCursor.getColumnIndex(MediaStore.Images.Thumbnails.DATA));
+                }
+                thumbCursor.close();
+            }
+            */
+
+            image = new Image();
+            image.setPath(path);
+            if (ifExistImage(image) == null) {
+                String folder = ImageUtils.getFolderNameFromPath(path);
+
+                String name = cursor.getString(nameIndex);
+                long time = cursor.getLong(timeIndex);
+                double lat = cursor.getDouble(latIndex);
+                double lng = cursor.getDouble(lngIndex);
+                String desp = cursor.getString(descIndex);
+                String mineType = cursor.getString(mineTypeIndex);
+
                 image.setName(name);
                 image.setFolder(folder);
-                image.setPath(path);
+                image.setThumbnailPath("");
                 image.setTime(new Date(time));
                 image.setLat(String.valueOf(lat));
                 image.setLng(String.valueOf(lng));
                 image.setDesc(desp);
-                ImageService.insertImage(image);
-            } catch (Exception e) {
-                e.printStackTrace();
-                Log.w("path", "failed path name : " + path);
+
+                if ("image/gif".equals(mineType))
+                    image.setType(Image.TYPE_GIF);
+                else
+                    image.setType(Image.TYPE_NORNAL);
+
+                insertImageWithOutCheck(image);
             }
         }
         cursor.close();
+    }
+
+    public static void testFile(Context context) {
+        // MediaStore.Video.Thumbnails.DATA:视频缩略图的文件路径
+        String[] thumbColumns = {MediaStore.Video.Thumbnails.DATA,
+                MediaStore.Video.Thumbnails.VIDEO_ID};
+
+        // MediaStore.Video.Media.DATA：视频文件路径；
+        // MediaStore.Video.Media.DISPLAY_NAME : 视频文件名，如 testVideo.mp4
+        // MediaStore.Video.Media.TITLE: 视频标题 : testVideo
+        String[] mediaColumns = {MediaStore.Video.Media._ID,
+                MediaStore.Video.Media.DATA, MediaStore.Video.Media.TITLE,
+                MediaStore.Video.Media.MIME_TYPE,
+                MediaStore.Video.Media.DISPLAY_NAME};
+
+        Uri uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+        ContentResolver contentResolver = context.getContentResolver();
+        Cursor cursor = contentResolver.query(uri, mediaColumns,
+                null, null, MediaStore.Images.Media.DATE_MODIFIED);
+
+        if (cursor == null || cursor.getCount() <= 0) return; // 没有图片;
+
+        while (cursor.moveToNext()) {
+            VideoInfo info = new VideoInfo();
+            int id = cursor.getInt(cursor
+                    .getColumnIndex(MediaStore.Video.Media._ID));
+
+            Cursor thumbCursor = contentResolver.query(
+                    MediaStore.Video.Thumbnails.EXTERNAL_CONTENT_URI,
+                    thumbColumns, MediaStore.Video.Thumbnails.VIDEO_ID
+                            + "=" + id, null, null);
+
+            if (thumbCursor != null && thumbCursor.moveToFirst()) {
+                info.setThumbPath(thumbCursor.getString(thumbCursor
+                        .getColumnIndex(MediaStore.Video.Thumbnails.DATA)));
+            }
+
+            info.setPath(cursor.getString(cursor
+                    .getColumnIndexOrThrow(MediaStore.Video.Media.DATA)));
+            info.setTitle(cursor.getString(cursor
+                    .getColumnIndexOrThrow(MediaStore.Video.Media.TITLE)));
+
+            info.setDisplayName(cursor.getString(cursor
+                    .getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)));
+
+            info.setMimeType(cursor
+                    .getString(cursor
+                            .getColumnIndexOrThrow(MediaStore.Video.Media.MIME_TYPE)));
+
+            //System.out.println(info.toString());
+            Log.w("TEST", info.toString());
+        }
     }
 
     public static boolean moveFile(Image image, String folder) {
@@ -509,5 +627,17 @@ public class ImageService {
         image.setFolder(ImageUtils.getFolderNameFromPath(path));
         daoManager.getDaoSession().getImageDao().save(image);
         broadcastToNotifySystem(context, image.getPath());
+    }
+
+    public static void deleteTag(final Tag tag) {
+        Long tag_id = tag.getId();
+        // delete
+        TagAndImageDao tagAndImageDao = daoManager.getDaoSession().getTagAndImageDao();
+        List<TagAndImage> tagAndImages = tagAndImageDao.queryBuilder()
+                .where(TagAndImageDao.Properties.Tag_id.eq(tag_id))
+                .build().list();
+        tagAndImageDao.deleteInTx(tagAndImages);
+
+        daoManager.getDaoSession().getTagDao().delete(tag);
     }
 }

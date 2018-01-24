@@ -203,6 +203,17 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
                     holder.select.toggle();
                 }
             });
+
+            holder.delete.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ImageService.deleteTag(allTags.get(position));
+                    allTags.remove(position);
+                    selectedTags.remove(position);
+                    notifyItemRemoved(position);
+                    notifyItemRangeChanged(position, allTags.size() - position);
+                }
+            });
         }
 
         @Override
@@ -213,6 +224,7 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
         class TagHolder extends RecyclerView.ViewHolder {
             public TextView tag;
             public CheckBox select;
+            public ImageButton delete;
             public RelativeLayout layout;
 
             public TagHolder(View itemView) {
@@ -220,6 +232,7 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
                 tag = itemView.findViewById(R.id.dialog_tag);
                 select = itemView.findViewById(R.id.dialog_select);
                 layout = itemView.findViewById(R.id.dialog_folder_layout);
+                delete = itemView.findViewById(R.id.dialog_delete);
             }
         }
     }

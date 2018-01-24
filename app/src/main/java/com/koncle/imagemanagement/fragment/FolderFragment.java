@@ -175,6 +175,10 @@ public class FolderFragment extends Fragment implements HasName {
         popupMenu.show();
     }
 
+    public void onTagAdded() {
+        Toast.makeText(getContext(), "added tags", Toast.LENGTH_SHORT).show();
+    }
+
     class FolderRecyclerViewAdapter extends RecyclerView.Adapter<FolderRecyclerViewAdapter.FolderHolder> {
         @Override
         public FolderHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -205,9 +209,12 @@ public class FolderFragment extends Fragment implements HasName {
 
             Glide.with(FolderFragment.this.getContext())
                     .load(folderCovers.get(position).getPath())
-                    .thumbnail(0.01f)
+                    .asBitmap()
+                    .thumbnail(0.1f)
                     // .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .into(holder.imageView);
+
+            holder.num.setText(String.format("(%d)", ImageService.getImageCountFromFolder(folder)));
 
             initListener(holder, folder, position);
         }
@@ -244,8 +251,6 @@ public class FolderFragment extends Fragment implements HasName {
                 }
             });
 
-            holder.num.setText(String.format("(%d)", ImageService.getImageCountFromFolder(folder)));
-
             holder.linearLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -281,6 +286,11 @@ public class FolderFragment extends Fragment implements HasName {
         private void unSelectAll() {
             selectedFolder.clear();
             notifyDataSetChangedWithoutFlash();
+        }
+
+        public void setFolderCover(int index, Image image) {
+            folderCovers.set(index, image);
+            notifyItemChanged(index);
         }
 
         class FolderHolder extends RecyclerView.ViewHolder {
@@ -333,14 +343,15 @@ public class FolderFragment extends Fragment implements HasName {
     }
 
     public void refreshCover(Image image) {
-        int i = 0;
-        for (; i < folderCovers.size(); i++) {
-            if (folderCovers.get(i).getFolder().equals(image.getFolder())) {
-                folderCovers.set(i, image);
+        if (image == null) return;
+
+        int index = 0;
+        for (; index < folderCovers.size(); ++index) {
+            if (folderCovers.get(index).getFolder().equals(image.getFolder())) {
+                folderAdapter.setFolderCover(index, image);
                 break;
             }
         }
-        folderAdapter.notifyItemChanged(i);
     }
 
     public void handleResult(boolean delete, String changedFolder) {

@@ -10,13 +10,13 @@ import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 
-import com.koncle.imagemanagement.activity.DrawerActivity;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
 
 /**
  * Created by Koncle on 2018/1/22.
@@ -49,42 +49,24 @@ public class FileChangeObserver extends ContentObserver {
 
         if (cursor == null) return;
 
-        int index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+        int pathIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
 
         int timeIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN);
         int nameIndex = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME);
         int latIndex = cursor.getColumnIndex(MediaStore.Images.Media.LATITUDE);
         int lngIndex = cursor.getColumnIndex(MediaStore.Images.Media.LONGITUDE);
         int despIndex = cursor.getColumnIndex(MediaStore.Images.Media.DESCRIPTION);
+        int mineTypeIndex = cursor.getColumnIndex(MediaStore.Images.Media.MIME_TYPE);
 
         while (cursor.moveToNext()) {
-            String path = cursor.getString(index);
-            Log.w("FILE OBSERVER", path);
-            path = cursor.getString(index); // 文件地址
-            String name = cursor.getString(nameIndex);
-            long time = cursor.getLong(timeIndex);
-            double lat = cursor.getDouble(latIndex);
-            double lng = cursor.getDouble(lngIndex);
-            String desp = cursor.getString(despIndex);
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            String folder;
-
-            String[] strings = path.split("/");
-            folder = strings[strings.length - 2];
-
+            String path = cursor.getString(pathIndex);
             Image image = new Image();
-            image.setName(name);
-            image.setFolder(folder);
             image.setPath(path);
-            image.setTime(new Date(time));
-            image.setLat(String.valueOf(lat));
-            image.setLng(String.valueOf(lng));
-            image.setDesc(desp);
 
-            // try insert image
+            // test if exist
+            Image imageInDatabase = ImageService.ifExistImage(image);
             // if return false, which means it exists in the database.
             // else it should be added to the database
-            Image imageInDatabase = ImageService.ifExistImage(image);
             if (imageInDatabase != null) {
 
                 File f = new File(path);
@@ -98,13 +80,34 @@ public class FileChangeObserver extends ContentObserver {
                     Log.w(TAG, "did nothing to : " + path);
                     break;
                 }
-
+                // not exist, insert the image
             } else {
+                String folder = ImageUtils.getFolderNameFromPath(path);
+                String name = cursor.getString(nameIndex);
+                long time = cursor.getLong(timeIndex);
+                double lat = cursor.getDouble(latIndex);
+                double lng = cursor.getDouble(lngIndex);
+                String desp = cursor.getString(despIndex);
+                String mineType = cursor.getString(mineTypeIndex);
+
+                image.setName(name);
+                image.setFolder(folder);
+                image.setTime(new Date(time));
+                image.setLat(String.valueOf(lat));
+                image.setLng(String.valueOf(lng));
+                image.setDesc(desp);
+
+                if ("image/gif".equals(mineType))
+                    image.setType(Image.TYPE_GIF);
+                else
+                    image.setType(Image.TYPE_NORNAL);
+
                 // if the image is not in database
                 ImageService.insertImageWithOutCheck(image);
 
+                // send msg to DrawerActivity handler
                 Message msg = new Message();
-                msg.what = DrawerActivity.IMAGE_ADDED;
+                msg.what = IMAGE_ADDED;
                 Bundle bundle = new Bundle();
                 bundle.putParcelable("image", image);
                 msg.setData(bundle);
@@ -112,10 +115,8 @@ public class FileChangeObserver extends ContentObserver {
 
                 Log.w(TAG, "insert image into database : " + path);
             }
-
             break;
         }
-
         cursor.close();
     }
 

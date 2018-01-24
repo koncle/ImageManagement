@@ -1,6 +1,10 @@
 package com.koncle.imagemanagement.adapter;
 
 import android.content.Context;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.os.Parcelable;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -10,10 +14,12 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.activity.MyHandler;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.util.ActivityUtil;
@@ -44,10 +50,12 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     private boolean selectMode = false;
     private ModeOperator modeOperator;
     private boolean descOrder = true;
+    private Handler handler;
 
-    public ImageAdaptor(Context context, GridLayoutManager gridLayoutManager, List<Image> images) {
+    public ImageAdaptor(Context context, Handler handler, GridLayoutManager gridLayoutManager, List<Image> images) {
         this.context = context;
         this.gridLayoutManager = gridLayoutManager;
+        this.handler = handler;
         if (images == null) {
             this.images = new ArrayList<>();
         } else {
@@ -134,14 +142,24 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             return;
         }
 
-        // put images
-        Glide.with(context)
-                .load(path)
-                //  .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .thumbnail(0.00001f)
-                // can't add simple target, cause it costs too much memory
-                .into(holder.image);
-
+        if (images.get(position).getType() == Image.TYPE_GIF) {
+            // put images
+            Glide.with(context)
+                    .load(path)
+                    .asBitmap()
+                    //  .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    // can't add simple target, cause it costs too much memory
+                    .into(holder.image);
+            holder.gifText.setVisibility(View.VISIBLE);
+        } else {
+            // put images
+            Glide.with(context)
+                    .load(path)
+                    //  .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    // can't add simple target, cause it costs too much memory
+                    .into(holder.image);
+            holder.gifText.setVisibility(View.GONE);
+        }
         // add tag to decide whether the image needs being loaded again
         // can't add tag to image when Glide is load its picture
         // cause Glide is using the tag to make sure images won't
@@ -267,14 +285,24 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         for (Integer pos : selectedImages.keySet()) {
             image = selectedImages.get(pos);
             // delete from sd card
-            count += ImageService.deleteImageInFileSystem(context, image, false) ? 1 : 0;
+            count += ImageService.deleteImageInFileSystemAndBroadcast(context, image, true) ? 1 : 0;
             // delete from memory
             images.remove(image);
             notifyItemRemoved(pos);
             // delete from database,
             // replaced by service
-            // ImageService.deleteImageInFileSystem(image);
+            // ImageService.deleteImageInFileSystemAndBroadcast(image);
         }
+
+        List<Image> deletedImages = new ArrayList<>();
+        deletedImages.addAll(selectedImages.values());
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList("images", (ArrayList<? extends Parcelable>) deletedImages);
+        Message msg = new Message();
+        msg.what = MyHandler.IMAGE_DELETED_BY_SELF;
+        msg.setData(bundle);
+        handler.sendMessage(msg);
+
         Log.w(TAG, "delete " + count + " files");
 
         Toast.makeText(context, "delete " + count + " files", Toast.LENGTH_SHORT).show();
@@ -296,8 +324,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         images.remove(i);
         notifyItemChanged(i);
         notifyItemRangeChanged(i, images.size() - i);
-        // delete image from database and broadcast it
-        ImageService.deleteImageInFileSystem(context, image, true);
         //notifyDataSetChangedWithoutFlash();
         Log.w(TAG, "delete 1 invalid file " + image.getPath());
     }
@@ -306,7 +332,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         for (Image image : imageList) {
             deleteInvalidImage(image);
         }
-        //notifyDataSetChangedWithoutFlash();
         Log.w(TAG, "delete " + imageList.size() + "invalid files");
     }
 
@@ -385,12 +410,14 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         public ImageView image;
         public CheckBox selects;
         public FrameLayout frameLayout;
+        TextView gifText;
 
         public ImageViewHolder(View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.image);
             selects = itemView.findViewById(R.id.select_button);
             frameLayout = itemView.findViewById(R.id.background);
+            gifText = itemView.findViewById(R.id.gif_text);
         }
     }
 

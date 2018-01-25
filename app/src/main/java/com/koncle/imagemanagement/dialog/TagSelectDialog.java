@@ -45,14 +45,14 @@ public class TagSelectDialog extends BaseDialogFragment {
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelableArrayList("images", (ArrayList<? extends Parcelable>) images);
+        outState.putParcelableArrayList("singleImages", (ArrayList<? extends Parcelable>) images);
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         if (savedInstanceState != null) {
-            images = savedInstanceState.getParcelableArrayList("images");
+            images = savedInstanceState.getParcelableArrayList("singleImages");
         }
         return super.onCreateView(inflater, container, savedInstanceState);
     }

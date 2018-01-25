@@ -93,7 +93,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
             stmt.bindLong(1, id);
         }
         stmt.bindString(2, entity.getPath());
-
+ 
         String thumbnailPath = entity.getThumbnailPath();
         if (thumbnailPath != null) {
             stmt.bindString(3, thumbnailPath);
@@ -137,7 +137,7 @@ public class ImageDao extends AbstractDao<Image, Long> {
             stmt.bindLong(1, id);
         }
         stmt.bindString(2, entity.getPath());
-
+ 
         String thumbnailPath = entity.getThumbnailPath();
         if (thumbnailPath != null) {
             stmt.bindString(3, thumbnailPath);

@@ -28,7 +28,7 @@ import java.util.Map;
  */
 
 public class ActivityUtil {
-    public static final String ACTIVITY_MUL_IMAGE_TAG = "images";
+    public static final String ACTIVITY_MUL_IMAGE_TAG = "singleImages";
     public static final String ACTIVITY_MUL_IMAGE_TITLE_TAG = "title";
 
     public static final String ACTIVITY_POS_TAG = "pos";
@@ -69,17 +69,24 @@ public class ActivityUtil {
     public static void showImageList(Context context, List<Image> images, String title) {
         Intent intent = new Intent(context, MultiColumnImagesActivity.class);
         Bundle bundle = new Bundle();
+
         bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
+        //WeakReference.putMulImages(images);
+
         bundle.putString(ACTIVITY_MUL_IMAGE_TITLE_TAG, title);
         intent.putExtras(bundle);
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
+        //((Activity) context).startActivityForResult(intent, 1);
     }
 
     public static void showSingleImageWithPos(final Context context, List<Image> images, int currentPos, View view) {
         Intent intent = new Intent(context, SingleImageActivity.class);
         Bundle bundle = new Bundle();
+
         bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
+        //WeakReference.putSingleImages(images);
+
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
 

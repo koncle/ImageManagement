@@ -10,6 +10,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PersistableBundle;
 import android.os.StrictMode;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -24,13 +25,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.Toast;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
+import com.koncle.imagemanagement.dialog.FolderSelectDialogFragment;
 import com.koncle.imagemanagement.dialog.TagSelectDialog;
 import com.koncle.imagemanagement.util.ActivityUtil;
+import com.koncle.imagemanagement.util.FileChangeObserver;
+import com.koncle.imagemanagement.util.ImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +47,9 @@ import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED;
 public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
 
     public static final String className = MultiColumnImagesActivity.class.getSimpleName();
+    public static final String ALL_FOLDER_NAME = "ALL";
+    private static final String TAG = MultiColumnImagesActivity.class.getSimpleName();
+    private static final int CANCEL_PREVENT = -100;
 
     boolean selecting = false;
     private RecyclerView recyclerView;
@@ -53,7 +61,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     private RadioButton delete;
     private RadioButton move;
     private RadioButton tag;
-    private String folderName;
+    private String Current_Folder_Name;
 
     private boolean deleteImage = false;
     public static final int RESULT_DELETE_IMAGE = -4;
@@ -61,6 +69,8 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     public static final String RESULT_DELETE_IMAGE_NUM = "num";
 
     private MyHandler handler;
+
+    private boolean prevent = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,21 +86,23 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         Bundle bundle = this.getIntent().getExtras();
         if (bundle != null) {
             images = bundle.getParcelableArrayList(ActivityUtil.ACTIVITY_MUL_IMAGE_TAG);
-            folderName = bundle.getString(ActivityUtil.ACTIVITY_MUL_IMAGE_TITLE_TAG);
+            //images = WeakReference.getMulImages();
+            //WeakReference.removeMulImages();
+            Current_Folder_Name = bundle.getString(ActivityUtil.ACTIVITY_MUL_IMAGE_TITLE_TAG);
             if (images == null) {
                 images = new ArrayList<>();
             }
         } else {
             images = new ArrayList<>();
-            folderName = "Error";
+            Current_Folder_Name = "Error";
         }
 
         ImageService.recoverDaoSession(images);
 
+        initHandler();
         findViews();
         initMode();
         initRecyclerView();
-        initFileObserver();
 
         getWindow().setExitTransition(new Explode());
         getWindow().setEnterTransition(new Explode());
@@ -100,26 +112,67 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         public void handleMessage(Message msg) {
             Image image;
             switch (msg.what) {
-                // notify folder to change images
+                // notify folder to change singleImages
                 case IMAGE_ADDED:
+                    if (prevent) break;
+
                     image = msg.getData().getParcelable("image");
-                    if (image != null && folderName.equals(image.getFolder())) {
+                    if (image != null && (ALL_FOLDER_NAME.equals(Current_Folder_Name) || Current_Folder_Name.equals(image.getFolder()))) {
                         imageAdaptor.addNewImage(image);
                     }
                     break;
                 case IMAGE_DELETED:
                     break;
+
+                case CANCEL_PREVENT:
+                    prevent = false;
             }
         }
     }
 
-    private void initFileObserver() {
+    private void initHandler() {
         handler = new MyHandler();
         MsgCenter.addHandler(handler, className);
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.w(TAG, "on resume" + images.size());
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.w(TAG, "on pause" + images.size());
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.w(TAG, "on stop" + images.size());
+    }
+
+    @Override
+    protected void onStart() {
+        Log.w(TAG, "on start" + images.size());
+        super.onStart();
+    }
+
+    @Override
+    protected void onRestart() {
+        Log.w(TAG, "on restart" + images.size());
+        super.onRestart();
+    }
+
+    @Override
     protected void onDestroy() {
+        Log.w(TAG, "on destroy" + images.size());
         super.onDestroy();
         MsgCenter.removeHandler(className);
         handler.removeMessages(IMAGE_ADDED);
@@ -183,7 +236,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                 if (selecting) {
                     exitSelectMode();
                 } else {
-                    finish();
+                    onBackPressed();
                 }
             }
         });
@@ -191,7 +244,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
             actionBar.setDisplayShowHomeEnabled(true);
-            actionBar.setTitle(folderName);
+            actionBar.setTitle(Current_Folder_Name);
         }
 
         // init bottom tools
@@ -202,7 +255,10 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                FileChangeObserver.lock();
                 imageAdaptor.deleteSelectedImages();
+                FileChangeObserver.unlock();
+
                 deleteImage = true;
                 imageAdaptor.exitSelectMode();
             }
@@ -219,9 +275,43 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         move.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                List<Image> images = imageAdaptor.getSelections();
-                //  ImageUtils.moveImages(paths);
-                imageAdaptor.exitSelectMode();
+                final List<Image> images = imageAdaptor.getSelections();
+                if (images.size() == 0) {
+                    imageAdaptor.exitSelectMode();
+                    return;
+                }
+
+                FolderSelectDialogFragment dialogFragment = FolderSelectDialogFragment.newInstance(new FolderSelectDialogFragment.OnSelectFinishedListener() {
+                    @Override
+                    public void selectFinished(String folderPath) {
+                        String folderName = ImageUtils.getFolderNameFromFolderPath(folderPath);
+                        // if the folder is ALL folder or the its name is the same as current folder
+                        // then return
+                        if (!ALL_FOLDER_NAME.equals(folderName) && folderName.equals(Current_Folder_Name)) {
+                            imageAdaptor.exitSelectMode();
+                            return;
+                        }
+
+                        FileChangeObserver.lock();
+                        int count = 0;
+                        for (Image image : images) {
+                            Image old = new Image();
+                            old.setFolder(image.getFolder());
+                            old.setPath(image.getPath());
+                            if (ImageService.moveFileAndSendMsg(MultiColumnImagesActivity.this, image, folderPath)) {
+                                imageAdaptor.removeItem(image);
+                                count += 1;
+                            } else {
+                                break;
+                            }
+                        }
+                        FileChangeObserver.unlock();
+                        Toast.makeText(getApplicationContext(), "move " + count + " images to folder : " + folderPath, Toast.LENGTH_SHORT).show();
+                        imageAdaptor.exitSelectMode();
+                        prevent = false;
+                    }
+                });
+                dialogFragment.show(getSupportFragmentManager(), "multi folder");
             }
         });
 
@@ -229,7 +319,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
             @Override
             public void onClick(View v) {
                 List<Image> images = imageAdaptor.getSelections();
-                //ImageService.addTags(images, );
+                //ImageService.addTags(singleImages, );
                 if (images.size() > 1) {
                     TagSelectDialog dialog = TagSelectDialog.newInstance(images);
                     dialog.addNote("It will overwrite previous tags");
@@ -262,11 +352,13 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     public void exitSelectMode() {
         // hide tools
         operatoins.setVisibility(View.GONE);
+        // clear selections
+        imageAdaptor.exitSelectMode();
 
         // hide menu
         selecting = false;
         invalidateOptionsMenu();
-        toolbar.setTitle(folderName);
+        toolbar.setTitle(Current_Folder_Name);
     }
 
     public void enterSelectMode() {
@@ -285,12 +377,13 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         if (!imageAdaptor.exitSelectMode()) {
             if (deleteImage) {
                 Intent intent = new Intent();
-                intent.putExtra(RESULT_DELETE_IMAGE_FOLDER, folderName);
+                intent.putExtra(RESULT_DELETE_IMAGE_FOLDER, Current_Folder_Name);
                 intent.putExtra(RESULT_DELETE_IMAGE_NUM, deleteImage);
                 setResult(RESULT_DELETE_IMAGE, intent);
 
                 handler.sendEmptyMessage(IMAGE_DELETED);
             }
+            WeakReference.clear();
             super.onBackPressed();
         }
     }
@@ -298,7 +391,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     @Override
     public void refreshData() {
         /*
-         * The recyclerView will retain at least 4 images to
+         * The recyclerView will retain at least 4 singleImages to
          * have a perfect perfomance which leads to my failure
          * to recover from select mode to nomal mode,
          * Thus I have to use this method to refresh data
@@ -314,6 +407,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.w(TAG, "on return");
         super.onActivityResult(requestCode, resultCode, data);
         switch (resultCode) {
             // the glide will use cache to show image

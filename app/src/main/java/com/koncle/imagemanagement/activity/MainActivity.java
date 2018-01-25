@@ -18,7 +18,6 @@ import android.view.MenuItem;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.fragment.EventFragment;
 import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
 import com.koncle.imagemanagement.fragment.Operator;
@@ -55,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements Operator {
                     break;
                 case SCAN_OK:
                     List<Image> folders = ImageService.getFolders();
-                    ((FolderFragment) fragments.get(0)).setFolderCovers(folders);
+                    // ((FolderFragment) fragments.get(0)).setFolderCovers(folders); // this method has been changed
                     break;
             }
         }
@@ -232,16 +231,6 @@ public class MainActivity extends AppCompatActivity implements Operator {
             default:
                 super.onBackPressed();
                 break;
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (resultCode == SelectImageActivity.RESULT_CODE) {
-            List<Image> images = data.getExtras().getParcelableArrayList(SelectImageActivity.IMAGES);
-            ((EventFragment) fragments.get(1)).handleResult(images);
         }
     }
 }

@@ -33,7 +33,7 @@ public class MsgCenter {
         // send msg to all other activities
         Message msg = new Message();
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList("images", (ArrayList<? extends Parcelable>) deletedImages);
+        bundle.putParcelableArrayList("singleImages", (ArrayList<? extends Parcelable>) deletedImages);
         msg.setData(bundle);
         msg.what = IMAGE_DELETED_BY_SELF;
         MsgCenter.sendMsg(msg);

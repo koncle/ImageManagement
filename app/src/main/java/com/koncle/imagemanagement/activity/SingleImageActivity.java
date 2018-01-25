@@ -72,7 +72,10 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
 
         Bundle bundle = getIntent().getExtras();
         int position = (int) bundle.get("pos");
-        this.images = (List<Image>) bundle.get("images");
+
+        this.images = (List<Image>) bundle.get("singleImages");
+        //this.images = WeakReference.getSingleImages();
+
         ImageService.recoverDaoSession(images);  // its daoSession can't not be parsed
 
         deleteImages = new ArrayList<>();
@@ -178,6 +181,9 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
                 FolderSelectDialogFragment dialogFragment = FolderSelectDialogFragment.newInstance(new FolderSelectDialogFragment.OnSelectFinishedListener() {
                     @Override
                     public void selectFinished(String folderPath) {
+                        if (folderPath.equals(getCurrentItem().getFolder())) {
+                            return;
+                        }
                         Image image = images.get(imageViewPager.getCurrentItem());
                         moveImage(image, folderPath);
                     }
@@ -212,54 +218,44 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     }
 
     private void moveImage(Image image, String folderPath) {
-        boolean success = ImageService.moveFile(image, folderPath);
+        Image preImage = new Image();
+        preImage.setPath(image.getPath());
+        preImage.setFolder(image.getFolder());
+
+        boolean success = ImageService.moveFileAndSendMsg(getApplicationContext(), image, folderPath);
+
         if (success) {
-            Image preImage = new Image();
-            preImage.setPath(image.getPath());
-            ImageService.updateImagePath(getApplicationContext(), image, folderPath);
-            Image rearImage = image;
-            notifyImageMoved(preImage, rearImage, true);
+            Intent intent = new Intent();
+            intent.putExtra(RESULT_TAG, true);
+            Bundle bundle = new Bundle();
+            bundle.putParcelable(DELETE_IMAGE, preImage);
+            bundle.putParcelable(MOVE_IMAGE, image);
+            intent.putExtras(bundle);
+            setResult(IMAGE_VIEWER_MOVE, intent);
+
+            Toast.makeText(getApplicationContext(), "move to folder : " + folderPath, Toast.LENGTH_SHORT).show();
         }
-        Toast.makeText(getApplicationContext(), "move to folder : " + folderPath, Toast.LENGTH_SHORT).show();
         finish();
     }
 
     public void deleteImage(Image currentImage) {
-        // delete from sd card
+        // delete from sd card and send msg
         ImageService.deleteImageInFileSystemAndBroadcast(this, currentImage, true);
-        notifyImageDelete(currentImage, true);
+
+        // notify mul
+        Intent intent = new Intent();
+        intent.putExtra(RESULT_TAG, true);
+        Bundle bundle = new Bundle();
+        bundle.putParcelable(DELETE_IMAGE, currentImage);
+        intent.putExtras(bundle);
+        setResult(IMAGE_VIEWER_DELETE, intent);
+
+
+        List<Image> deletedImages = new ArrayList<>();
+        deletedImages.add(currentImage);
+        MsgCenter.notifyDataDeletedInner(deletedImages);
         // notify multi activity to change its data set
         finish();
-    }
-
-    public void notifyImageDelete(Image currentImage, boolean sucess) {
-        Intent intent = new Intent();
-        intent.putExtra(RESULT_TAG, sucess);
-        if (sucess) {
-            Bundle bundle = new Bundle();
-            bundle.putParcelable(DELETE_IMAGE, currentImage);
-            intent.putExtras(bundle);
-
-            // send msg to all other activities
-            List<Image> deletedImages = new ArrayList<>();
-            deletedImages.add(currentImage);
-            MsgCenter.notifyDataDeletedInner(deletedImages);
-        }
-        setResult(IMAGE_VIEWER_DELETE, intent);
-    }
-
-    public void notifyImageMoved(Image preImage, Image rearImage, boolean success) {
-        Intent intent = new Intent();
-        intent.putExtra(RESULT_TAG, success);
-        if (success) {
-            Bundle bundle = new Bundle();
-            bundle.putParcelable(DELETE_IMAGE, preImage);
-            bundle.putParcelable(MOVE_IMAGE, rearImage);
-            intent.putExtras(bundle);
-
-            MsgCenter.notifyDataMovedInner(preImage, rearImage);
-        }
-        setResult(IMAGE_VIEWER_MOVE, intent);
     }
 
     @Override
@@ -330,16 +326,15 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         intent.putExtra("pos", imageViewPager.getCurrentItem());
 
         /*
-        * when user scroll images, there may be many invalid images
+        * when user scroll singleImages, there may be many invalid singleImages
         * that some application didn't delete completely as what this app did,
-        * thus invalid images have to be deleted both in database and in MediaStore
+        * thus invalid singleImages have to be deleted both in database and in MediaStore
         *
         * Of cause this work should be done by MultiActivity which should
         * show the change of a data set
         */
         if (deleteImages.size() > 0) {
             for (Image image : deleteImages) {
-                //ImageService.deleteImageInFileSystemAndBroadcast(getApplicationContext(), image, true);
                 ImageService.deleteImageInFileSystemAndBroadcast(getApplication(), image, false);
             }
 
@@ -347,8 +342,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             Bundle bundle = new Bundle();
             bundle.putParcelableArrayList("deletes", (ArrayList<? extends Parcelable>) deleteImages);
             intent.putExtras(bundle);
-
-            MsgCenter.notifyDataDeletedInner(deleteImages);
 
         } else {
             intent.putExtra("delete", false);

@@ -146,6 +146,7 @@ public class DrawerActivity extends AppCompatActivity
     protected void onDestroy() {
         super.onDestroy();
         ImageService.close(this);
+        WeakReference.clear();
     }
 
     private void initToolbar() {
@@ -382,7 +383,7 @@ public class DrawerActivity extends AppCompatActivity
 
         if (resultCode == SelectImageActivity.RESULT_CODE) {
             List<Image> images = data.getExtras().getParcelableArrayList(SelectImageActivity.IMAGES);
-            ((EventFragment) fragments.get(1)).handleResult(images);
+            ((EventFragment) fragments.get(1)).addImage2Events(images);
         } else if (resultCode == MultiColumnImagesActivity.RESULT_DELETE_IMAGE) {
             boolean deleteNum = data.getBooleanExtra(MultiColumnImagesActivity.RESULT_DELETE_IMAGE_NUM, false);
             String deleteFolder = data.getStringExtra(MultiColumnImagesActivity.RESULT_DELETE_IMAGE_FOLDER);
@@ -397,7 +398,7 @@ public class DrawerActivity extends AppCompatActivity
             public void run() {
                 ImageService.getSystemPhotoList(DrawerActivity.this);
                 handler.sendEmptyMessage(SCAN_OK);
-                ImageService.testFile(getApplicationContext());
+                //ImageService.testFile(getApplicationContext());
             }
         }).start();
     }
@@ -413,9 +414,9 @@ public class DrawerActivity extends AppCompatActivity
     }
 
     public class MyHandler extends Handler {
-
+        public static final String tag = "HANDLER DRAWER";
         public void handleMessage(Message msg) {
-            Image image;
+            Image image, newCover;
             List<Image> folders;
             switch (msg.what) {
                 case SCAN_OK_SHOW:
@@ -424,20 +425,39 @@ public class DrawerActivity extends AppCompatActivity
                     break;
 
                 case SCAN_OK:
-                    folders = ImageService.getFolders();
+                    folders = ImageService.getAllFolders();
                     ((FolderFragment) fragments.get(0)).setFolderCovers(folders);
                     break;
 
-                // notify folder to change images
+                // notify folder to change singleImages
                 case IMAGE_ADDED:
                     image = msg.getData().getParcelable("image");
-                    ((FolderFragment) fragments.get(0)).refreshCover(image);
+                    ((ImageChangeListener) fragments.get(0)).onImageAdded(image);
+                    ((ImageChangeListener) fragments.get(1)).onImageAdded(image);
+                    break;
+
+                case IMAGE_DELETED_BY_SELF:
+                    List<Image> images = msg.getData().getParcelableArrayList("singleImages");
+                    ((ImageChangeListener) fragments.get(0)).onImageDeleted(images);
+                    ((ImageChangeListener) fragments.get(1)).onImageDeleted(images);
+                    break;
+
+                case IMAGE_MOVED:
+
+                    Image newImage = msg.getData().getParcelable(MsgCenter.MOVE_REARIMAGE);
+                    Image oldImage = msg.getData().getParcelable(MsgCenter.MOVE_PREIMAGE);
+
+                    Log.w(tag, " get image moved msg " +
+                            " from : " + oldImage.getPath() +
+                            " to :" + newImage.getPath()
+                    );
+
+                    ((ImageChangeListener) fragments.get(0)).onImageMoved(oldImage, newImage);
+                    ((ImageChangeListener) fragments.get(1)).onImageMoved(oldImage, newImage);
                     break;
 
                 case IMAGE_DELETED:
-                    image = msg.getData().getParcelable("image");
-                    ((FolderFragment) fragments.get(0)).refreshCover(image);
-                    ((EventFragment) fragments.get(1)).onImageDeleted(image);
+                    Log.w(tag, "Calded");
                     break;
 
                 case IMAGE_TAG_ADDED:
@@ -448,17 +468,6 @@ public class DrawerActivity extends AppCompatActivity
                     ((EventFragment) fragments.get(1)).onImageAddedToAnEvent();
                     break;
 
-                case IMAGE_DELETED_BY_SELF:
-                    List<Image> images = msg.getData().getParcelableArrayList("images");
-                    ((EventFragment) fragments.get(1)).onImageDeleted(images);
-
-                case IMAGE_MOVED:
-                    Image newImage = msg.getData().getParcelable(MsgCenter.MOVE_REARIMAGE);
-                    Image oldImage = msg.getData().getParcelable(MsgCenter.MOVE_PREIMAGE);
-                    ((FolderFragment) fragments.get(0)).refreshCover(oldImage);
-                    ((FolderFragment) fragments.get(0)).refreshCover(newImage);
-                    ((EventFragment) fragments.get(1)).onImageMoved(oldImage, newImage);
-                    break;
             }
         }
     }

@@ -29,6 +29,15 @@ public class FileChangeObserver extends ContentObserver {
 
     private Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
+    private static boolean lock = false;
+
+    public static void lock() {
+        lock = true;
+    }
+
+    public static void unlock() {
+        lock = false;
+    }
     /**
      * Creates a content observer.
      *
@@ -42,6 +51,8 @@ public class FileChangeObserver extends ContentObserver {
 
     @Override
     public void onChange(boolean selfChange) {
+        if (lock) return;
+
         Cursor cursor = context.getContentResolver().query(uri, null,
                 MediaStore.Images.Media.MIME_TYPE + "=? or "
                         + MediaStore.Images.Media.MIME_TYPE + "=?",
@@ -82,7 +93,7 @@ public class FileChangeObserver extends ContentObserver {
                 }
                 // not exist, insert the image
             } else {
-                String folder = ImageUtils.getFolderNameFromPath(path);
+                String folderName = ImageUtils.getFolderNameFromPath(path);
                 String name = cursor.getString(nameIndex);
                 long time = cursor.getLong(timeIndex);
                 double lat = cursor.getDouble(latIndex);
@@ -91,7 +102,17 @@ public class FileChangeObserver extends ContentObserver {
                 String mineType = cursor.getString(mineTypeIndex);
 
                 image.setName(name);
-                image.setFolder(folder);
+                image.setFolder(folderName);
+                /*
+                List<Folder> folders = ImageService.ifExistFolder(folderName);
+                Folder f;
+                if (folders.size() == 0){
+                    f = ImageService.insertFolder(folderName);
+                }else{
+                    f =folders.get(0);
+                }
+                image.setFolder_id(f.getId());
+                */
                 image.setTime(new Date(time));
                 image.setLat(String.valueOf(lat));
                 image.setLng(String.valueOf(lng));
@@ -118,12 +139,5 @@ public class FileChangeObserver extends ContentObserver {
             break;
         }
         cursor.close();
-    }
-
-    @Override
-    public void onChange(boolean selfChange, Uri uri) {
-        super.onChange(selfChange, uri);
-        Log.w(TAG, uri.toString());
-        onChange(selfChange);
     }
 }

@@ -36,7 +36,7 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
     private List<Image> images;
 
     // save <positoin, url> into map
-    private HashMap<Integer, Image> selectedImages;
+    private HashMap<String, Image> selectedImages;
 
     public ImageSelectAdaptor(Context context, GridLayoutManager gridLayoutManager, List<Image> images) {
         this.context = context;
@@ -107,7 +107,7 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
         });
 
         if (image.getType() == Image.TYPE_GIF) {
-            // put images
+            // put singleImages
             Glide.with(context)
                     .load(path)
                     .asBitmap()
@@ -115,7 +115,7 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
                     .into(holder.image);
             holder.gifText.setVisibility(View.VISIBLE);
         } else {
-            // put images
+            // put singleImages
             Glide.with(context)
                     .load(path)
                     // can't add simple target, cause it costs too much memory
@@ -131,23 +131,25 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
     * nothing has been done.
     */
     private void toggleImageSelectionWithoutCheck(ImageViewHolder holder, int position) {
-        if (selectedImages.containsKey(position)) {
-            selectedImages.remove(position);
+        String path = images.get(position).getPath();
+        if (selectedImages.containsKey(path)) {
+            selectedImages.remove(path);
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.GONE);
         } else {
-            selectedImages.put(position, images.get(position));
+            selectedImages.put(path, images.get(position));
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
         }
     }
 
     private void toggleImageSelectionAndCheck(ImageViewHolder holder, int position) {
-        if (selectedImages.containsKey(position)) {
-            selectedImages.remove(position);
+        String path = images.get(position).getPath();
+        if (selectedImages.containsKey(path)) {
+            selectedImages.remove(path);
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.GONE);
 
             holder.selects.setChecked(false);
         } else {
-            selectedImages.put(position, images.get(position));
+            selectedImages.put(path, images.get(position));
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
 
             holder.selects.setChecked(true);
@@ -170,10 +172,10 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
 
     // TODO:to compelte this method
     public void selectAll() {
-        if (selectedImages.size() == images.size()) return;
+        //if (selectedImages.size() == singleImages.size()) return;
 
         for (int i = 0; i < images.size(); ++i) {
-            selectedImages.put(i, images.get(i));
+            selectedImages.put(images.get(i).getPath(), images.get(i));
         }
 
         notifyDataSetChanged();
@@ -181,9 +183,7 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
 
     public List<Image> getSelections() {
         List<Image> images = new ArrayList<>();
-        for (Integer key : selectedImages.keySet()) {
-            images.add(selectedImages.get(key));
-        }
+        images.addAll(selectedImages.values());
         return images;
     }
 

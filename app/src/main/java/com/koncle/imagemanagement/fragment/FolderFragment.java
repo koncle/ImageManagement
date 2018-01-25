@@ -27,6 +27,8 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.activity.DrawerActivity;
+import com.koncle.imagemanagement.activity.ImageChangeListener;
+import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dialog.TagSelectDialog;
@@ -42,7 +44,7 @@ import java.util.Map;
  * Created by Koncle on 2018/1/12.
  */
 
-public class FolderFragment extends Fragment implements HasName {
+public class FolderFragment extends Fragment implements HasName, ImageChangeListener {
     private final String TAG = getClass().getSimpleName();
     private final String name = DrawerActivity.FOLDER_FRAGMENT_NAME;
     private FolderRecyclerViewAdapter folderAdapter;
@@ -87,7 +89,7 @@ public class FolderFragment extends Fragment implements HasName {
             spanCount = 4;
         }
 
-        folderCovers = ImageService.getFolders();
+        folderCovers = ImageService.getAllFolders();
 
         folderAdapter = new FolderRecyclerViewAdapter();
         recyclerView.setLayoutManager(new GridLayoutManager(this.getContext(), spanCount));
@@ -153,12 +155,14 @@ public class FolderFragment extends Fragment implements HasName {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 switch (item.getItemId()) {
+                    /*
                     case R.id.event_delete:
                         if (ImageUtils.deleteFile(folder))
                             Toast.makeText(getContext(), "delete...", Toast.LENGTH_SHORT).show();
                         else
                             Toast.makeText(getContext(), "can't delete...", Toast.LENGTH_SHORT).show();
                         break;
+                        */
                     case R.id.share:
                         List<Image> images = ImageService.getImagesFromFolder(folder);
                         ActivityUtil.shareImages(getContext(), images);
@@ -180,6 +184,9 @@ public class FolderFragment extends Fragment implements HasName {
     }
 
     class FolderRecyclerViewAdapter extends RecyclerView.Adapter<FolderRecyclerViewAdapter.FolderHolder> {
+        private static final int ALL = 0;
+        private static final int OTHER = 1;
+
         @Override
         public FolderHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             return new FolderHolder(LayoutInflater.from(FolderFragment.this.getContext())
@@ -195,11 +202,36 @@ public class FolderFragment extends Fragment implements HasName {
             notifyItemRangeChanged(0, folderCovers.size());
         }
 
+        public void setFolderCover(int index, Image image) {
+            folderCovers.set(index, image);
+            notifyItemChanged(index);
+        }
+
+        public void refreshAll() {
+            folderCovers = ImageService.getAllFolders();
+            notifyDataSetChangedWithoutFlash();
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            return position == 0 ? ALL : OTHER;
+        }
+
         @Override
         public void onBindViewHolder(final FolderHolder holder, final int position) {
-            final String folder = folderCovers.get(position).getFolder();
+            final String folder;
+            if (getItemViewType(position) == OTHER) {
+                folder = folderCovers.get(position).getFolder();
+                holder.num.setText(String.format("(%d)", ImageService.getImageCountFromFolder(folder)));
+                holder.more.setVisibility(View.VISIBLE);
+            } else {
+                folder = MultiColumnImagesActivity.ALL_FOLDER_NAME;
+                holder.num.setText(String.format("(%d)", ImageService.getImagesCount()));
+                holder.more.setVisibility(View.GONE);
+            }
 
             holder.textView.setText(folder);
+
             if (selectMode && selectedFolder.containsKey(position)) {
                 holder.cardView.setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
             } else {
@@ -214,49 +246,58 @@ public class FolderFragment extends Fragment implements HasName {
                     // .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .into(holder.imageView);
 
-            holder.num.setText(String.format("(%d)", ImageService.getImageCountFromFolder(folder)));
-
             initListener(holder, folder, position);
         }
 
         private void initListener(final FolderHolder holder, final String folder, final int position) {
-            final Image image = folderCovers.get(position);
-            // if the data has been refreshed, then get images from database again
-            // otherwise use previous data
-
-            holder.imageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (selectMode) {
-                        toggleFolderSelection(holder.cardView, folderCovers.get(position), position);
-                    } else {
-                        List<Image> images = ImageService.getImagesFromFolder(folder);
-                        ActivityUtil.showImageList(FolderFragment.this.getContext(), images, folder);
+            if (getItemViewType(position) == OTHER) {
+                holder.imageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (selectMode) {
+                            toggleFolderSelection(holder.cardView, folderCovers.get(position), position);
+                        } else {
+                            List<Image> images = ImageService.getImagesFromFolder(folder);
+                            ActivityUtil.showImageList(FolderFragment.this.getContext(), images, folder);
+                        }
                     }
-                }
-            });
+                });
 
-            holder.imageView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    enterSelectMode(holder.cardView, image, position);
-                    return true;
-                }
-            });
+                final Image image = folderCovers.get(position);
+                holder.imageView.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        enterSelectMode(holder.cardView, image, position);
+                        return true;
+                    }
+                });
 
-            holder.more.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showPopup(holder.more, folder, folderCovers.get(position));
-                }
-            });
+                holder.more.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        showPopup(holder.more, folder, folderCovers.get(position));
+                    }
+                });
 
-            holder.linearLayout.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showPopup(holder.more, folder, folderCovers.get(position));
-                }
-            });
+                holder.linearLayout.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        showPopup(holder.more, folder, folderCovers.get(position));
+                    }
+                });
+            } else {
+                holder.imageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (selectMode) {
+                            Toast.makeText(getContext(), " can't be selected", Toast.LENGTH_SHORT).show();
+                        } else {
+                            List<Image> images = ImageService.getImages();
+                            ActivityUtil.showImageList(FolderFragment.this.getContext(), images, folder);
+                        }
+                    }
+                });
+            }
         }
 
         private void toggleFolderSelection(CardView card, Image image, int pos) {
@@ -286,11 +327,6 @@ public class FolderFragment extends Fragment implements HasName {
         private void unSelectAll() {
             selectedFolder.clear();
             notifyDataSetChangedWithoutFlash();
-        }
-
-        public void setFolderCover(int index, Image image) {
-            folderCovers.set(index, image);
-            notifyItemChanged(index);
         }
 
         class FolderHolder extends RecyclerView.ViewHolder {
@@ -342,10 +378,14 @@ public class FolderFragment extends Fragment implements HasName {
         refresh.setRefreshing(false);
     }
 
+    public void refreshFirst() {
+        folderAdapter.setFolderCover(0, ImageService.getLatestImage());
+    }
+
     public void refreshCover(Image image) {
         if (image == null) return;
 
-        int index = 0;
+        int index = 1;
         for (; index < folderCovers.size(); ++index) {
             if (folderCovers.get(index).getFolder().equals(image.getFolder())) {
                 folderAdapter.setFolderCover(index, image);
@@ -354,8 +394,36 @@ public class FolderFragment extends Fragment implements HasName {
         }
     }
 
+    @Override
+    public void onImageAdded(Image image) {
+        refreshFirst();
+        refreshCover(image);
+    }
+
+    @Override
+    public void onImageMoved(Image oldImage, Image newImage) {
+        folderAdapter.refreshAll();
+        return;
+        /*
+        Image oldFolderCover = ImageService.getCoverFromFolder(oldImage.getFolder());
+        Image newFolderCover = ImageService.getCoverFromFolder(newImage.getFolder());
+        // get new cover for old folder
+        refreshCover(oldFolderCover);
+        refreshCover(newFolderCover);
+        */
+    }
+
+    @Override
+    public void onImageDeleted(List<Image> images) {
+        Image newCover = ImageService.getCoverFromFolder(images.get(0).getFolder());
+        refreshFirst();
+        refreshCover(newCover);
+    }
+
     public void handleResult(boolean delete, String changedFolder) {
         if (!delete) return;
+
+        refreshFirst();
 
         // get new cover
         Image image = ImageService.getCoverFromFolder(changedFolder);

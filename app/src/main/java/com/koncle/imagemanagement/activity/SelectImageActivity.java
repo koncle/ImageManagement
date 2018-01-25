@@ -38,7 +38,7 @@ import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
 public class SelectImageActivity extends AppCompatActivity {
 
     public static final int RESULT_CODE = -3;
-    public static final String IMAGES = "images";
+    public static final String IMAGES = "singleImages";
     private RecyclerView recyclerView;
     private ImageSelectAdaptor imageAdaptor;
     private Toolbar toolbar;
@@ -87,6 +87,13 @@ public class SelectImageActivity extends AppCompatActivity {
             }
         });
 
+        show.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                imageAdaptor.selectAll();
+            }
+        });
+
         toolbar.setNavigationIcon(R.drawable.back);
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
@@ -101,24 +108,38 @@ public class SelectImageActivity extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList(IMAGES, (ArrayList<? extends Parcelable>) imageAdaptor.getSelections());
         intent.putExtras(bundle);
+        //WeakReference.putSelections(imageAdaptor.getSelections());
         setResult(RESULT_CODE, intent);
     }
 
     private void initData() {
         folderStringMap = new HashMap<>();
         folderImageMap = new HashMap<>();
-        List<Image> folderImages = ImageService.getFolders();
-        for (Image image : folderImages) {
+        List<Image> folderImages = ImageService.getAllFolders();
+        for (int i = 0; i < folderImages.size(); i++) {
+            Image image = folderImages.get(i);
+
             // get image paths
-            List<Image> images = ImageService.getImagesFromFolder(image.getFolder());
+            List<Image> images;
+            if (i == 0) {
+                images = ImageService.getImages();
+            } else {
+                images = ImageService.getImagesFromFolder(image.getFolder());
+            }
+
             List<String> imagePaths = new ArrayList<>();
             for (Image image1 : images) {
                 imagePaths.add(image1.getPath());
             }
 
             // add
-            folderStringMap.put(image.getFolder(), imagePaths);
-            folderImageMap.put(image.getFolder(), images);
+            if (i != 0) {
+                folderStringMap.put(image.getFolder(), imagePaths);
+                folderImageMap.put(image.getFolder(), images);
+            } else {
+                folderStringMap.put(MultiColumnImagesActivity.ALL_FOLDER_NAME, imagePaths);
+                folderImageMap.put(MultiColumnImagesActivity.ALL_FOLDER_NAME, images);
+            }
         }
     }
 

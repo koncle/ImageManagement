@@ -23,6 +23,8 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.activity.DrawerActivity;
+import com.koncle.imagemanagement.activity.ImageChangeListener;
+import com.koncle.imagemanagement.activity.WeakReference;
 import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
@@ -36,7 +38,7 @@ import java.util.List;
  * Created by 10976 on 2018/1/12.
  */
 
-public class EventFragment extends Fragment implements HasName {
+public class EventFragment extends Fragment implements HasName, ImageChangeListener {
     private static final String TAG = EventFragment.class.getSimpleName();
     public static String className = EventFragment.class.getSimpleName();
 
@@ -174,7 +176,9 @@ public class EventFragment extends Fragment implements HasName {
                     public void onClick(View v) {
                         ImageService.deleteEvent(event);
                         events.remove(position);
+                        // item remove will not call onbindview again
                         eventAdapter.notifyItemRemoved(position);
+                        eventAdapter.notifyItemRangeChanged(position, events.size() - position);
                     }
                 });
                 finalHolder.modify.setOnClickListener(new View.OnClickListener() {
@@ -263,15 +267,15 @@ public class EventFragment extends Fragment implements HasName {
             event.resetImageList();
             this.images = event.getImageList();
             this.size = images.size() * 2;
-            notifyDataSetChanged();
+            notifyItemRangeChanged(0, images.size());
             this.event = event;
         }
 
-        void refreData() {
+        void refreshData() {
             event.resetImageList();
             this.images = event.getImageList();
             this.size = images.size() * 2;
-            notifyDataSetChanged();
+            notifyItemRangeChanged(0, images.size());
         }
 
         void deleteImage(int position) {
@@ -279,8 +283,9 @@ public class EventFragment extends Fragment implements HasName {
             this.size -= 2;
             if (position == size - 4) {
                 notifyItemRangeRemoved(position, 2);
+                notifyItemRangeChanged(position, images.size() - position);
             } else {
-                notifyDataSetChanged();
+                notifyItemRangeChanged(0, images.size() - position);
             }
         }
 
@@ -401,13 +406,6 @@ public class EventFragment extends Fragment implements HasName {
         return name;
     }
 
-    public void handleResult(List<Image> images) {
-        if (images != null) {
-            ImageService.recoverDaoSession(images);
-            ImageService.addImages2EventInThread(events.get(eventPositionWaitingForAddImageResult), images);
-        }
-    }
-
     public void onImageDeleted(Image image) {
         if (eventAdapter == null) return;
 
@@ -428,8 +426,21 @@ public class EventFragment extends Fragment implements HasName {
         }
     }
 
+    @Override
+    public void onImageAdded(Image image) {
+
+    }
+
     public void onImageMoved(Image oldImage, Image newImage) {
+        if (eventAdapter == null) return;
         eventAdapter.refreshData();
+    }
+
+    public void addImage2Events(List<Image> images) {
+        if (images != null) {
+            ImageService.recoverDaoSession(images);
+            ImageService.addImages2EventInThread(events.get(eventPositionWaitingForAddImageResult), images);
+        }
     }
 
     public void onImageAddedToAnEvent() {
@@ -442,10 +453,11 @@ public class EventFragment extends Fragment implements HasName {
 
         eventPositionWaitingForAddImageResult = -1;
         adapterWaitingForAddImageResult = null;
+        WeakReference.removeSelections();
     }
 
     public void onImageDeleted() {
         if (adapterWaitingForAddImageResult == null) return;
-        adapterWaitingForAddImageResult.refreData();
+        adapterWaitingForAddImageResult.refreshData();
     }
 }

@@ -43,16 +43,14 @@ public class ImageAndEventDao extends AbstractDao<ImageAndEvent, Long> {
      * Creates the underlying database table.
      */
     public static void createTable(Database db, boolean ifNotExists) {
-        String constraint = ifNotExists ? "IF NOT EXISTS " : "";
+        String constraint = ifNotExists ? "IF NOT EXISTS ": "";
         db.execSQL("CREATE TABLE " + constraint + "\"IMAGE_AND_EVENT\" (" + //
                 "\"_id\" INTEGER PRIMARY KEY AUTOINCREMENT ," + // 0: id
                 "\"EVENT_ID\" INTEGER NOT NULL ," + // 1: event_id
                 "\"IMAGE_ID\" INTEGER NOT NULL );"); // 2: image_id
     }
 
-    /**
-     * Drops the underlying database table.
-     */
+    /** Drops the underlying database table. */
     public static void dropTable(Database db, boolean ifExists) {
         String sql = "DROP TABLE " + (ifExists ? "IF EXISTS " : "") + "\"IMAGE_AND_EVENT\"";
         db.execSQL(sql);
@@ -61,7 +59,7 @@ public class ImageAndEventDao extends AbstractDao<ImageAndEvent, Long> {
     @Override
     protected final void bindValues(DatabaseStatement stmt, ImageAndEvent entity) {
         stmt.clearBindings();
-
+ 
         Long id = entity.getId();
         if (id != null) {
             stmt.bindLong(1, id);
@@ -73,7 +71,7 @@ public class ImageAndEventDao extends AbstractDao<ImageAndEvent, Long> {
     @Override
     protected final void bindValues(SQLiteStatement stmt, ImageAndEvent entity) {
         stmt.clearBindings();
-
+ 
         Long id = entity.getId();
         if (id != null) {
             stmt.bindLong(1, id);
@@ -85,7 +83,7 @@ public class ImageAndEventDao extends AbstractDao<ImageAndEvent, Long> {
     @Override
     public Long readKey(Cursor cursor, int offset) {
         return cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0);
-    }
+    }    
 
     @Override
     public ImageAndEvent readEntity(Cursor cursor, int offset) {
@@ -96,20 +94,20 @@ public class ImageAndEventDao extends AbstractDao<ImageAndEvent, Long> {
         );
         return entity;
     }
-
+     
     @Override
     public void readEntity(Cursor cursor, ImageAndEvent entity, int offset) {
         entity.setId(cursor.isNull(offset + 0) ? null : cursor.getLong(offset + 0));
         entity.setEvent_id(cursor.getLong(offset + 1));
         entity.setImage_id(cursor.getLong(offset + 2));
-    }
-
+     }
+    
     @Override
     protected final Long updateKeyAfterInsert(ImageAndEvent entity, long rowId) {
         entity.setId(rowId);
         return rowId;
     }
-
+    
     @Override
     public Long getKey(ImageAndEvent entity) {
         if (entity != null) {
@@ -128,5 +126,5 @@ public class ImageAndEventDao extends AbstractDao<ImageAndEvent, Long> {
     protected final boolean isEntityUpdateable() {
         return true;
     }
-
+    
 }

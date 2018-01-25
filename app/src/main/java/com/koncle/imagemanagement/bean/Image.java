@@ -28,7 +28,7 @@ import java.util.List;
  */
 
 @Entity
-public class Image implements Parcelable, Comparable<Image>, ClusterItem {
+public class Image implements Parcelable, Comparable<Image>, ClusterItem, Cloneable {
     public static final int TYPE_NORNAL = 0;
     public static final int TYPE_GIF = 1;
 
@@ -337,9 +337,9 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem {
     }
 
     @Generated(hash = 1256681410)
-    public Image(Long id, @NotNull String path, String thumbnailPath,
-                 @NotNull String folder, @NotNull String name, String desc, Date time,
-                 Long loc_id, String lat, String lng, int type) {
+    public Image(Long id, @NotNull String path, String thumbnailPath, @NotNull String folder,
+                 @NotNull String name, String desc, Date time, Long loc_id, String lat, String lng,
+                 int type) {
         this.id = id;
         this.path = path;
         this.thumbnailPath = thumbnailPath;

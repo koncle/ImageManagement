@@ -29,9 +29,7 @@ public class Location {
     @Generated(hash = 2040040024)
     private transient DaoSession daoSession;
 
-    /**
-     * Used for active entity operations.
-     */
+    /** Used for active entity operations. */
     @Generated(hash = 842527347)
     private transient LocationDao myDao;
 
@@ -74,9 +72,7 @@ public class Location {
         return images;
     }
 
-    /**
-     * Resets a to-many relationship, making the next get call to query for a fresh result.
-     */
+    /** Resets a to-many relationship, making the next get call to query for a fresh result. */
     @Generated(hash = 604059028)
     public synchronized void resetImages() {
         images = null;
@@ -118,9 +114,7 @@ public class Location {
         myDao.update(this);
     }
 
-    /**
-     * called by internal mechanisms, do not call yourself.
-     */
+    /** called by internal mechanisms, do not call yourself. */
     @Generated(hash = 1046799944)
     public void __setDaoSession(DaoSession daoSession) {
         this.daoSession = daoSession;

@@ -43,6 +43,10 @@ public class ImageUtils {
         return bitmap;
     }
 
+    /*
+    * @param    aaa/abbb/ccc.jpe
+    * @return   abbb
+    * */
     public static String getFolderNameFromPath(String path) {
         if (path == null) return null;
         String[] f = path.split("/");
@@ -50,8 +54,20 @@ public class ImageUtils {
         return f[f.length - 2];
     }
 
+    /*
+    * @param    aaa/abbb/ccc.jpe
+    * @return   aaa/abbb
+    * */
     public static String getFolderPathFromPath(String path) {
         return path.substring(0, path.lastIndexOf('/'));
+    }
+
+    /*
+    * @param    aaa/abbb/ccc
+    * @return   ccc
+    * */
+    public static String getFolderNameFromFolderPath(String folderPath) {
+        return folderPath.substring(folderPath.lastIndexOf('/') + 1);
     }
 
     public static boolean copyFile(String srcFilePath, String desDirPath) {

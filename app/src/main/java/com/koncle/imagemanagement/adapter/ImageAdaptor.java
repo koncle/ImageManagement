@@ -12,7 +12,6 @@ import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
@@ -20,13 +19,12 @@ import com.koncle.imagemanagement.activity.MsgCenter;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.util.ActivityUtil;
+import com.koncle.imagemanagement.util.FileChangeObserver;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by 10976 on 2018/1/8.
@@ -167,6 +165,26 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     }
 
+    @Override
+    public int getItemCount() {
+        return images.size();
+    }
+
+    class ImageViewHolder extends RecyclerView.ViewHolder {
+        public ImageView image;
+        public CheckBox selects;
+        public FrameLayout frameLayout;
+        TextView gifText;
+
+        public ImageViewHolder(View itemView) {
+            super(itemView);
+            image = itemView.findViewById(R.id.image);
+            selects = itemView.findViewById(R.id.select_button);
+            frameLayout = itemView.findViewById(R.id.background);
+            gifText = itemView.findViewById(R.id.gif_text);
+        }
+    }
+
     public void enterSelectMode() {
         Log.w("items", "Child count : " + gridLayoutManager.getChildCount());
         if (!selectMode) {
@@ -243,21 +261,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         modeOperator.showSelectedNum(selectedImages.size());
     }
 
-    private void setOrClearDisplayedImageSelection(boolean mode) {
-        int start = gridLayoutManager.findFirstVisibleItemPosition();
-        int end = gridLayoutManager.findLastVisibleItemPosition();
-        View cur;
-        int i = start;
-
-        for (; i <= end; ++i) {
-            cur = gridLayoutManager.findViewByPosition(i);
-            if (cur == null) break;
-            cur.findViewById(R.id.select_button).setVisibility(View.VISIBLE);
-        }
-        Log.i("clear", "start + " + start + " end " + end);
-    }
-
-    // TODO:to compelte this method
     public void selectAll() {
         if (selectedImages.size() == images.size()) return;
 
@@ -278,82 +281,66 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         return images;
     }
 
-    public void deleteSelectedImages() {
-        Set keySet = selectedImages.keySet();
-        Collection<Image> valueSet = selectedImages.values();
+    public int moveSelectedImages(String folderPath) {
+        FileChangeObserver.lock();
+        int count = 0;
+        List<Image> selections = getSelections();
+        Image image;
+        for (int pos : selectedImages.keySet()) {
+            image = selectedImages.get(pos);
+            Image old = new Image();
+            old.setFolder(image.getFolder());
+            old.setPath(image.getPath());
+            if (ImageService.moveFileAndSendMsg(context, image, folderPath)) {
+                removeItem(image);
+                count += 1;
+            } else {
+                break;
+            }
+        }
 
+        FileChangeObserver.unlock();
+        return count;
+    }
+
+    public int deleteSelectedImages() {
         int count = 0;
 
         Image image;
-        for (Integer pos : selectedImages.keySet()) {
+        FileChangeObserver.lock();
+        int deleteNum = 0;
+        for (int pos : selectedImages.keySet()) {
             image = selectedImages.get(pos);
             count += ImageService.deleteImageInFileSystemAndBroadcast(context, image, true) ? 1 : 0;
             // delete from memory
-            images.remove(image);
-            // prevent inconsistence in data
-            notifyItemRemoved(pos);
+
+            // can't directly delete image from images with pos
+            // cause the pos is relative to original images
+            removeItem(image);
+
             // delete from database,
             // replaced by service
             // ImageService.deleteImageInFileSystemAndBroadcast(image);
         }
         ///notifyItemRemoved(pos);
         notifyDataSetChangedWithoutFlash();
+        FileChangeObserver.unlock();
 
         final List<Image> deletedImages = new ArrayList<>();
         deletedImages.addAll(selectedImages.values());
         MsgCenter.notifyDataDeletedInner(deletedImages);
         Log.w(TAG, "delete " + count + " files");
-        /*
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int count = 0;
-                // delete from sd card
-                for(Image image1 : deletedImages) {
-                    count += ImageService.deleteImageInFileSystemAndBroadcast(context, image1, true) ? 1 : 0;
-                    MsgCenter.notifyDataDeletedInner(deletedImages);
-                }
-
-                Log.w(TAG, "delete " + count + " files");
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                // notify others
-
-            }
-        }).start();
-*/
-        Toast.makeText(context, "delete " + count + " files", Toast.LENGTH_SHORT).show();
+        return count;
     }
 
     // delete one item from single view
-    public void deleteImageItem(Image image) {
-        int i = images.indexOf(image);
-        if (i == -1) return;
-        images.remove(i);
-        notifyItemRemoved(i);
-        notifyItemRangeChanged(i, images.size() - i);
-        Log.w(TAG, "delete image items");
-    }
-
-    // delete invalid item from view
-    public void deleteInvalidImage(Image image) {
-        // singleImages.remove(image);
-        int i = images.indexOf(image);
-        images.remove(i);
-        notifyItemChanged(i);
-        notifyItemRangeChanged(i, images.size() - i);
-        //notifyDataSetChangedWithoutFlash();
-        Log.w(TAG, "delete 1 invalid file " + image.getPath());
-    }
-
-    public void deleteInvalidImages(List<Image> imageList) {
-        for (Image image : imageList) {
-            deleteInvalidImage(image);
-        }
-        Log.w(TAG, "delete " + imageList.size() + "invalid files");
+    public void removeItem(Image image) {
+        int pos = images.indexOf(image);
+        if (pos == -1) return;
+        images.remove(pos);
+        notifyItemRemoved(pos);
+        notifyItemRangeChanged(pos, images.size() - pos);
+        Log.w(TAG, "remove a image item " + image.getPath());
     }
 
     public void setData(List<Image> images) {
@@ -406,16 +393,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         }
     }
 
-    public void removeItem(Image image) {
-        int index = images.indexOf(image);
-        if (index != -1) {
-            images.remove(index);
-            notifyItemRemoved(index);
-            notifyItemRangeChanged(index, images.size() - index);
-        }
-    }
-
-
     // to operate other components in activity
     public interface ModeOperator {
         void exitSelectMode();
@@ -429,26 +406,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
 
     public void setOperater(ModeOperator modeOperator) {
         this.modeOperator = modeOperator;
-    }
-
-    @Override
-    public int getItemCount() {
-        return images.size();
-    }
-
-    class ImageViewHolder extends RecyclerView.ViewHolder{
-        public ImageView image;
-        public CheckBox selects;
-        public FrameLayout frameLayout;
-        TextView gifText;
-
-        public ImageViewHolder(View itemView) {
-            super(itemView);
-            image = itemView.findViewById(R.id.image);
-            selects = itemView.findViewById(R.id.select_button);
-            frameLayout = itemView.findViewById(R.id.background);
-            gifText = itemView.findViewById(R.id.gif_text);
-        }
     }
 
     public void toggleImagesOrder() {

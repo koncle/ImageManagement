@@ -10,6 +10,7 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -17,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -76,6 +78,9 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
         eventAdapter = new EventRecyclerViewAdapter();
         eventsRecyclerView.setLayoutManager(new LinearLayoutManager(this.getContext()));
         eventsRecyclerView.setAdapter(eventAdapter);
+
+        ((SimpleItemAnimator) eventsRecyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
+        eventsRecyclerView.getItemAnimator().setChangeDuration(0);
 
         return view;
     }
@@ -244,6 +249,10 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
                 recyclerView.setLayoutManager(manager);
                 recyclerView.setAdapter(innerAdapter);
 
+
+                ((SimpleItemAnimator) recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
+                recyclerView.getItemAnimator().setChangeDuration(0);
+
                 title = view.findViewById(R.id.event_title);
                 add = view.findViewById(R.id.event_add_image);
                 delete = view.findViewById(R.id.event_delete);
@@ -257,7 +266,6 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
 
         private final LinearLayoutManager manager;
         private List<Image> images;
-        private int size = 0;
 
         private final int LINE = 1;
         private final int IMAGE = 0;
@@ -266,7 +274,6 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
         void setData(Event event) {
             event.resetImageList();
             this.images = event.getImageList();
-            this.size = images.size() * 2;
             notifyItemRangeChanged(0, images.size());
             this.event = event;
         }
@@ -274,33 +281,28 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
         void refreshData() {
             event.resetImageList();
             this.images = event.getImageList();
-            this.size = images.size() * 2;
             notifyItemRangeChanged(0, images.size());
         }
 
         void deleteImage(int position) {
-            images.remove(position / 2);
-            this.size -= 2;
-            if (position == size - 4) {
-                notifyItemRangeRemoved(position, 2);
-                notifyItemRangeChanged(position, images.size() - position);
+            images.remove(position);
+            notifyItemRemoved(position);
+            // is the last
+            if (position == images.size()) {
+                // refresh previous item
+                notifyItemRangeChanged(position - 1, 1);
             } else {
-                notifyItemRangeChanged(0, images.size() - position);
+                notifyItemRangeChanged(position, images.size() - position);
             }
         }
 
         // 1 3 5 7 9
         Image getImageByPosition(int pos) {
-            return images.get(pos / 2);
+            return images.get(pos);
         }
 
         Event getEvent() {
             return event;
-        }
-
-        @Override
-        public int getItemViewType(int position) {
-            return position % 2;
         }
 
         public InnerEventAdapter(LinearLayoutManager manager) {
@@ -309,80 +311,68 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
 
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            if (viewType == IMAGE) {
-                return new EventImageHolder(LayoutInflater.from(parent.getContext())
-                        .inflate(R.layout.event_inner_item_layout, parent, false));
-            } else {
-                return new EventLineHolder(LayoutInflater.from(parent.getContext())
-                        .inflate(R.layout.event_inner_item_line_layout, parent, false));
-            }
+            return new EventImageHolder(LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.event_inner_item_layout, parent, false));
         }
 
         @Override
         public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
-            if (getItemViewType(position) == LINE) {
-                if (position == this.size - 1) {
-                    ((EventLineHolder) holder).line.setVisibility(View.GONE);
-                } else {
-                    ((EventLineHolder) holder).line.setVisibility(View.VISIBLE);
-                }
+            // LINE
+            if (position == this.images.size() - 1) {
+                ((EventImageHolder) holder).line.setVisibility(View.GONE);
             } else {
-                final EventImageHolder imageHolder = (EventImageHolder) holder;
-                Image image = this.images.get(position / 2);
-                Glide.with(EventFragment.this)
-                        .load(image.getPath())
-                        .asBitmap()
-                        .into(imageHolder.image);
-                if (image.getType() == Image.TYPE_GIF) {
-                    ((EventImageHolder) holder).gifText.setVisibility(View.VISIBLE);
-                } else {
-                    ((EventImageHolder) holder).gifText.setVisibility(View.GONE);
-                }
-                holder.itemView.setTag(position);
-                imageHolder.image.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        ActivityUtil.showSingleImageWithPos(getContext(), images, position / 2, imageHolder.image);
-
-                        adapterWaitingForAddImageResult = InnerEventAdapter.this;
-                    }
-                });
-                imageHolder.image.setOnLongClickListener(new View.OnLongClickListener() {
-                    @Override
-                    public boolean onLongClick(View v) {
-                        showPopup(imageHolder.image, position, InnerEventAdapter.this);
-                        return true;
-                    }
-                });
-                Log.w("EventFragment", "item : " + position);
+                ((EventImageHolder) holder).line.setVisibility(View.VISIBLE);
             }
+
+            final EventImageHolder imageHolder = (EventImageHolder) holder;
+            Image image = this.images.get(position);
+            Glide.with(EventFragment.this)
+                    .load(image.getPath())
+                    .asBitmap()
+                    .into(imageHolder.image);
+            // GIF
+            if (image.getType() == Image.TYPE_GIF) {
+                ((EventImageHolder) holder).gifText.setVisibility(View.VISIBLE);
+            } else {
+                ((EventImageHolder) holder).gifText.setVisibility(View.GONE);
+            }
+            holder.itemView.setTag(position);
+            imageHolder.image.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ActivityUtil.showSingleImageWithPos(getContext(), images, position, imageHolder.image);
+
+                    adapterWaitingForAddImageResult = InnerEventAdapter.this;
+                }
+            });
+            imageHolder.image.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    showPopup(imageHolder.image, position, InnerEventAdapter.this);
+                    return true;
+                }
+            });
         }
 
 
         @Override
         public int getItemCount() {
-            return size;
+            return images.size();
         }
 
         class EventImageHolder extends RecyclerView.ViewHolder {
             ImageView image;
             TextView gifText;
+            RelativeLayout line;
 
             public EventImageHolder(View itemView) {
                 super(itemView);
                 image = itemView.findViewById(R.id.event_image);
                 gifText = itemView.findViewById(R.id.gif_text);
-            }
-        }
-
-        class EventLineHolder extends RecyclerView.ViewHolder {
-            public ImageView line;
-
-            public EventLineHolder(View itemView) {
-                super(itemView);
                 line = itemView.findViewById(R.id.line);
             }
         }
+
     }
 
     @Override

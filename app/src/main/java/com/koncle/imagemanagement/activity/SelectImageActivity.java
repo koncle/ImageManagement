@@ -8,6 +8,7 @@ import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.support.v7.widget.Toolbar;
 import android.transition.Slide;
 import android.view.Gravity;
@@ -146,7 +147,7 @@ public class SelectImageActivity extends AppCompatActivity {
     private void initSpinner() {
         spinner = findViewById(R.id.image_select_spinner);
         final FolderSpinnerAdapter fsa = new FolderSpinnerAdapter(this, folderStringMap);
-        folderList = fsa.getFloderList();
+        folderList = fsa.getFolderList();
         Collections.sort(folderList, new Comparator<String>() {
             @Override
             public int compare(String o1, String o2) {
@@ -180,5 +181,8 @@ public class SelectImageActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(gridLayoutManager);
         imageAdaptor = new ImageSelectAdaptor(this, gridLayoutManager, folderImageMap.get(folderList.get(0)));
         recyclerView.setAdapter(imageAdaptor);
+
+        ((SimpleItemAnimator) recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
+        recyclerView.getItemAnimator().setChangeDuration(0);
     }
 }

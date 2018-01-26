@@ -10,6 +10,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -42,6 +43,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     public static final int IMAGE_VIEWER_MOVE = 4;
     public static final String MOVE_IMAGE = "move_image";
     public static final java.lang.String INTENT_DESC_STRING = "desc";
+    private static final String TAG = SingleImageActivity.class.getSimpleName();
     private ViewPager imageViewPager;
     private List<Image> images;
     private View delete;
@@ -337,6 +339,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             for (Image image : deleteImages) {
                 ImageService.deleteImageInFileSystemAndBroadcast(getApplication(), image, false);
             }
+            Log.w(TAG, "delete " + deleteImages.size() + "invalid files");
 
             intent.putExtra("delete", true);
             Bundle bundle = new Bundle();

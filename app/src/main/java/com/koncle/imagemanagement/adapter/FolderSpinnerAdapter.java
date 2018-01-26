@@ -101,7 +101,7 @@ public class FolderSpinnerAdapter implements SpinnerAdapter {
         return convertView;
     }
 
-    public List<String> getFloderList() {
+    public List<String> getFolderList() {
         return folderList;
     }
 
@@ -112,7 +112,6 @@ public class FolderSpinnerAdapter implements SpinnerAdapter {
             textView = v.findViewById(R.id.select_folder_name);
         }
     }
-
 
     private class ViewHolder {
         ImageView imageView;

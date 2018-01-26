@@ -24,19 +24,41 @@ import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
 
 public class FileChangeObserver extends ContentObserver {
     private static final String TAG = "FILE OBSERVER";
+    private static final long LOCK_MILLIS = 3000;
     private final Context context;
     private final Handler handler;
 
     private Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
     private static boolean lock = false;
+    public static int continueCount = 0;
 
+    // to prevent inserting image when this app is deleting or removing images
     public static void lock() {
-        lock = true;
+        Log.w(TAG, "lock");
+        if (lock == true)
+            continueCount += 1;
+        else
+            lock = true;
     }
 
     public static void unlock() {
-        lock = false;
+        if (continueCount > 0) return;
+        continueCount = 1;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (continueCount-- > 0) {
+                    try {
+                        Thread.sleep(LOCK_MILLIS);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Log.w(TAG, "unlock " + continueCount);
+                lock = false;
+            }
+        }).start();
     }
     /**
      * Creates a content observer.
@@ -51,12 +73,15 @@ public class FileChangeObserver extends ContentObserver {
 
     @Override
     public void onChange(boolean selfChange) {
-        if (lock) return;
-
+        if (lock) {
+            Log.w(TAG, "locked");
+            return;
+        }
         Cursor cursor = context.getContentResolver().query(uri, null,
                 MediaStore.Images.Media.MIME_TYPE + "=? or "
+                        + MediaStore.Images.Media.MIME_TYPE + "=? or "
                         + MediaStore.Images.Media.MIME_TYPE + "=?",
-                new String[]{"image/jpeg", "image/png"}, MediaStore.Images.Media.DATE_MODIFIED + " desc limit 1");
+                new String[]{"image/jpeg", "image/png", "image/gif"}, MediaStore.Images.Media.DATE_MODIFIED + " desc limit 1");
 
         if (cursor == null) return;
 
@@ -78,9 +103,8 @@ public class FileChangeObserver extends ContentObserver {
             Image imageInDatabase = ImageService.ifExistImage(image);
             // if return false, which means it exists in the database.
             // else it should be added to the database
+            File f = new File(path);
             if (imageInDatabase != null) {
-
-                File f = new File(path);
                 // if not exits in the file system,
                 // which means the image has been deleted
                 if (!f.exists()) {
@@ -93,6 +117,10 @@ public class FileChangeObserver extends ContentObserver {
                 }
                 // not exist, insert the image
             } else {
+                if (!f.exists()) {
+                    Log.w(TAG, "not exist  : " + path);
+                    return;
+                }
                 String folderName = ImageUtils.getFolderNameFromPath(path);
                 String name = cursor.getString(nameIndex);
                 long time = cursor.getLong(timeIndex);

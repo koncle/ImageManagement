@@ -146,7 +146,7 @@ public class DrawerActivity extends AppCompatActivity
     protected void onDestroy() {
         super.onDestroy();
         ImageService.close(this);
-        WeakReference.clear();
+        handler.removeCallbacksAndMessages(null);
     }
 
     private void initToolbar() {

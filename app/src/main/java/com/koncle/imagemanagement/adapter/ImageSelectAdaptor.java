@@ -3,7 +3,6 @@ package com.koncle.imagemanagement.adapter;
 import android.content.Context;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -156,21 +155,6 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
         }
     }
 
-    private void setOrClearDisplayedImageSelection(boolean mode) {
-        int start = gridLayoutManager.findFirstVisibleItemPosition();
-        int end = gridLayoutManager.findLastVisibleItemPosition();
-        View cur;
-        int i = start;
-
-        for (; i <= end; ++i) {
-            cur = gridLayoutManager.findViewByPosition(i);
-            if (cur == null) break;
-            cur.findViewById(R.id.select_button).setVisibility(View.VISIBLE);
-        }
-        Log.i("clear", "start + " + start + " end " + end);
-    }
-
-    // TODO:to compelte this method
     public void selectAll() {
         //if (selectedImages.size() == singleImages.size()) return;
 
@@ -178,7 +162,7 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
             selectedImages.put(images.get(i).getPath(), images.get(i));
         }
 
-        notifyDataSetChanged();
+        notifyItemRangeChanged(0, images.size());
     }
 
     public List<Image> getSelections() {
@@ -188,8 +172,10 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
     }
 
     public void setData(List<Image> images) {
+        int previousSize = this.images.size();
         this.images = images;
         notifyDataSetChanged();
+        //notifyItemRangeChanged(0, previousSize);
     }
 
     @Override

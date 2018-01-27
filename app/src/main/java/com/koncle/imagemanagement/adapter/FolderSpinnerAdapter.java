@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.bean.Folder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +25,10 @@ import java.util.Map;
 public class FolderSpinnerAdapter implements SpinnerAdapter {
 
     private List<String> folderList;
-    private Map<String, List<String>> folderMap;
+    private Map<String, Folder> folderMap;
     private Context context;
 
-    public FolderSpinnerAdapter(Context context, Map<String, List<String>> folderMap) {
+    public FolderSpinnerAdapter(Context context, Map<String, Folder> folderMap) {
         this.folderMap = folderMap;
         this.folderList = new ArrayList<>();
         folderList.addAll(folderMap.keySet());
@@ -36,7 +37,7 @@ public class FolderSpinnerAdapter implements SpinnerAdapter {
 
     @Override
     public View getDropDownView(int position, View convertView, ViewGroup parent) {
-        ViewHolder viewHolder = null;
+        ViewHolder viewHolder;
         if (null == convertView) {
             convertView = LayoutInflater.from(context).inflate(R.layout.image_select_spinner_layout, null);
             viewHolder = new ViewHolder(convertView);
@@ -47,10 +48,11 @@ public class FolderSpinnerAdapter implements SpinnerAdapter {
 
         String folder = folderList.get(position);
         Glide.with(context)
-                .load(folderMap.get(folder).get(0))
+                // show cover
+                .load(folderMap.get(folder).getImages().get(0).getPath())
                 .asBitmap()
                 .into(viewHolder.imageView);
-        viewHolder.textView.setText(String.format(new Locale("zh"), "%s (%d) ", folder, folderMap.get(folder).size()));
+        viewHolder.textView.setText(String.format(new Locale("zh"), "%s (%d) ", folder, folderMap.get(folder).getImages().size()));
         return convertView;
     }
 
@@ -97,7 +99,7 @@ public class FolderSpinnerAdapter implements SpinnerAdapter {
         }
 
         String folder = folderList.get(position);
-        viewHolder.textView.setText(String.format(new Locale("zh"), "%s (%d) ", folder, folderMap.get(folder).size()));
+        viewHolder.textView.setText(String.format(new Locale("zh"), "%s (%d) ", folder, folderMap.get(folder).getImages().size()));
         return convertView;
     }
 

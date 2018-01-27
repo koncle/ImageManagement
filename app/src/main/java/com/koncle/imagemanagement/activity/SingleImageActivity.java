@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.SingleImageViewPagerAdapter;
+import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dialog.FolderSelectDialogFragment;
@@ -182,12 +183,12 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             public void onClick(View v) {
                 FolderSelectDialogFragment dialogFragment = FolderSelectDialogFragment.newInstance(new FolderSelectDialogFragment.OnSelectFinishedListener() {
                     @Override
-                    public void selectFinished(String folderPath) {
-                        if (folderPath.equals(getCurrentItem().getFolder())) {
+                    public void selectFinished(Folder folder) {
+                        if (folder.getId().equals(getCurrentItem().getFolder_id())) {
                             return;
                         }
                         Image image = images.get(imageViewPager.getCurrentItem());
-                        moveImage(image, folderPath);
+                        moveImage(image, folder);
                     }
                 });
                 dialogFragment.show(getSupportFragmentManager(), "folder dialog");
@@ -219,12 +220,12 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         return images.get(imageViewPager.getCurrentItem());
     }
 
-    private void moveImage(Image image, String folderPath) {
+    private void moveImage(Image image, Folder folder) {
         Image preImage = new Image();
         preImage.setPath(image.getPath());
         preImage.setFolder(image.getFolder());
 
-        boolean success = ImageService.moveFileAndSendMsg(getApplicationContext(), image, folderPath);
+        boolean success = ImageService.moveFileAndSendMsg(getApplicationContext(), image, folder);
 
         if (success) {
             Intent intent = new Intent();
@@ -235,7 +236,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             intent.putExtras(bundle);
             setResult(IMAGE_VIEWER_MOVE, intent);
 
-            Toast.makeText(getApplicationContext(), "move to folder : " + folderPath, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "move to folder : " + folder.getPath(), Toast.LENGTH_SHORT).show();
         }
         finish();
     }
@@ -253,9 +254,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         setResult(IMAGE_VIEWER_DELETE, intent);
 
 
-        List<Image> deletedImages = new ArrayList<>();
-        deletedImages.add(currentImage);
-        MsgCenter.notifyDataDeletedInner(deletedImages);
+        MsgCenter.notifyDataDeletedInner(currentImage);
         // notify multi activity to change its data set
         finish();
     }

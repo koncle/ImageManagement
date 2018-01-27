@@ -5,13 +5,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.util.Log;
 
 import com.koncle.imagemanagement.activity.DrawerActivity;
 import com.koncle.imagemanagement.activity.MsgCenter;
+import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
 import com.koncle.imagemanagement.activity.MyHandler;
 import com.koncle.imagemanagement.bean.Event;
+import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.bean.ImageAndEvent;
 import com.koncle.imagemanagement.bean.MySearchSuggestion;
@@ -21,6 +24,7 @@ import com.koncle.imagemanagement.bean.VideoInfo;
 import com.koncle.imagemanagement.dao.DaoMaster;
 import com.koncle.imagemanagement.dao.DaoSession;
 import com.koncle.imagemanagement.dao.EventDao;
+import com.koncle.imagemanagement.dao.FolderDao;
 import com.koncle.imagemanagement.dao.ImageAndEventDao;
 import com.koncle.imagemanagement.dao.ImageDao;
 import com.koncle.imagemanagement.dao.TagAndImageDao;
@@ -152,15 +156,6 @@ public class ImageService {
         return images;
     }
 
-    /*
-    * include ALL folder
-    * */
-    public static List<Image> getAllFolders() {
-        List<Image> folderImages = getFolders();
-        folderImages.add(0, getLatestImage());
-        return folderImages;
-    }
-
     public static Image getLatestImage() {
         return daoManager.getDaoSession().getImageDao().queryBuilder()
                 .orderDesc(ImageDao.Properties.Time)
@@ -168,19 +163,10 @@ public class ImageService {
                 .list().get(0);
     }
 
-    public static List<Image> getFolders() {
-        ImageDao imageDao = daoManager.getDaoSession().getImageDao();
-        List<Image> images = imageDao.queryRawCreate("where T._id!=? GROUP BY T.folder ORDER BY T.folder ASC ", "0").list();
-        if (DEBUG) {
-            Log.i(TAG, "get folders : " + images.size());
-        }
-        return images;
-    }
-
-    public static Image getCoverFromFolder(String folder) {
+    public static Image getCoverFromFolder(long folderId) {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         List<Image> images = imageDao.queryBuilder()
-                .where(ImageDao.Properties.Folder.eq(folder))
+                .where(ImageDao.Properties.Folder_id.eq(folderId))
                 .orderDesc(ImageDao.Properties.Time)
                 .build().list();
         return images.size() > 0 ? images.get(0) : null;
@@ -193,7 +179,7 @@ public class ImageService {
         return count;
     }
 
-    public static Long getImageCountFromFolder(String folder) {
+    public static Long getImageCountByFolder(String folder) {
         Long count = daoManager.getDaoSession().getImageDao()
                 .queryBuilder()
                 .where(ImageDao.Properties.Folder.eq(folder))
@@ -236,6 +222,10 @@ public class ImageService {
         // MediaScannerConnection.scanFile(context, new String[]{image.getPath()}, null,null);
         broadcastToNotifySystem(context, image.getPath());
 
+        MsgCenter.notifyDataDeletedInner(image);
+
+        // refresh Cover
+        refreshFolderCovers();
         return ret;
     }
 
@@ -452,8 +442,8 @@ public class ImageService {
     }
 
     // load all singleImages
-    public static void getSystemPhotoList(Context context) {
-
+    public static int getSystemPhotoList(Context context) {
+        int count = 0;
         Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
         ContentResolver contentResolver = context.getContentResolver();
@@ -464,13 +454,11 @@ public class ImageService {
                         + MediaStore.Images.Media.MIME_TYPE + "=?",
                 new String[]{"image/jpeg", "image/png", "image/gif"}, MediaStore.Images.Media.DATE_MODIFIED);
 
-        if (cursor == null || cursor.getCount() <= 0) return; // 没有图片
+        if (cursor == null || cursor.getCount() <= 0) return count;
 
-        String path;
-        Image image;
 
         int pathIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-        int thumnailIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MINI_THUMB_MAGIC);
+        //int thumnailIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.MINI_THUMB_MAGIC);
         int timeIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN);
         int nameIndex = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME);
         int latIndex = cursor.getColumnIndex(MediaStore.Images.Media.LATITUDE);
@@ -479,8 +467,14 @@ public class ImageService {
         int mineTypeIndex = cursor.getColumnIndex(MediaStore.Images.Media.MIME_TYPE);
 
         while (cursor.moveToNext()) {
-            path = cursor.getString(pathIndex); // 文件地址
-
+            Image image = new Image();
+            String path = cursor.getString(pathIndex); // 文件地址
+            image.setPath(path);
+            image = ifExistImage(image);
+            if (image == null) {
+                createImage(cursor, pathIndex, timeIndex, nameIndex, latIndex, lngIndex, descIndex, mineTypeIndex);
+                count += 1;
+            }
             /*
             int thumnailId = cursor.getInt(thumnailIndex);
             Cursor thumbCursor = contentResolver.query(
@@ -495,80 +489,119 @@ public class ImageService {
                 thumbCursor.close();
             }
             */
-
-            image = new Image();
-            image.setPath(path);
-            if (ifExistImage(image) == null) {
-                String folderName = ImageUtils.getFolderNameFromPath(path);
-
-                String name = cursor.getString(nameIndex);
-                long time = cursor.getLong(timeIndex);
-                double lat = cursor.getDouble(latIndex);
-                double lng = cursor.getDouble(lngIndex);
-                String desp = cursor.getString(descIndex);
-                String mineType = cursor.getString(mineTypeIndex);
-
-                image.setName(name);
-                image.setFolder(folderName);
-                /*
-                List<Folder> folders = ifExistFolder(folderName);
-                Folder f;
-                if (folders.size() == 0){
-                    f = insertFolder(folderName);
-                }else{
-                    f = folders.get(0);
-                }
-                image.setFolder_id(f.getId());
-                */
-                image.setThumbnailPath("");
-                image.setTime(new Date(time));
-                image.setLat(String.valueOf(lat));
-                image.setLng(String.valueOf(lng));
-                image.setDesc(desp);
-
-                if ("image/gif".equals(mineType))
-                    image.setType(Image.TYPE_GIF);
-                else
-                    image.setType(Image.TYPE_NORNAL);
-
-                insertImageWithOutCheck(image);
-            }
         }
-        /*
         refreshFolderCovers();
-        */
         cursor.close();
+        return count;
     }
 
-    /*
-    private static void refreshFolderCovers() {
+    public static Image createImage(Cursor cursor, int pathIndex, int timeIndex, int nameIndex, int latIndex,
+                                    int lngIndex, int descIndex, int mineTypeIndex) {
+
+        String path = cursor.getString(pathIndex); // 文件地址
+        String folderName = ImageUtils.getFolderNameFromPath(path);
+
+        String name = cursor.getString(nameIndex);
+        long time = cursor.getLong(timeIndex);
+        double lat = cursor.getDouble(latIndex);
+        double lng = cursor.getDouble(lngIndex);
+        String desc = cursor.getString(descIndex);
+        String mineType = cursor.getString(mineTypeIndex);
+
+        Image image = new Image();
+        image.setName(name);
+        image.setFolder(folderName);
+
+        List<Folder> folders = ifExistFolder(folderName);
+        Folder f;
+        if (folders.size() == 0) {
+            f = insertFolder(ImageUtils.getFolderPathFromPath(path), folderName);
+        } else {
+            f = folders.get(0);
+        }
+        image.setFolder_id(f.getId());
+        image.setPath(path);
+        image.setThumbnailPath("");
+        image.setTime(new Date(time));
+        image.setLat(String.valueOf(lat));
+        image.setLng(String.valueOf(lng));
+        image.setDesc(desc);
+
+        if ("image/gif".equals(mineType))
+            image.setType(Image.TYPE_GIF);
+        else
+            image.setType(Image.TYPE_NORNAL);
+
+        insertImageWithOutCheck(image);
+        return image;
+    }
+
+
+    public static void refreshFolderCovers() {
         List<Folder> folders = getNewFolders();
-        for(Folder folder : folders){
-            Image image = getCoverFromFolder(folder.getName());
-            if (image != null){
-                folder.setCoverPath(image.getPath());
-            }
+        for (Folder folder : folders) {
+            refreshFolderCover(folder);
         }
     }
 
-    private static List<Folder> getNewFolders(){
+    public static void refreshFolderCover(Image newImage) {
+        Folder folder = daoManager.getDaoSession().getFolderDao().load(newImage.getFolder_id());
+        refreshFolderCover(folder);
+    }
+
+    public static void refreshFolderCover(Folder folder) {
+        Image image = getCoverFromFolderId(folder.getId());
+        if (image != null) {
+            folder.setCoverPath(image.getPath());
+        } else {
+            folder.setCoverPath(null);
+        }
+    }
+
+    public static Image getCoverFromFolderId(long folderId) {
+        List<Image> images = daoManager.getDaoSession().getImageDao().queryBuilder()
+                .where(ImageDao.Properties.Folder_id.eq(folderId))
+                .orderDesc(ImageDao.Properties.Time)
+                .limit(1)
+                .list();
+        return images.size() > 0 ? images.get(0) : null;
+    }
+
+    public static List<Folder> getNewFolders() {
         return daoManager.getDaoSession().getFolderDao().loadAll();
     }
 
-    public static List<Folder> ifExistFolder(String folder){
+    public static Folder getAllNameFolder() {
+
+        Folder folder = new Folder();
+        Image image = getLatestImage();
+        folder.setCoverPath(image.getPath());
+        folder.setName(MultiColumnImagesActivity.ALL_FOLDER_NAME);
+        return folder;
+    }
+
+    public static List<Folder> getNewAllFolders() {
+        List<Folder> folders = daoManager.getDaoSession().getFolderDao().loadAll();
+        folders.add(0, getAllNameFolder());
+        return folders;
+    }
+
+    public static List<Folder> ifExistFolder(String folder) {
         return daoManager.getDaoSession().getFolderDao()
                 .queryBuilder()
                 .where(FolderDao.Properties.Name.eq(folder))
                 .build().list();
     }
 
-    public static Folder insertFolder(String name){
+    public static Folder insertFolder(String folderPath, String name) {
         Folder folder = new Folder();
         folder.setName(name);
+        folder.setPath(folderPath);
         daoManager.getDaoSession().getFolderDao().insert(folder);
+        Log.w(TAG, "insert a folder " + folder.getPath());
         return folder;
     }
-*/
+
     public static void testFile(Context context) {
         // MediaStore.Video.Thumbnails.DATA:视频缩略图的文件路径
         String[] thumbColumns = {MediaStore.Video.Thumbnails.DATA,
@@ -621,8 +654,8 @@ public class ImageService {
         }
     }
 
-    public static boolean moveFileAndSendMsg(Context context, Image image, String folder) {
-        String des = folder + "/" + image.getName();
+    public static boolean moveFileAndSendMsg(Context context, Image image, Folder folder) {
+        String des = folder.getPath() + "/" + image.getName();
         String src = image.getPath();
         // delete from file system
         boolean b = ImageUtils.copyFile(src, des);
@@ -640,6 +673,9 @@ public class ImageService {
 
             // notify
             MsgCenter.notifyDataMovedInner(preImage, image);
+
+            // refreshCover
+            refreshFolderCovers();
             return true;
         }
         return false;
@@ -703,11 +739,12 @@ public class ImageService {
         daoManager.getDaoSession().getImageDao().save(image);
     }
 
-    public static void updateImagePath(Context context, Image image, String folderPath) {
+    public static void updateImagePath(Context context, Image image, Folder folder) {
         broadcastToNotifySystem(context, image.getPath());
-        String path = folderPath + "/" + image.getName();
+        String path = folder.getPath() + "/" + image.getName();
         image.setPath(path);
         image.setFolder(ImageUtils.getFolderNameFromPath(path));
+        image.setFolder_id(folder.getId());
         daoManager.getDaoSession().getImageDao().save(image);
         broadcastToNotifySystem(context, image.getPath());
     }
@@ -722,5 +759,60 @@ public class ImageService {
         tagAndImageDao.deleteInTx(tagAndImages);
 
         daoManager.getDaoSession().getTagDao().delete(tag);
+    }
+
+    public static List<Image> getImagesFromParcelable(Parcelable obj) throws IllegalArgumentException {
+        if (obj == null) return null;
+        if (obj instanceof Folder) {
+            Folder folder = (Folder) obj;
+            // All folder
+            if (MultiColumnImagesActivity.ALL_FOLDER_NAME.equals(folder.getName())) {
+                return getImages();
+            } else {
+                folder.__setDaoSession(daoManager.getDaoSession());
+                return ((Folder) obj).getImages();
+            }
+        } else if (obj instanceof Event) {
+            Event event = (Event) obj;
+            event.__setDaoSession(daoManager.getDaoSession());
+            return (event).getImageList();
+        } else if (obj instanceof Tag) {
+            Tag tag = (Tag) obj;
+            tag.__setDaoSession(daoManager.getDaoSession());
+            return (tag).getImages();
+        } else {
+            throw new IllegalArgumentException("wrong argument to extract images!");
+        }
+    }
+
+    public static void recoverDaoSession(Parcelable obj) {
+        if (obj instanceof Folder) {
+            Folder folder = (Folder) obj;
+            folder.__setDaoSession(daoManager.getDaoSession());
+        } else if (obj instanceof Event) {
+            Event event = (Event) obj;
+            event.__setDaoSession(daoManager.getDaoSession());
+        } else if (obj instanceof Tag) {
+            Tag tag = (Tag) obj;
+            tag.__setDaoSession(daoManager.getDaoSession());
+        } else {
+            throw new IllegalArgumentException("wrong argument to extract images!");
+        }
+    }
+
+    public static void resetImages(Parcelable obj) {
+        if (obj == null) return;
+        if (obj instanceof Folder) {
+            Folder folder = (Folder) obj;
+            folder.resetImages();
+        } else if (obj instanceof Event) {
+            Event event = (Event) obj;
+            event.resetImageList();
+        } else if (obj instanceof Tag) {
+            Tag tag = (Tag) obj;
+            tag.resetImages();
+        } else {
+            throw new IllegalArgumentException("wrong argument to extract images!");
+        }
     }
 }

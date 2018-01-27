@@ -19,11 +19,10 @@ import org.greenrobot.greendao.identityscope.IdentityScopeType;
 public class DaoMaster extends AbstractDaoMaster {
     public static final int SCHEMA_VERSION = 1;
 
-    /**
-     * Creates underlying database table using DAOs.
-     */
+    /** Creates underlying database table using DAOs. */
     public static void createAllTables(Database db, boolean ifNotExists) {
         EventDao.createTable(db, ifNotExists);
+        FolderDao.createTable(db, ifNotExists);
         ImageDao.createTable(db, ifNotExists);
         ImageAndEventDao.createTable(db, ifNotExists);
         LocationDao.createTable(db, ifNotExists);
@@ -34,6 +33,7 @@ public class DaoMaster extends AbstractDaoMaster {
     /** Drops underlying database table using DAOs. */
     public static void dropAllTables(Database db, boolean ifExists) {
         EventDao.dropTable(db, ifExists);
+        FolderDao.dropTable(db, ifExists);
         ImageDao.dropTable(db, ifExists);
         ImageAndEventDao.dropTable(db, ifExists);
         LocationDao.dropTable(db, ifExists);
@@ -58,6 +58,7 @@ public class DaoMaster extends AbstractDaoMaster {
     public DaoMaster(Database db) {
         super(db, SCHEMA_VERSION);
         registerDaoClass(EventDao.class);
+        registerDaoClass(FolderDao.class);
         registerDaoClass(ImageDao.class);
         registerDaoClass(ImageAndEventDao.class);
         registerDaoClass(LocationDao.class);

@@ -60,7 +60,7 @@ public class DrawerActivity extends AppCompatActivity
 
     public static final String WATCH_TAG = "folders";
     private static final boolean INIT_TABLES = false;
-    public static final String className = MainActivity.class.getSimpleName();
+    public static final String className = DrawerActivity.class.getSimpleName();
 
     private static final int FOLDER_FRAGMENT = 0;
     private static final int EVENT_FRAGMENT = 1;
@@ -254,13 +254,13 @@ public class DrawerActivity extends AppCompatActivity
             if (((MySearchSuggestion) searchSuggestion).getType() == MySearchSuggestion.TYPE_TAG) {
                 Tag tag = ImageService.searchTagByName(searchSuggestion.getBody());
                 if (tag != null) {
-                    ActivityUtil.showImageList(DrawerActivity.this, tag.getImages(), "search for : " + query);
+                    ActivityUtil.showImageList(DrawerActivity.this, tag, "search for : " + query);
                     return;
                 }
             } else {
                 Event event = ImageService.searchEventByName(searchSuggestion.getBody());
                 if (event != null) {
-                    ActivityUtil.showImageList(DrawerActivity.this, event.getImageList(), "search for : " + query);
+                    ActivityUtil.showImageList(DrawerActivity.this, event, "search for : " + query);
                     return;
                 }
             }
@@ -381,13 +381,9 @@ public class DrawerActivity extends AppCompatActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (resultCode == SelectImageActivity.RESULT_CODE) {
-            List<Image> images = data.getExtras().getParcelableArrayList(SelectImageActivity.IMAGES);
+        if (resultCode == SelectImageActivity.SELECTED_IMAGE_DATA) {
+            List<Image> images = data.getExtras().getParcelableArrayList(SelectImageActivity.SELECTED_IMAGES);
             ((EventFragment) fragments.get(1)).addImage2Events(images);
-        } else if (resultCode == MultiColumnImagesActivity.RESULT_DELETE_IMAGE) {
-            boolean deleteNum = data.getBooleanExtra(MultiColumnImagesActivity.RESULT_DELETE_IMAGE_NUM, false);
-            String deleteFolder = data.getStringExtra(MultiColumnImagesActivity.RESULT_DELETE_IMAGE_FOLDER);
-            ((FolderFragment) fragments.get(0)).handleResult(deleteNum, deleteFolder);
         }
     }
 
@@ -396,7 +392,10 @@ public class DrawerActivity extends AppCompatActivity
         new Thread(new Runnable() {
             @Override
             public void run() {
-                ImageService.getSystemPhotoList(DrawerActivity.this);
+                int count = ImageService.getSystemPhotoList(DrawerActivity.this);
+                Message msg = Message.obtain();
+                msg.what = SCAN_OK;
+                msg.arg1 = count;
                 handler.sendEmptyMessage(SCAN_OK);
                 //ImageService.testFile(getApplicationContext());
             }
@@ -422,28 +421,32 @@ public class DrawerActivity extends AppCompatActivity
                 case SCAN_OK_SHOW:
                     progressDialog.dismiss();
                     show();
+
                     break;
 
                 case SCAN_OK:
-                    folders = ImageService.getAllFolders();
-                    ((FolderFragment) fragments.get(0)).setFolderCovers(folders);
+                    ((FolderFragment) fragments.get(0)).refreshAllFolderCovers();
+                    int count = msg.arg1;
+                    if (count > 0)
+                        Toast.makeText(DrawerActivity.this, count + " images added", Toast.LENGTH_SHORT).show();
                     break;
 
                 // notify folder to change singleImages
                 case IMAGE_ADDED:
                     image = msg.getData().getParcelable("image");
+                    Log.w(tag, " added image " + image);
                     ((ImageChangeListener) fragments.get(0)).onImageAdded(image);
                     ((ImageChangeListener) fragments.get(1)).onImageAdded(image);
                     break;
 
                 case IMAGE_DELETED_BY_SELF:
-                    List<Image> images = msg.getData().getParcelableArrayList("singleImages");
-                    ((ImageChangeListener) fragments.get(0)).onImageDeleted(images);
-                    ((ImageChangeListener) fragments.get(1)).onImageDeleted(images);
+                    image = msg.getData().getParcelable(MsgCenter.DELETE_IMAGE);
+                    Log.w(tag, " delete image from this app " + image);
+                    ((ImageChangeListener) fragments.get(0)).onImageDeleted(image);
+                    ((ImageChangeListener) fragments.get(1)).onImageDeleted(image);
                     break;
 
                 case IMAGE_MOVED:
-
                     Image newImage = msg.getData().getParcelable(MsgCenter.MOVE_REARIMAGE);
                     Image oldImage = msg.getData().getParcelable(MsgCenter.MOVE_PREIMAGE);
 
@@ -457,14 +460,16 @@ public class DrawerActivity extends AppCompatActivity
                     break;
 
                 case IMAGE_DELETED:
-                    Log.w(tag, "Calded");
+                    Log.w(tag, "delete image from other app");
                     break;
 
                 case IMAGE_TAG_ADDED:
+                    Log.w(tag, "added image tag");
                     ((FolderFragment) fragments.get(0)).onTagAdded();
                     break;
 
                 case IMAGE_ADD_TO_EVENT:
+                    Log.w(tag, "added image event");
                     ((EventFragment) fragments.get(1)).onImageAddedToAnEvent();
                     break;
 

@@ -5,17 +5,15 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.os.Parcelable;
 import android.provider.MediaStore;
 
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.util.FileChangeObserver;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
 import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED_BY_SELF;
 import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_MOVED;
 
@@ -28,23 +26,33 @@ public class MsgCenter {
 
     public static final String MOVE_PREIMAGE = "preImage";
     public static final String MOVE_REARIMAGE = "rearImage";
+    public static final String DELETE_IMAGE = "image";
 
-    public static void notifyDataDeletedInner(List<Image> deletedImages) {
+    public static void notifyDataDeletedInner(Image image) {
         // send msg to all other activities
-        Message msg = new Message();
+        Message msg = Message.obtain();
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList("singleImages", (ArrayList<? extends Parcelable>) deletedImages);
+        bundle.putParcelable(DELETE_IMAGE, image);
         msg.setData(bundle);
         msg.what = IMAGE_DELETED_BY_SELF;
         MsgCenter.sendMsg(msg);
     }
 
     public static void notifyDataMovedInner(Image preImage, Image rearImage) {
-        Message msg = new Message();
+        Message msg = Message.obtain();
         msg.what = IMAGE_MOVED;
         Bundle bundle = new Bundle();
         bundle.putParcelable(MOVE_REARIMAGE, rearImage);
         bundle.putParcelable(MOVE_PREIMAGE, preImage);
+        msg.setData(bundle);
+        MsgCenter.sendMsg(msg);
+    }
+
+    public static void notifyImageAdded(Image image) {
+        Message msg = Message.obtain();
+        msg.what = IMAGE_ADDED;
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("image", image);
         msg.setData(bundle);
         MsgCenter.sendMsg(msg);
     }

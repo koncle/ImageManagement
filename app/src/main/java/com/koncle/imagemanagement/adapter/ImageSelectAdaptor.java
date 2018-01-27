@@ -10,9 +10,11 @@ import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
 
 import java.util.ArrayList;
@@ -25,6 +27,7 @@ import java.util.List;
 
 public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.ImageViewHolder> {
     private static final String TAG = ImageSelectAdaptor.class.getSimpleName();
+    private static final int MAX_SELECT_NUM = 200;
     // In order to ensure the height of the image is the same as its width,
     // the manager has to be introduced to get the correct height
     private final GridLayoutManager gridLayoutManager;
@@ -34,18 +37,29 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
 
     private List<Image> images;
 
-    // save <positoin, url> into map
-    private HashMap<String, Image> selectedImages;
+    public HashMap<String, Image> getSelectedImages() {
+        return selectedImages;
+    }
 
-    public ImageSelectAdaptor(Context context, GridLayoutManager gridLayoutManager, List<Image> images) {
+    public void createSelctedImage(List<Image> values) {
+        selectedImages.clear();
+        for (Image image : values) {
+            selectedImages.put(image.getPath(), image);
+        }
+        notifyItemRangeChanged(0, images.size());
+    }
+
+    // save <positoin, url> into map
+    private HashMap<String, Image> selectedImages = new HashMap<>();
+
+    public ImageSelectAdaptor(Context context, GridLayoutManager gridLayoutManager, Folder folder) {
         this.context = context;
         this.gridLayoutManager = gridLayoutManager;
         if (images == null) {
             this.images = new ArrayList<>();
         } else {
-            this.images = images;
+            this.images = folder.getImages();
         }
-        selectedImages = new HashMap<>();
     }
 
     @Override
@@ -135,8 +149,12 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
             selectedImages.remove(path);
             holder.frameLayout.findViewById(R.id.background).setVisibility(View.GONE);
         } else {
-            selectedImages.put(path, images.get(position));
-            holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
+            if (selectedImages.size() == MAX_SELECT_NUM) {
+                warnSelectedNum();
+            } else {
+                selectedImages.put(path, images.get(position));
+                holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
+            }
         }
     }
 
@@ -148,18 +166,30 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
 
             holder.selects.setChecked(false);
         } else {
-            selectedImages.put(path, images.get(position));
-            holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
-
-            holder.selects.setChecked(true);
+            if (selectedImages.size() == MAX_SELECT_NUM) {
+                warnSelectedNum();
+            } else {
+                selectedImages.put(path, images.get(position));
+                holder.frameLayout.findViewById(R.id.background).setVisibility(View.VISIBLE);
+                holder.selects.setChecked(true);
+            }
         }
+    }
+
+    public void warnSelectedNum() {
+        Toast.makeText(context, "select at most 200 images", Toast.LENGTH_SHORT).show();
     }
 
     public void selectAll() {
         //if (selectedImages.size() == singleImages.size()) return;
 
         for (int i = 0; i < images.size(); ++i) {
-            selectedImages.put(images.get(i).getPath(), images.get(i));
+            if (selectedImages.size() == MAX_SELECT_NUM) {
+                warnSelectedNum();
+                break;
+            } else {
+                selectedImages.put(images.get(i).getPath(), images.get(i));
+            }
         }
 
         notifyItemRangeChanged(0, images.size());
@@ -171,9 +201,8 @@ public class ImageSelectAdaptor extends RecyclerView.Adapter<ImageSelectAdaptor.
         return images;
     }
 
-    public void setData(List<Image> images) {
-        int previousSize = this.images.size();
-        this.images = images;
+    public void setData(Folder folder) {
+        this.images = folder.getImages();
         notifyDataSetChanged();
         //notifyItemRangeChanged(0, previousSize);
     }

@@ -15,7 +15,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
-import com.koncle.imagemanagement.activity.MsgCenter;
+import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.util.ActivityUtil;
@@ -281,58 +281,37 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         return images;
     }
 
-    public int moveSelectedImages(String folderPath) {
-        FileChangeObserver.lock();
+    public int moveSelectedImages(Folder folder) {
         int count = 0;
-        List<Image> selections = getSelections();
-        Image image;
-        for (int pos : selectedImages.keySet()) {
-            image = selectedImages.get(pos);
-            Image old = new Image();
-            old.setFolder(image.getFolder());
-            old.setPath(image.getPath());
-            if (ImageService.moveFileAndSendMsg(context, image, folderPath)) {
-                removeItem(image);
-                count += 1;
-            } else {
-                break;
-            }
+        FileChangeObserver.lock();
+        for (Image image : selectedImages.values()) {
+            count += ImageService.moveFileAndSendMsg(context, image, folder) ? 1 : 0;
         }
-
         FileChangeObserver.unlock();
+        Log.w(TAG, "delete " + count + " files");
         return count;
     }
 
     public int deleteSelectedImages() {
         int count = 0;
 
-        Image image;
         FileChangeObserver.lock();
-        int deleteNum = 0;
-        for (int pos : selectedImages.keySet()) {
-            image = selectedImages.get(pos);
+        for (Image image : selectedImages.values()) {
             count += ImageService.deleteImageInFileSystemAndBroadcast(context, image, true) ? 1 : 0;
-            // delete from memory
-
-            // can't directly delete image from images with pos
-            // cause the pos is relative to original images
-            removeItem(image);
-
-            // delete from database,
-            // replaced by service
-            // ImageService.deleteImageInFileSystemAndBroadcast(image);
         }
-        ///notifyItemRemoved(pos);
-        notifyDataSetChangedWithoutFlash();
         FileChangeObserver.unlock();
-
-        final List<Image> deletedImages = new ArrayList<>();
-        deletedImages.addAll(selectedImages.values());
-        MsgCenter.notifyDataDeletedInner(deletedImages);
         Log.w(TAG, "delete " + count + " files");
         return count;
     }
 
+    public void removeSelectedItems() {
+        for (Image image : selectedImages.values()) {
+
+            // can't directly delete image from images with pos
+            // cause the pos is relative to original images
+            removeItem(image);
+        }
+    }
     // delete one item from single view
     public void removeItem(Image image) {
         int pos = images.indexOf(image);

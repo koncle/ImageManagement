@@ -17,9 +17,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.koncle.imagemanagement.R;
-import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.dataManagement.ImageService;
-import com.koncle.imagemanagement.util.ImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +29,7 @@ import java.util.List;
 
 public class FolderSelectDialogFragment extends DialogFragment implements View.OnClickListener {
 
-    private List<Image> folders;
+    private List<Folder> folders;
 
     private int pos;
     private LinearLayoutManager manager;
@@ -38,7 +37,7 @@ public class FolderSelectDialogFragment extends DialogFragment implements View.O
     private OnSelectFinishedListener listener;
 
     public interface OnSelectFinishedListener {
-        void selectFinished(String folderPath);
+        void selectFinished(Folder folder);
     }
 
     public void setListener(OnSelectFinishedListener listener) {
@@ -53,8 +52,8 @@ public class FolderSelectDialogFragment extends DialogFragment implements View.O
         return fragment;
     }
 
-    public String getSelectedFolderPath() {
-        return ImageUtils.getFolderPathFromPath(folders.get(pos).getPath());
+    public Folder getSelectedFolder() {
+        return folders.get(pos);
     }
 
     @Override
@@ -71,7 +70,7 @@ public class FolderSelectDialogFragment extends DialogFragment implements View.O
             folders = savedInstanceState.getParcelableArrayList("folders");
             pos = savedInstanceState.getInt("pos");
         } else {
-            folders = ImageService.getFolders();
+            folders = ImageService.getNewFolders();
             pos = 0;
         }
 
@@ -116,7 +115,7 @@ public class FolderSelectDialogFragment extends DialogFragment implements View.O
 
     @Override
     public void onClick(View v) {
-        listener.selectFinished(getSelectedFolderPath());
+        listener.selectFinished(folders.get(pos));
     }
 
     class FolderAdapter extends RecyclerView.Adapter<FolderAdapter.FolderHolder> {
@@ -135,7 +134,7 @@ public class FolderSelectDialogFragment extends DialogFragment implements View.O
                 holder.select.setChecked(false);
             }
 
-            holder.folder.setText(folders.get(position).getFolder());
+            holder.folder.setText(folders.get(position).getName());
 
             holder.relativeLayout.setOnClickListener(new View.OnClickListener() {
                 @Override

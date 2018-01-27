@@ -4,12 +4,14 @@ package com.koncle.imagemanagement.activity;
  * Created by 10976 on 2018/1/8.
  */
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 import android.os.PersistableBundle;
 import android.os.StrictMode;
 import android.support.v7.app.ActionBar;
@@ -29,12 +31,12 @@ import android.widget.Toast;
 
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
+import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dialog.FolderSelectDialogFragment;
 import com.koncle.imagemanagement.dialog.TagSelectDialog;
 import com.koncle.imagemanagement.util.ActivityUtil;
-import com.koncle.imagemanagement.util.ImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +68,10 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     public static final String RESULT_DELETE_IMAGE_FOLDER = "folder";
     public static final String RESULT_DELETE_IMAGE_NUM = "num";
 
+
     private MyHandler handler;
+    private Parcelable obj;
+    private ProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,9 +86,8 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
         Bundle bundle = this.getIntent().getExtras();
         if (bundle != null) {
-            images = bundle.getParcelableArrayList(ActivityUtil.ACTIVITY_MUL_IMAGE_TAG);
-            //images = WeakReference.getMulImages();
-            //WeakReference.removeMulImages();
+            obj = bundle.getParcelable(ActivityUtil.ACTIVITY_MUL_IMAGE_DATA);
+            images = ImageService.getImagesFromParcelable(obj);
             Current_Folder_Name = bundle.getString(ActivityUtil.ACTIVITY_MUL_IMAGE_TITLE_TAG);
             if (images == null) {
                 images = new ArrayList<>();
@@ -105,8 +109,12 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     }
 
     public class MyHandler extends Handler {
+        public static final int DELETE_IMAGE_PROCESS = 20;
+        public static final int MOVE_IMAGE_PROCESS = 10;
+
         public void handleMessage(Message msg) {
             Image image;
+            int count;
             switch (msg.what) {
                 // notify folder to change singleImages
                 case IMAGE_ADDED:
@@ -118,6 +126,24 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                     break;
                 case IMAGE_DELETED:
                     break;
+                case MOVE_IMAGE_PROCESS:
+                    count = msg.arg1;
+                    String folderPath = ((Folder) msg.obj).getPath();
+                    if (!Current_Folder_Name.equals(MultiColumnImagesActivity.ALL_FOLDER_NAME) && count != 0) {
+                        imageAdaptor.removeSelectedItems();
+                    }
+                    imageAdaptor.exitSelectMode();
+                    progressDialog.dismiss();
+                    Toast.makeText(getApplicationContext(), "move " + count + " images to folder : " + folderPath, Toast.LENGTH_SHORT).show();
+                    break;
+                case DELETE_IMAGE_PROCESS:
+                    count = msg.arg1;
+                    imageAdaptor.removeSelectedItems();
+                    imageAdaptor.exitSelectMode();
+                    progressDialog.dismiss();
+                    Toast.makeText(getApplicationContext(), "delete " + count + " files", Toast.LENGTH_SHORT).show();
+                    break;
+
             }
         }
     }
@@ -247,10 +273,27 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int count = imageAdaptor.deleteSelectedImages();
-                Toast.makeText(getApplicationContext(), "delete " + count + " files", Toast.LENGTH_SHORT).show();
-                deleteImage = true;
-                imageAdaptor.exitSelectMode();
+                final int size = imageAdaptor.getSelections().size();
+                if (size < 5) {
+                    int count = imageAdaptor.deleteSelectedImages();
+                    imageAdaptor.removeSelectedItems();
+                    imageAdaptor.exitSelectMode();
+                    Toast.makeText(getApplicationContext(), "delete " + count + " files", Toast.LENGTH_SHORT).show();
+                    deleteImage = true;
+                } else {
+                    progressDialog = ProgressDialog.show(MultiColumnImagesActivity.this, null, "deleting " + size + " files");
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            int count = imageAdaptor.deleteSelectedImages();
+
+                            Message msg = Message.obtain();
+                            msg.what = MyHandler.DELETE_IMAGE_PROCESS;
+                            msg.arg1 = count;
+                            handler.sendMessage(msg);
+                        }
+                    }).start();
+                }
             }
         });
 
@@ -273,18 +316,37 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
 
                 FolderSelectDialogFragment dialogFragment = FolderSelectDialogFragment.newInstance(new FolderSelectDialogFragment.OnSelectFinishedListener() {
                     @Override
-                    public void selectFinished(String folderPath) {
+                    public void selectFinished(final Folder folder) {
                         // if the folder is ALL folder or the its name is the same as current folder
                         // then return
-                        String folderName = ImageUtils.getFolderNameFromFolderPath(folderPath);
+                        final String folderName = folder.getName();
                         if (!MultiColumnImagesActivity.ALL_FOLDER_NAME.equals(folderName) && folderName.equals(Current_Folder_Name)) {
                             Toast.makeText(getApplicationContext(), "can't move to the same folder", Toast.LENGTH_SHORT).show();
                             imageAdaptor.exitSelectMode();
                             return;
                         }
-                        int count = imageAdaptor.moveSelectedImages(folderPath);
-                        imageAdaptor.exitSelectMode();
-                        Toast.makeText(getApplicationContext(), "move " + count + " images to folder : " + folderPath, Toast.LENGTH_SHORT).show();
+                        final int size = imageAdaptor.getSelections().size();
+                        if (size < 5) {
+                            int count = imageAdaptor.moveSelectedImages(folder);
+                            imageAdaptor.removeSelectedItems();
+                            imageAdaptor.exitSelectMode();
+                            Toast.makeText(getApplicationContext(), "move " + count + " images to folder : " + folder.getPath(), Toast.LENGTH_SHORT).show();
+                        } else {
+                            // can't use getApplicatonContext() for context,otherwise a token null not for application exception will occur
+                            progressDialog = ProgressDialog.show(MultiColumnImagesActivity.this, null, "removing " + size + " files");
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    int count = imageAdaptor.moveSelectedImages(folder);
+
+                                    Message msg = Message.obtain();
+                                    msg.what = MyHandler.MOVE_IMAGE_PROCESS;
+                                    msg.arg1 = count;
+                                    msg.obj = folder;
+                                    handler.sendMessage(msg);
+                                }
+                            }).start();
+                        }
                     }
                 });
                 dialogFragment.show(getSupportFragmentManager(), "multi folder");
@@ -351,15 +413,6 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     public void onBackPressed() {
         // if there is no selected mode, then close the activity
         if (!imageAdaptor.exitSelectMode()) {
-            if (deleteImage) {
-                Intent intent = new Intent();
-                intent.putExtra(RESULT_DELETE_IMAGE_FOLDER, Current_Folder_Name);
-                intent.putExtra(RESULT_DELETE_IMAGE_NUM, deleteImage);
-                setResult(RESULT_DELETE_IMAGE, intent);
-
-                handler.sendEmptyMessage(IMAGE_DELETED);
-            }
-            WeakReference.clear();
             super.onBackPressed();
         }
     }

@@ -157,7 +157,17 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
 
         public void refreshData() {
             events = ImageService.getEvents();
-            notifyItemRangeChanged(0, events.size() + 1);
+            notifyItemRangeChanged(0, getItemCount());
+        }
+
+        public void refreshData(List<Event> refreshEvents) {
+            for (Event event : refreshEvents) {
+                int index = events.indexOf(event);
+                if (index != 0) {
+                    events.set(index, event);
+                }
+            }
+            notifyItemRangeChanged(0, getItemCount());
         }
 
         @Override
@@ -202,8 +212,7 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
                 finalHolder.show.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        event.resetImageList();
-                        ActivityUtil.showImageList(getContext(), event.getImageList(), event.getName());
+                        ActivityUtil.showImageList(getContext(), event, event.getName());
                     }
                 });
             }
@@ -398,22 +407,8 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
 
     public void onImageDeleted(Image image) {
         if (eventAdapter == null) return;
-
         List<Event> concernedEvents = image.getEvents();
-        if (concernedEvents.size() > 0) {
-            eventAdapter.refreshData();
-        }
-    }
-
-    public void onImageDeleted(List<Image> images) {
-        if (eventAdapter == null) return;
-        for (Image image : images) {
-            List<Event> concernedEvents = image.getEvents();
-            if (concernedEvents.size() > 0) {
-                eventAdapter.refreshData();
-                break;
-            }
-        }
+        eventAdapter.refreshData(concernedEvents);
     }
 
     @Override

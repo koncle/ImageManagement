@@ -14,6 +14,7 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Image;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -51,18 +52,19 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
     }
 
     @Override
-    public Object instantiateItem(ViewGroup container, final int position) {
+    public Object instantiateItem(final ViewGroup container, final int position) {
         if (images.size() >= position) {
             final Image image = images.get(position);
-            String path = image.getPath();
+            final String path = image.getPath();
 
             //imageView = new FullScreenImageView(this.context);
             if (Image.TYPE_NORNAL == image.getType()) {
-                SubsamplingScaleImageView subsamplingScaleImageView = new SubsamplingScaleImageView(this.context);
+                final SubsamplingScaleImageView subsamplingScaleImageView = new SubsamplingScaleImageView(this.context);
                 if (cur == position)
                     subsamplingScaleImageView.setTransitionName(context.getString(R.string.m2s_transition));
                 subsamplingScaleImageView.setImage(ImageSource.uri(path));
                 subsamplingScaleImageView.setOnImageEventListener(new SubsamplingScaleImageView.OnImageEventListener() {
+                    int time = 0;
                     @Override
                     public void onReady() {
                     }
@@ -73,16 +75,23 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
 
                     @Override
                     public void onPreviewLoadError(Exception e) {
-
-                        Log.w(TAG, "Preview Load Error");
-                        operator.addDeleteImage(image);
                     }
 
                     @Override
                     public void onImageLoadError(Exception e) {
-                        Toast.makeText(context, "This image has been deleted by other Appes", Toast.LENGTH_SHORT).show();
-                        operator.addDeleteImage(image);
-                        Log.w(TAG, "Load Error");
+                        if (!new File(image.getPath()).exists()) {
+                            Toast.makeText(context, "This image has been deleted by other Apps", Toast.LENGTH_SHORT).show();
+                            operator.addDeleteImage(image);
+                        } else {
+                            if (time < 3) {
+                                ++time;
+                                Toast.makeText(context, "Load error, reload image, time : " + time, Toast.LENGTH_SHORT).show();
+                                Log.w(TAG, "Load Error");
+                                subsamplingScaleImageView.setImage(ImageSource.uri(path));
+                            } else {
+                                Toast.makeText(context, "Load error, can't load image", Toast.LENGTH_SHORT).show();
+                            }
+                        }
                     }
 
                     @Override
@@ -100,7 +109,6 @@ public class SingleImageViewPagerAdapter extends PagerAdapter {
                         operator.toggleMode();
                     }
                 });
-
                 container.addView(subsamplingScaleImageView);
                 return subsamplingScaleImageView;
             } else {

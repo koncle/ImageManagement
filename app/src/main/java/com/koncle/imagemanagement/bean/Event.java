@@ -43,18 +43,6 @@ public class Event implements Parcelable {
         return obj instanceof Event && ((Event) obj).getName().equals(name);
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeValue(this.id);
-        dest.writeString(this.name);
-        dest.writeTypedList(this.imageList);
-    }
-
     public Long getId() {
         return this.id;
     }
@@ -147,16 +135,40 @@ public class Event implements Parcelable {
     public Event() {
     }
 
-    protected Event(Parcel in) {
-        this.id = (Long) in.readValue(Long.class.getClassLoader());
-        this.name = in.readString();
-        this.imageList = in.createTypedArrayList(Image.CREATOR);
-    }
-
     @Generated(hash = 1278351185)
     public Event(Long id, @NotNull String name) {
         this.id = id;
         this.name = name;
+    }
+
+    /**
+     * Used to resolve relations
+     */
+    @Generated(hash = 2040040024)
+    private transient DaoSession daoSession;
+
+    /**
+     * Used for active entity operations.
+     */
+    @Generated(hash = 1542254534)
+    private transient EventDao myDao;
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(this.id);
+        dest.writeString(this.name);
+        dest.writeTypedList(this.imageList);
+    }
+
+    protected Event(Parcel in) {
+        this.id = (Long) in.readValue(Long.class.getClassLoader());
+        this.name = in.readString();
+        this.imageList = in.createTypedArrayList(Image.CREATOR);
     }
 
     public static final Creator<Event> CREATOR = new Creator<Event>() {
@@ -170,16 +182,4 @@ public class Event implements Parcelable {
             return new Event[size];
         }
     };
-
-    /**
-     * Used to resolve relations
-     */
-    @Generated(hash = 2040040024)
-    private transient DaoSession daoSession;
-
-    /**
-     * Used for active entity operations.
-     */
-    @Generated(hash = 1542254534)
-    private transient EventDao myDao;
 }

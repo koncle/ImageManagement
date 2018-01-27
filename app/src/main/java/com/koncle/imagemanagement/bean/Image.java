@@ -19,6 +19,7 @@ import org.greenrobot.greendao.annotation.JoinEntity;
 import org.greenrobot.greendao.annotation.NotNull;
 import org.greenrobot.greendao.annotation.ToMany;
 import org.greenrobot.greendao.annotation.Transient;
+import org.greenrobot.greendao.annotation.Unique;
 
 import java.util.Date;
 import java.util.List;
@@ -36,6 +37,7 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
     private Long id;
 
     @NotNull
+    @Unique
     private String path;
     private String thumbnailPath;
     @NotNull
@@ -64,6 +66,8 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
     private List<Event> events;
 
     private Long loc_id;
+
+    private Long folder_id;
 
     private String lat;
 
@@ -336,10 +340,10 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
         this.pos = in.readParcelable(LatLng.class.getClassLoader());
     }
 
-    @Generated(hash = 1256681410)
+    @Generated(hash = 73242433)
     public Image(Long id, @NotNull String path, String thumbnailPath, @NotNull String folder,
-                 @NotNull String name, String desc, Date time, Long loc_id, String lat, String lng,
-                 int type) {
+                 @NotNull String name, String desc, Date time, Long loc_id, Long folder_id, String lat,
+                 String lng, int type) {
         this.id = id;
         this.path = path;
         this.thumbnailPath = thumbnailPath;
@@ -348,6 +352,7 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
         this.desc = desc;
         this.time = time;
         this.loc_id = loc_id;
+        this.folder_id = folder_id;
         this.lat = lat;
         this.lng = lng;
         this.type = type;
@@ -381,5 +386,13 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
                 "id=" + id +
                 ", path='" + path + '\'' +
                 '}';
+    }
+
+    public Long getFolder_id() {
+        return this.folder_id;
+    }
+
+    public void setFolder_id(Long folder_id) {
+        this.folder_id = folder_id;
     }
 }

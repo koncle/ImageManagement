@@ -28,10 +28,6 @@
             android:name="com.amap.api.v2.apikey"
             android:value="f58035457ccc153e5f24ff0195e4c750" />
 
-        <service
-            android:name=".service.ImageListenerService"
-            android:enabled="true" />
-
         <activity
             android:name="com.koncle.imagemanagement.activity.DrawerActivity"
             android:configChanges="orientation"
@@ -43,7 +39,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activity.MainActivity" />
         <activity android:name=".activity.MapActivity" />
         <activity android:name=".activity.MultiColumnImagesActivity" />
         <activity android:name=".activity.SelectImageActivity" />
@@ -55,9 +50,6 @@
         <activity
             android:name=".activity.RemarkActivity"
             android:theme="@style/FullscreenTheme" />
-        <service
-            android:name=".service.ImageListenerService"
-            android:enabled="true" />
 
     </application>
 

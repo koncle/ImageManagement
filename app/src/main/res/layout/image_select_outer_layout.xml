@@ -28,7 +28,7 @@
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize">
+        android:layout_height="wrap_content">
 
         <Button
             android:id="@+id/image_select_show"

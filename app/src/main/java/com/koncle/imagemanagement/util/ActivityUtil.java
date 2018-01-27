@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.SharedElementCallback;
 import android.transition.Explode;
@@ -17,6 +19,7 @@ import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
 import com.koncle.imagemanagement.activity.SelectImageActivity;
 import com.koncle.imagemanagement.activity.SingleImageActivity;
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.dataManagement.ImageService;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -32,6 +35,7 @@ public class ActivityUtil {
     public static final String ACTIVITY_MUL_IMAGE_TITLE_TAG = "title";
 
     public static final String ACTIVITY_POS_TAG = "pos";
+    public static final String ACTIVITY_MUL_IMAGE_DATA = "mul";
 
     public static void shareImages(Context context, List<Image> images) {
 
@@ -66,13 +70,14 @@ public class ActivityUtil {
         context.startActivity(intent);
     }
 
-    public static void showImageList(Context context, List<Image> images, String title) {
+    /*
+    * reset Images and send it to mul activity
+    * */
+    public static void showImageList(Context context, @Nullable Parcelable obj, String title) {
         Intent intent = new Intent(context, MultiColumnImagesActivity.class);
         Bundle bundle = new Bundle();
-
-        bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
-        //WeakReference.putMulImages(images);
-
+        ImageService.resetImages(obj);
+        bundle.putParcelable(ACTIVITY_MUL_IMAGE_DATA, obj);
         bundle.putString(ACTIVITY_MUL_IMAGE_TITLE_TAG, title);
         intent.putExtras(bundle);
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);

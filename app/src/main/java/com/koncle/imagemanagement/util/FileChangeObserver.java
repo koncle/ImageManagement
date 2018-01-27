@@ -4,19 +4,15 @@ import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import com.koncle.imagemanagement.activity.MsgCenter;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 
 import java.io.File;
-import java.util.Date;
-
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
 
 /**
  * Created by Koncle on 2018/1/22.
@@ -91,7 +87,7 @@ public class FileChangeObserver extends ContentObserver {
         int nameIndex = cursor.getColumnIndex(MediaStore.Images.Media.DISPLAY_NAME);
         int latIndex = cursor.getColumnIndex(MediaStore.Images.Media.LATITUDE);
         int lngIndex = cursor.getColumnIndex(MediaStore.Images.Media.LONGITUDE);
-        int despIndex = cursor.getColumnIndex(MediaStore.Images.Media.DESCRIPTION);
+        int descIndex = cursor.getColumnIndex(MediaStore.Images.Media.DESCRIPTION);
         int mineTypeIndex = cursor.getColumnIndex(MediaStore.Images.Media.MIME_TYPE);
 
         while (cursor.moveToNext()) {
@@ -103,11 +99,11 @@ public class FileChangeObserver extends ContentObserver {
             Image imageInDatabase = ImageService.ifExistImage(image);
             // if return false, which means it exists in the database.
             // else it should be added to the database
-            File f = new File(path);
+            File file = new File(path);
             if (imageInDatabase != null) {
                 // if not exits in the file system,
                 // which means the image has been deleted
-                if (!f.exists()) {
+                if (!file.exists()) {
                     // delete the image from database
                     ImageService.deleteImageInDataBase(imageInDatabase);
                     Log.w(TAG, "delete image from database : " + path);
@@ -117,50 +113,17 @@ public class FileChangeObserver extends ContentObserver {
                 }
                 // not exist, insert the image
             } else {
-                if (!f.exists()) {
+                if (!file.exists()) {
                     Log.w(TAG, "not exist  : " + path);
                     return;
                 }
-                String folderName = ImageUtils.getFolderNameFromPath(path);
-                String name = cursor.getString(nameIndex);
-                long time = cursor.getLong(timeIndex);
-                double lat = cursor.getDouble(latIndex);
-                double lng = cursor.getDouble(lngIndex);
-                String desp = cursor.getString(despIndex);
-                String mineType = cursor.getString(mineTypeIndex);
 
-                image.setName(name);
-                image.setFolder(folderName);
-                /*
-                List<Folder> folders = ImageService.ifExistFolder(folderName);
-                Folder f;
-                if (folders.size() == 0){
-                    f = ImageService.insertFolder(folderName);
-                }else{
-                    f =folders.get(0);
-                }
-                image.setFolder_id(f.getId());
-                */
-                image.setTime(new Date(time));
-                image.setLat(String.valueOf(lat));
-                image.setLng(String.valueOf(lng));
-                image.setDesc(desp);
-
-                if ("image/gif".equals(mineType))
-                    image.setType(Image.TYPE_GIF);
-                else
-                    image.setType(Image.TYPE_NORNAL);
-
-                // if the image is not in database
-                ImageService.insertImageWithOutCheck(image);
+                image = ImageService.createImage(cursor, pathIndex, timeIndex, nameIndex, latIndex, lngIndex, descIndex, mineTypeIndex);
 
                 // send msg to DrawerActivity handler
-                Message msg = new Message();
-                msg.what = IMAGE_ADDED;
-                Bundle bundle = new Bundle();
-                bundle.putParcelable("image", image);
-                msg.setData(bundle);
-                handler.sendMessage(msg);
+                MsgCenter.notifyImageAdded(image);
+
+                ImageService.refreshFolderCover(image);
 
                 Log.w(TAG, "insert image into database : " + path);
             }

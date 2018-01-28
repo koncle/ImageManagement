@@ -37,4 +37,8 @@
     <string name="show_image_desc">show</string>
     <string name="modify_image_desc">modify</string>
     <string name="gif">GIF</string>
+    <string name="operatoins_item_more">more</string>
+    <string name="operations_item_info">image info</string>
+    <string name="operations_item_bg">set as wallpaper</string>
+    <string name="dialog_info_title">Image Info</string>
 </resources>

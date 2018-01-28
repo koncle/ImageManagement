@@ -85,11 +85,12 @@ public class ActivityUtil {
         //((Activity) context).startActivityForResult(intent, 1);
     }
 
-    public static void showSingleImageWithPos(final Context context, List<Image> images, int currentPos, View view) {
+    public static void showSingleImageWithPos(final Context context, Parcelable obj, int currentPos, View view) {
         Intent intent = new Intent(context, SingleImageActivity.class);
         Bundle bundle = new Bundle();
+        ImageService.resetImages(obj);
 
-        bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
+        bundle.putParcelable(ACTIVITY_MUL_IMAGE_DATA, obj);
         //WeakReference.putSingleImages(images);
 
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);

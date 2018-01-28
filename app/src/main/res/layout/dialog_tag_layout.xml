@@ -7,12 +7,7 @@
 
         <TextView
             android:text="@string/dialog_select_tag_title"
-            android:gravity="center"
-            android:background="#2aaa"
-            android:textColor="#000"
-            android:textSize="13sp"
-            android:layout_width="match_parent"
-            android:layout_height="30dp" />
+            style="@style/dialog_title" />
 
         <LinearLayout
             android:id="@+id/dialog_input_liearlayout"
@@ -30,7 +25,6 @@
                 android:src="@drawable/close"
                 android:layout_width="35dp"
                 android:layout_height="35dp" />
-
 
             <android.support.design.widget.TextInputLayout
                 android:layout_width="0dp"
@@ -64,9 +58,7 @@
             android:text="@string/dialog_add_tag"
             style="@style/dialog_button" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+        <LinearLayout style="@style/dialog_bottom_button_outer">
 
             <Button
                 android:id="@+id/dialog_cancel"

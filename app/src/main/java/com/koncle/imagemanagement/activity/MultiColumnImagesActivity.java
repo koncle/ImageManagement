@@ -252,7 +252,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
             @Override
             public void onClick(View v) {
                 if (selecting) {
-                    exitSelectMode();
+                    exitSelectModeAndClearSelections();
                 } else {
                     onBackPressed();
                 }
@@ -328,7 +328,9 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                         final int size = imageAdaptor.getSelections().size();
                         if (size < 5) {
                             int count = imageAdaptor.moveSelectedImages(folder);
-                            imageAdaptor.removeSelectedItems();
+                            if (!Current_Folder_Name.equals(MultiColumnImagesActivity.ALL_FOLDER_NAME) && count != 0) {
+                                imageAdaptor.removeSelectedItems();
+                            }
                             imageAdaptor.exitSelectMode();
                             Toast.makeText(getApplicationContext(), "move " + count + " images to folder : " + folder.getPath(), Toast.LENGTH_SHORT).show();
                         } else {
@@ -358,7 +360,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
             public void onClick(View v) {
                 List<Image> images = imageAdaptor.getSelections();
                 //ImageService.addTags(singleImages, );
-                if (images.size() > 1) {
+                if (images.size() > 0) {
                     TagSelectDialog dialog = TagSelectDialog.newInstance(images);
                     dialog.addNote("It will overwrite previous tags");
                     dialog.show(getSupportFragmentManager(), "Multi");
@@ -386,12 +388,17 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         recyclerView.getItemAnimator().setChangeDuration(0);
     }
 
+    public void exitSelectModeAndClearSelections() {
+        // clear selections
+        imageAdaptor.exitSelectMode();
+
+        exitSelectMode();
+    }
+
 
     public void exitSelectMode() {
         // hide tools
         operatoins.setVisibility(View.GONE);
-        // clear selections
-        imageAdaptor.exitSelectMode();
 
         // hide menu
         selecting = false;
@@ -432,6 +439,11 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
     @Override
     public void showSelectedNum(int num) {
         this.toolbar.setTitle(num + " Pictures Selected");
+    }
+
+    @Override
+    public Parcelable getObj() {
+        return obj;
     }
 
     @Override

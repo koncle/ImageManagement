@@ -7,21 +7,14 @@
 
         <TextView
             android:text="@string/dialog_select_folder_title"
-            android:gravity="center"
-            android:background="#2aaa"
-            android:textColor="#000"
-            android:textSize="13sp"
-            android:layout_width="match_parent"
-            android:layout_height="30dp" />
+            style="@style/dialog_title" />
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/folder_list"
             android:layout_width="match_parent"
             android:layout_height="300dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+        <LinearLayout style="@style/dialog_bottom_button_outer">
 
             <Button
                 android:id="@+id/dialog_cancel"

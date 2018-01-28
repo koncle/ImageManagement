@@ -163,7 +163,8 @@ public class ImageService {
                 .list().get(0);
     }
 
-    public static Image getCoverFromFolder(long folderId) {
+    public static Image getCoverFromFolder(Long folderId) {
+        if (folderId == null) return null;
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         List<Image> images = imageDao.queryBuilder()
                 .where(ImageDao.Properties.Folder_id.eq(folderId))

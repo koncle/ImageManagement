@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by 10976 on 2018/1/9.
@@ -28,7 +29,12 @@ import java.util.List;
 
 public class ImageUtils {
     public static final String TAG = ImageUtils.class.getSimpleName();
-    public static SimpleDateFormat sdf = new SimpleDateFormat("yyyy:MM:DD hh:mm:ss");
+
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.CHINA);
+
+    public static String getFormatedTime(Date date) {
+        return sdf.format(date);
+    }
 
     public static Bitmap drawableToBitmap(Drawable drawable) {
 

@@ -2,6 +2,7 @@ package com.koncle.imagemanagement.adapter;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -119,7 +120,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 if (selectMode) {
                     toggleImageSelectionAndCheck(holder, position);
                 } else {
-                    ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, ImageAdaptor.this.images, position, holder.image);
+                    ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, modeOperator.getObj(), position, holder.image);
                 }
             }
         });
@@ -221,6 +222,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
              * so that the view can be redrew.
              */
             notifyDataSetChangedWithoutFlash();
+
             return true;
         } else {
             return false;
@@ -381,6 +383,8 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         void refreshData();
 
         void showSelectedNum(int num);
+
+        Parcelable getObj();
     }
 
     public void setOperater(ModeOperator modeOperator) {

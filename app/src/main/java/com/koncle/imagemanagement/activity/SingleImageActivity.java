@@ -1,6 +1,8 @@
 package com.koncle.imagemanagement.activity;
 
+import android.app.WallpaperManager;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,6 +13,8 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -20,15 +24,20 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.animation.GlideAnimation;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.SingleImageViewPagerAdapter;
 import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dialog.FolderSelectDialogFragment;
+import com.koncle.imagemanagement.dialog.InfoDialog;
 import com.koncle.imagemanagement.dialog.TagSelectDialog;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,6 +74,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     private ViewGroup container;
     private boolean show;
     private TextView desc;
+    private Parcelable obj;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -76,10 +86,8 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         Bundle bundle = getIntent().getExtras();
         int position = (int) bundle.get("pos");
 
-        this.images = (List<Image>) bundle.get("singleImages");
-        //this.images = WeakReference.getSingleImages();
-
-        ImageService.recoverDaoSession(images);  // its daoSession can't not be parsed
+        obj = bundle.getParcelable(ActivityUtil.ACTIVITY_MUL_IMAGE_DATA);
+        images = ImageService.getImagesFromParcelable(obj);
 
         deleteImages = new ArrayList<>();
 
@@ -88,6 +96,45 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         initViewPager(position);
         initToolbar();
         initOperatoins();
+        changeTitle(images.get(position).getName());
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.image_more, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.single_item_bg:
+                Image image = getCurrentItem();
+                if (image.getType() == Image.TYPE_GIF) {
+                    Toast.makeText(this, "GIF can't be set as wallpaper", Toast.LENGTH_SHORT).show();
+                } else {
+                    Glide.with(this)
+                            .load(image.getPath())
+                            .asBitmap()
+                            .into(new SimpleTarget<Bitmap>() {
+                                @Override
+                                public void onResourceReady(Bitmap bitmap, GlideAnimation<? super Bitmap> glideAnimation) {
+                                    try {
+                                        WallpaperManager.getInstance(SingleImageActivity.this).setBitmap(bitmap);
+                                        Toast.makeText(SingleImageActivity.this, "set wallpaper successfully", Toast.LENGTH_SHORT).show();
+                                    } catch (IOException e) {
+                                        Toast.makeText(SingleImageActivity.this, "can't set wallpaper", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            });
+                }
+                break;
+            case R.id.single_item_info:
+                InfoDialog dialog = InfoDialog.newInstance(getCurrentItem());
+                dialog.show(getSupportFragmentManager(), "info");
+                break;
+        }
+        return true;
     }
 
     private void initToolbar() {
@@ -103,9 +150,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
                 onBackPressed();
             }
         });
-        toolbar.setTitle(images.get(imageViewPager.getCurrentItem()).getName());
-        //hideTools();
-        changeTitle(images.get(0).getName());
     }
 
     private void hideStatusBarAndActionBar() {
@@ -253,9 +297,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         intent.putExtras(bundle);
         setResult(IMAGE_VIEWER_DELETE, intent);
 
-
-        MsgCenter.notifyDataDeletedInner(currentImage);
-        // notify multi activity to change its data set
         finish();
     }
 

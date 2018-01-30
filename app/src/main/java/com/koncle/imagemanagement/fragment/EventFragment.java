@@ -349,7 +349,7 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
             imageHolder.image.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    ActivityUtil.showSingleImageWithPos(getContext(), events.get(position), position, imageHolder.image);
+                    ActivityUtil.showSingleImageWithPos(getContext(), event, position, imageHolder.image);
 
                     adapterWaitingForAddImageResult = InnerEventAdapter.this;
                 }

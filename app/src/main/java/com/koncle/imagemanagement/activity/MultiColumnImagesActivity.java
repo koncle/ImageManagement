@@ -33,6 +33,7 @@ import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
 import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.bean.Tag;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dialog.FolderSelectDialogFragment;
 import com.koncle.imagemanagement.dialog.TagSelectDialog;
@@ -44,6 +45,7 @@ import java.util.List;
 import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
 import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
 import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_TAG_ADDED;
 
 public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
 
@@ -124,8 +126,10 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                         recyclerView.scrollToPosition(0);
                     }
                     break;
+
                 case IMAGE_DELETED:
                     break;
+
                 case MOVE_IMAGE_PROCESS:
                     count = msg.arg1;
                     String folderPath = ((Folder) msg.obj).getPath();
@@ -136,6 +140,7 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                     progressDialog.dismiss();
                     Toast.makeText(getApplicationContext(), "move " + count + " images to folder : " + folderPath, Toast.LENGTH_SHORT).show();
                     break;
+
                 case DELETE_IMAGE_PROCESS:
                     count = msg.arg1;
                     imageAdaptor.removeSelectedItems();
@@ -144,6 +149,26 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
                     Toast.makeText(getApplicationContext(), "delete " + count + " files", Toast.LENGTH_SHORT).show();
                     break;
 
+                case IMAGE_TAG_ADDED:
+                    if (obj instanceof Tag) {
+                        Tag currentTag = (Tag) obj;
+                        List<Tag> tags = (List<Tag>) msg.getData().get("tags");
+                        // the msg is from single
+                        if (msg.obj != null) {
+                            Image image1 = (Image) msg.obj;
+                            imageAdaptor.removeItem(image1);
+                            // the msg is from its self
+                        } else {
+                            // if thses images are not tagged with current tag
+                            if (!tags.contains(currentTag)) {
+                                // remove them
+                                imageAdaptor.removeSelectedItems();
+                            }
+                            Toast.makeText(MultiColumnImagesActivity.this, "tag changed", Toast.LENGTH_SHORT).show();
+                            imageAdaptor.exitSelectMode();
+                        }
+                    }
+                    break;
             }
         }
     }
@@ -358,14 +383,13 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         tag.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                List<Image> images = imageAdaptor.getSelections();
+                final List<Image> selections = imageAdaptor.getSelections();
                 //ImageService.addTags(singleImages, );
-                if (images.size() > 0) {
-                    TagSelectDialog dialog = TagSelectDialog.newInstance(images);
+                if (selections.size() > 0) {
+                    TagSelectDialog dialog = TagSelectDialog.newInstance(selections);
                     dialog.addNote("It will overwrite previous tags");
                     dialog.show(getSupportFragmentManager(), "Multi");
                 }
-                imageAdaptor.exitSelectMode();
             }
         });
     }

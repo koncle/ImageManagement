@@ -24,6 +24,7 @@ import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.animation.AlphaAnimation;
 import com.amap.api.maps.model.animation.Animation;
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.bean.Image;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -323,9 +324,9 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
      * 获取每个聚合点的绘制样式
      */
     private BitmapDescriptor getBitmapDes(int num, ClusterItem clusterItem) {
-        BitmapDescriptor bitmapDescriptor = mLruCache.get(num);
-        if (bitmapDescriptor == null) {
-            View v = LayoutInflater.from(mContext).inflate(R.layout.map_item_layout, null, false);
+        BitmapDescriptor bitmapDescriptor = mLruCache.get(((Image) clusterItem).getId().intValue());
+        //if (bitmapDescriptor == null) {
+        View v = LayoutInflater.from(mContext).inflate(R.layout.map_item_layout, null, true);
             ImageView imageView = v.findViewById(R.id.map_image);
             TextView textView = v.findViewById(R.id.map_text);
             imageView.setImageDrawable(mClusterRender.getDrawAble(num, clusterItem));
@@ -353,8 +354,8 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
             }
             */
             bitmapDescriptor = BitmapDescriptorFactory.fromView(v);
-            mLruCache.put(num, bitmapDescriptor);
-        }
+        mLruCache.put(((Image) clusterItem).getId().intValue(), bitmapDescriptor);
+        //}
         return bitmapDescriptor;
     }
 

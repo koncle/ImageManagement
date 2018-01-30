@@ -5,17 +5,22 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.bean.Tag;
 import com.koncle.imagemanagement.util.FileChangeObserver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
 import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED_BY_SELF;
 import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_MOVED;
+import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_TAG_ADDED;
 
 /**
  * Created by Koncle on 2018/1/22.
@@ -53,6 +58,16 @@ public class MsgCenter {
         msg.what = IMAGE_ADDED;
         Bundle bundle = new Bundle();
         bundle.putParcelable("image", image);
+        msg.setData(bundle);
+        MsgCenter.sendMsg(msg);
+    }
+
+    public static void sendTagAddedMsg(List<Tag> tags, Image image) {
+        Message msg = Message.obtain();
+        msg.what = IMAGE_TAG_ADDED;
+        msg.obj = image;
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList("tags", (ArrayList<? extends Parcelable>) tags);
         msg.setData(bundle);
         MsgCenter.sendMsg(msg);
     }

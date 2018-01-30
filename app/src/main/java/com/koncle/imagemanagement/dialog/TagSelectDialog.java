@@ -21,6 +21,7 @@ import java.util.List;
 
 public class TagSelectDialog extends BaseDialogFragment {
     private List<Image> images;
+    OnTagSelectFinished onTagSelectFinished;
 
     public static TagSelectDialog newInstance(Image image) {
         Bundle args = new Bundle();
@@ -71,8 +72,18 @@ public class TagSelectDialog extends BaseDialogFragment {
 
     @Override
     public void onClick(View v) {
-        List<Tag> tags = new ArrayList<>();
-        tags.addAll(getSelectedTags().values());
+        List<Tag> tags = getSelectedTags();
         ImageService.overwriteImageTagInThread(images, tags);
+        if (onTagSelectFinished != null) {
+            onTagSelectFinished.onTagSelectFinished(tags);
+        }
+    }
+
+    public interface OnTagSelectFinished {
+        void onTagSelectFinished(List<Tag> tags);
+    }
+
+    public void setOnTagSelectFinished(OnTagSelectFinished onTagSelectFinished) {
+        this.onTagSelectFinished = onTagSelectFinished;
     }
 }

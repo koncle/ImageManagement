@@ -16,7 +16,6 @@ import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.koncle.imagemanagement.R;
@@ -39,8 +38,10 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
     private Map<Integer, Tag> selectedTags;
     private String note = null;
 
-    public Map<Integer, Tag> getSelectedTags() {
-        return selectedTags;
+    public List<Tag> getSelectedTags() {
+        List<Tag> tags = new ArrayList<>();
+        tags.addAll(selectedTags.values());
+        return tags;
     }
 
     @Override
@@ -225,7 +226,7 @@ public abstract class BaseDialogFragment extends DialogFragment implements View.
             public TextView tag;
             public CheckBox select;
             public ImageButton delete;
-            public RelativeLayout layout;
+            public LinearLayout layout;
 
             public TagHolder(View itemView) {
                 super(itemView);

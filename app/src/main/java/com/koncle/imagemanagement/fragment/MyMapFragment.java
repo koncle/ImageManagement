@@ -40,6 +40,7 @@ import com.koncle.imagemanagement.markerClusters.ClusterItem;
 import com.koncle.imagemanagement.markerClusters.ClusterOverlay;
 import com.koncle.imagemanagement.markerClusters.ClusterRender;
 import com.koncle.imagemanagement.util.ImageUtils;
+import com.koncle.imagemanagement.util.MapUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -113,15 +114,10 @@ public class MyMapFragment extends SupportMapFragment
             public void run() {
                 images = ImageService.getImagesWithLoc();
                 List<ClusterItem> items = new ArrayList<>();
-                Image image1 = images.get(0);
-                for (int i = 0; i < 100; i++) {
-                    Image image = new Image();
-                    image.setPath(image1.getPath());
-                    // rectify coordinate
-                    LatLng latLng = new LatLng(Double.parseDouble(image1.getLat()) + Math.random(), Double.parseDouble(image1.getLng()) + Math.random());
-                    //latLng = MapUtils.convert2AMapCoord(getContext(), latLng);
-
-                    image.setPos(latLng);
+                for (int i = 0; i < images.size(); i++) {
+                    Image image = images.get(i);
+                    //image.setPos(convert2LatLng(image.getLat(), image.getLng()));
+                    image.setPos(new LatLng(Double.parseDouble(image.getLat()), Double.parseDouble(image.getLng())));
                     items.add(image);
                 }
 
@@ -132,6 +128,11 @@ public class MyMapFragment extends SupportMapFragment
                 aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(items.get(0).getPosition(), 19));
             }
         }.start();
+    }
+
+    private LatLng convert2LatLng(String lat, String lng) {
+        LatLng latLng = MapUtils.convertToLatLng(new LatLonPoint(Double.parseDouble(lat), Double.parseDouble(lng)));
+        return MapUtils.convert2AMapCoord(getContext(), latLng);
     }
 
     private Marker addImageMarker(String path, LatLng latLng) {

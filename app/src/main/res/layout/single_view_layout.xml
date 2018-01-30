@@ -18,6 +18,7 @@
         android:layout_gravity="top" />
 
     <LinearLayout
+        android:id="@+id/single_view_bottom_layout"
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -26,16 +27,21 @@
         <TextView
             android:id="@+id/single_image_desc"
             android:text="hhh"
-            android:textColor="#fff"
-            android:textSize="15sp"
+            style="@style/desc_style"
             android:maxLines="6"
-            android:background="#a000"
-
             android:padding="5dp"
-
             android:layout_gravity="bottom"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
+
+        <com.koncle.imagemanagement.view.TagViewLayout
+            android:id="@+id/tag_view_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#a000"
+            app:canSelect="false"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp" />
 
         <LinearLayout
             app:layout_behavior="@string/bottom_sheet_behavior"

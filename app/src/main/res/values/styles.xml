@@ -131,8 +131,34 @@
         <item name="android:layout_marginEnd">5dp</item>
     </style>
 
+    <style name="desc_style">
+        <item name="android:textColor">#fff</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:background">#a000</item>
+    </style>
+
+    <style name="tag_style">
+        <item name="android:paddingTop">3dp</item>
+        <item name="android:paddingBottom">3dp</item>
+        <item name="android:paddingLeft">7dp</item>
+        <item name="android:paddingRight">7dp</item>
+        <item name="android:layout_margin">2dp</item>
+        <item name="android:background">@drawable/test_select</item>
+    </style>
+
+    <style name="under_desc_tag" parent="tag_style">
+        <item name="android:textColor">#fff</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
     <declare-styleable name="MyView">
         <attr name="default_size" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="TagViewLayout">
+        <attr name="selectMaxNum" format="integer" />
+        <attr name="canSelect" format="boolean" />
+        <attr name="canMultiSelect" format="boolean" />
     </declare-styleable>
 
 </resources>

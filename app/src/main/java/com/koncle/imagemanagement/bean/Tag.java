@@ -40,7 +40,7 @@ public class Tag implements Parcelable {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof Tag && ((Tag) obj).getTag().equals(tag);
+        return obj instanceof Tag && ((Tag) obj).getId().equals(id);
     }
     /**
      * Used to resolve relations

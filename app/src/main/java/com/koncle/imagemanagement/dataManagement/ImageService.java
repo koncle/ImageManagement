@@ -12,7 +12,6 @@ import android.util.Log;
 import com.koncle.imagemanagement.activity.DrawerActivity;
 import com.koncle.imagemanagement.activity.MsgCenter;
 import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
-import com.koncle.imagemanagement.activity.MyHandler;
 import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
@@ -317,7 +316,13 @@ public class ImageService {
                 for (TagAndImage tagAndImage : tagAndImages) {
                     tagAndImageDao.insert(tagAndImage);
                 }
-                MsgCenter.sendEmptyMessage(MyHandler.IMAGE_TAG_ADDED, null, DrawerActivity.className);
+                // which means this msg is from single
+                if (images.size() == 1) {
+                    MsgCenter.sendTagAddedMsg(tags, images.get(0));
+                } else {
+                    MsgCenter.sendTagAddedMsg(tags, null);
+                }
+                //MsgCenter.sendEmptyMessage(MyHandler.IMAGE_TAG_ADDED, null, DrawerActivity.className);
             }
         });
     }

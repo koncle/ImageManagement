@@ -13,6 +13,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -31,17 +32,19 @@ import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.adapter.SingleImageViewPagerAdapter;
 import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
+import com.koncle.imagemanagement.bean.Tag;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dialog.FolderSelectDialogFragment;
 import com.koncle.imagemanagement.dialog.InfoDialog;
 import com.koncle.imagemanagement.dialog.TagSelectDialog;
 import com.koncle.imagemanagement.util.ActivityUtil;
+import com.koncle.imagemanagement.view.TagAdapter;
+import com.koncle.imagemanagement.view.TagViewLayout;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.view.View.GONE;
 import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
 
 /**
@@ -63,7 +66,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     private Toolbar toolbar;
     private LinearLayout toolLayout;
     private SingleImageViewPagerAdapter pagerAdapter;
-
     private boolean toolMode = true;
 
     public static final String RESULT_TAG = "result";
@@ -75,6 +77,9 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     private boolean show;
     private TextView desc;
     private Parcelable obj;
+    private TagViewLayout tagViewLayout;
+    private TagAdapter<Tag> tagAdapter;
+    private LinearLayout bottomLayout;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,11 +97,31 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         deleteImages = new ArrayList<>();
 
         findViews();
-
         initViewPager(position);
         initToolbar();
         initOperatoins();
-        changeTitle(images.get(position).getName());
+        initTagLayout(getCurrentItem());
+    }
+
+    private void initTagLayout(Image image) {
+        tagAdapter = new TagAdapter<Tag>(null) {
+            @Override
+            public View getView(ViewGroup parent, int position, Tag tag) {
+                View root = LayoutInflater.from(getApplication()).inflate(R.layout.test_item, parent, false);
+                ((TextView) root.findViewById(R.id.test_id)).setText(tag.getTag());
+                return root;
+            }
+        };
+        tagViewLayout.setAdapter(tagAdapter);
+        tagViewLayout.setOnTagClickListener(new TagViewLayout.OnTagClickListener() {
+            @Override
+            public boolean onTagClick(View view, int position) {
+                Tag tag = tagAdapter.getItem(position);
+                ActivityUtil.showImageList(SingleImageActivity.this, tag, tag.getTag());
+                return true;
+            }
+        });
+        changeTags(image);
     }
 
     @Override
@@ -179,6 +204,8 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         toolLayout = findViewById(R.id.tool_layout);
         container = findViewById(R.id.single_view_transition_container);
         desc = findViewById(R.id.single_image_desc);
+        tagViewLayout = findViewById(R.id.tag_view_layout);
+        bottomLayout = findViewById(R.id.single_view_bottom_layout);
     }
 
     private void initViewPager(int position) {
@@ -187,6 +214,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         pagerAdapter.setOperator(this);
         imageViewPager.setAdapter(pagerAdapter);
         imageViewPager.setCurrentItem(position);
+        imageViewPager.setOffscreenPageLimit(5);
 
         imageViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -195,15 +223,19 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
 
             @Override
             public void onPageSelected(int position) {
-                changeTitle(images.get(position).getName());
-                changeDesc(images.get(position).getDesc());
+                Image image = images.get(position);
+                changeTitle(image.getName());
+                changeDesc(image.getDesc());
+                changeTags(image);
             }
 
             @Override
             public void onPageScrollStateChanged(int state) {
             }
         });
-        changeDesc(images.get(position).getDesc());
+
+        changeDesc(getCurrentItem().getDesc());
+        changeTitle(getCurrentItem().getName());
     }
 
     private void initOperatoins() {
@@ -250,11 +282,17 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             }
         });
 
-
         tag.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 TagSelectDialog dialog = TagSelectDialog.newInstance(images.get(imageViewPager.getCurrentItem()));
+                dialog.setOnTagSelectFinished(new TagSelectDialog.OnTagSelectFinished() {
+                    @Override
+                    public void onTagSelectFinished(List<Tag> tags) {
+                        //tagAdapter.setTags(tags);
+                        changeTags(tags);
+                    }
+                });
                 dialog.show(getSupportFragmentManager(), "Single");
             }
         });
@@ -313,53 +351,83 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
             showTools();
         }
         toolMode = !toolMode;
-        changeDesc(getCurrentItem().getDesc());
     }
 
     public void changeTitle(String s) {
         this.toolbar.setTitle(s);
     }
 
+    boolean descShow = true;
     public void changeDesc(String s) {
-        if (s != null && !"".equals(s) && toolMode) {
-            desc.setVisibility(View.VISIBLE);
-            desc.setText(s);
+        desc.setText(s);
+        if (toolMode) {
+            if (s != null && !"".equals(s)) {
+                desc.setVisibility(View.VISIBLE);
+            } else {
+                desc.setVisibility(View.GONE);
+            }
         } else {
-            desc.setText("");
-            desc.setVisibility(GONE);
+            desc.setVisibility(View.GONE);
         }
+
+        descShow = s != null && !"".equals(s);
+    }
+
+    private void changeTags(List<Tag> tags) {
+        tagAdapter.setTags(tags);
+
+        if (toolMode) {
+            if (tags.size() > 0) {
+                tagViewLayout.setVisibility(View.VISIBLE);
+            } else {
+                tagViewLayout.setVisibility(View.GONE);
+            }
+        } else {
+            tagViewLayout.setVisibility(View.GONE);
+        }
+
+        tagShow = tags.size() > 0;
+    }
+
+    boolean tagShow = true;
+
+    private void changeTags(Image image) {
+        image.resetTags();
+        List<Tag> tags = image.getTags();
+        changeTags(tags);
     }
 
     public void showTools() {
-        show = true;
-        toolLayout.setVisibility(View.VISIBLE);
-        toolbar.setVisibility(View.VISIBLE);
-        toolLayout.setClickable(true);
-
         Animation down = AnimationUtils.loadAnimation(this, R.anim.toolbar_enter);
         Animation up = AnimationUtils.loadAnimation(this, R.anim.operations_enter);
         //Animator toWhite = AnimatorInflater.loadAnimator(this, R.animator.bg_to_white);
-        toolLayout.startAnimation(up);
+
+        toolbar.setVisibility(View.VISIBLE);
         toolbar.startAnimation(down);
 
-        //toWhite.setTarget(imageViewPager);
-        //toWhite.start();
+        if (tagShow) {
+            tagViewLayout.setVisibility(View.VISIBLE);
+        }
+
+        if (descShow) {
+            desc.setVisibility(View.VISIBLE);
+        }
+
+        bottomLayout.startAnimation(up);
+        bottomLayout.setVisibility(View.VISIBLE);
+        Log.w(TAG, "show tools");
     }
 
     public void hideTools() {
-        show = false;
         Animation up = AnimationUtils.loadAnimation(this, R.anim.toolbar_exit);
         Animation down = AnimationUtils.loadAnimation(this, R.anim.operations_exit);
         //Animator toBlack = AnimatorInflater.loadAnimator(this, R.animator.bg_to_black);
         toolbar.startAnimation(up);
-        toolLayout.startAnimation(down);
-
-        toolLayout.setVisibility(View.GONE);
         toolbar.setVisibility(View.GONE);
-        toolLayout.setClickable(false);
 
-        //toBlack.setTarget(imageViewPager);
-        //toBlack.start();
+        bottomLayout.startAnimation(down);
+        bottomLayout.setVisibility(View.GONE);
+        Log.w(TAG, "hide tools");
     }
 
     @Override
@@ -392,10 +460,8 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         setResult(IMAGE_VIWER_SCROLL, intent);
 
         // prevent toolbar show again when the activity finished
-        if (show)
+        if (toolMode)
             hideTools();
-        toolbar.setVisibility(GONE);
-        toolLayout.setVisibility(GONE);
 
         super.onBackPressed();
     }

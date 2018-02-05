@@ -1,4 +1,4 @@
-package com.koncle.imagemanagement.activity;
+package com.koncle.imagemanagement.message;
 
 import android.content.Context;
 import android.net.Uri;
@@ -8,6 +8,7 @@ import android.os.Message;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 
+import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.bean.Tag;
 import com.koncle.imagemanagement.util.FileChangeObserver;
@@ -17,10 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED_BY_SELF;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_MOVED;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_TAG_ADDED;
+import static com.koncle.imagemanagement.message.MyHandler.FOLDER_ADDED;
+import static com.koncle.imagemanagement.message.MyHandler.FOLDER_DELETED;
 
 /**
  * Created by Koncle on 2018/1/22.
@@ -32,6 +31,8 @@ public class MsgCenter {
     public static final String MOVE_PREIMAGE = "preImage";
     public static final String MOVE_REARIMAGE = "rearImage";
     public static final String DELETE_IMAGE = "image";
+    private static Map<String, Handler> handlerMap = new HashMap<>();
+    private static FileChangeObserver observer;
 
     public static void notifyDataDeletedInner(Image image) {
         // send msg to all other activities
@@ -39,13 +40,13 @@ public class MsgCenter {
         Bundle bundle = new Bundle();
         bundle.putParcelable(DELETE_IMAGE, image);
         msg.setData(bundle);
-        msg.what = IMAGE_DELETED_BY_SELF;
+        msg.what = com.koncle.imagemanagement.message.MyHandler.IMAGE_DELETED_BY_SELF;
         MsgCenter.sendMsg(msg);
     }
 
     public static void notifyDataMovedInner(Image preImage, Image rearImage) {
         Message msg = Message.obtain();
-        msg.what = IMAGE_MOVED;
+        msg.what = com.koncle.imagemanagement.message.MyHandler.IMAGE_MOVED;
         Bundle bundle = new Bundle();
         bundle.putParcelable(MOVE_REARIMAGE, rearImage);
         bundle.putParcelable(MOVE_PREIMAGE, preImage);
@@ -55,7 +56,7 @@ public class MsgCenter {
 
     public static void notifyImageAdded(Image image) {
         Message msg = Message.obtain();
-        msg.what = IMAGE_ADDED;
+        msg.what = com.koncle.imagemanagement.message.MyHandler.IMAGE_ADDED;
         Bundle bundle = new Bundle();
         bundle.putParcelable("image", image);
         msg.setData(bundle);
@@ -64,7 +65,7 @@ public class MsgCenter {
 
     public static void sendTagAddedMsg(List<Tag> tags, Image image) {
         Message msg = Message.obtain();
-        msg.what = IMAGE_TAG_ADDED;
+        msg.what = com.koncle.imagemanagement.message.MyHandler.IMAGE_TAG_CHANGED;
         msg.obj = image;
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList("tags", (ArrayList<? extends Parcelable>) tags);
@@ -72,10 +73,22 @@ public class MsgCenter {
         MsgCenter.sendMsg(msg);
     }
 
-    public static class MyHandler extends Handler {
-        public void handleMessage(Message msg) {
-            sendMsg(msg);
-        }
+    public static void notifyFolderDeletedInner(Folder folder) {
+        Message msg = Message.obtain();
+        msg.what = FOLDER_DELETED;
+        msg.obj = folder;
+        Bundle bundle = new Bundle();
+        msg.setData(bundle);
+        MsgCenter.sendMsg(msg);
+    }
+
+    public static void notifyFolderAddedInner(Folder folder) {
+        Message msg = Message.obtain();
+        msg.what = FOLDER_ADDED;
+        msg.obj = folder;
+        Bundle bundle = new Bundle();
+        msg.setData(bundle);
+        MsgCenter.sendMsg(msg);
     }
 
     public static void sendEmptyMessage(int what, String from, String to) {
@@ -121,9 +134,6 @@ public class MsgCenter {
         }
     }
 
-    private static Map<String, Handler> handlerMap = new HashMap<>();
-    private static FileChangeObserver observer;
-
     public static void init(Context context) {
         Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         observer = new FileChangeObserver(new MyHandler(), context);
@@ -141,5 +151,11 @@ public class MsgCenter {
 
     public static void removeHandler(String name) {
         handlerMap.remove(name);
+    }
+
+    public static class MyHandler extends Handler {
+        public void handleMessage(Message msg) {
+            sendMsg(msg);
+        }
     }
 }

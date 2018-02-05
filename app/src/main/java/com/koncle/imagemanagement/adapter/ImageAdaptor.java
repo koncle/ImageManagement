@@ -120,7 +120,12 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
                 if (selectMode) {
                     toggleImageSelectionAndCheck(holder, position);
                 } else {
-                    ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, modeOperator.getObj(), position, holder.image);
+                    Parcelable obj = modeOperator.getObj();
+                    if (obj != null) {
+                        ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, modeOperator.getObj(), position, descOrder, holder.image);
+                    } else {
+                        ActivityUtil.showSingleImageWithPos(ImageAdaptor.this.context, images, position, descOrder, holder.image);
+                    }
                 }
             }
         });
@@ -169,21 +174,6 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
     @Override
     public int getItemCount() {
         return images.size();
-    }
-
-    class ImageViewHolder extends RecyclerView.ViewHolder {
-        public ImageView image;
-        public CheckBox selects;
-        public FrameLayout frameLayout;
-        TextView gifText;
-
-        public ImageViewHolder(View itemView) {
-            super(itemView);
-            image = itemView.findViewById(R.id.image);
-            selects = itemView.findViewById(R.id.select_button);
-            frameLayout = itemView.findViewById(R.id.background);
-            gifText = itemView.findViewById(R.id.gif_text);
-        }
     }
 
     public void enterSelectMode() {
@@ -314,6 +304,7 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
             removeItem(image);
         }
     }
+
     // delete one item from single view
     public void removeItem(Image image) {
         int pos = images.indexOf(image);
@@ -374,6 +365,20 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         }
     }
 
+    public void setOperater(ModeOperator modeOperator) {
+        this.modeOperator = modeOperator;
+    }
+
+    public void toggleImagesOrder() {
+        descOrder = !descOrder;
+        Collections.reverse(images);
+        notifyDataSetChangedWithoutFlash();
+    }
+
+    public void notifyDataSetChangedWithoutFlash() {
+        notifyItemRangeChanged(0, images.size());
+    }
+
     // to operate other components in activity
     public interface ModeOperator {
         void exitSelectMode();
@@ -387,17 +392,18 @@ public class ImageAdaptor extends RecyclerView.Adapter<ImageAdaptor.ImageViewHol
         Parcelable getObj();
     }
 
-    public void setOperater(ModeOperator modeOperator) {
-        this.modeOperator = modeOperator;
-    }
+    class ImageViewHolder extends RecyclerView.ViewHolder {
+        public ImageView image;
+        public CheckBox selects;
+        public FrameLayout frameLayout;
+        TextView gifText;
 
-    public void toggleImagesOrder() {
-        descOrder = !descOrder;
-        Collections.reverse(images);
-        notifyDataSetChangedWithoutFlash();
-    }
-
-    public void notifyDataSetChangedWithoutFlash() {
-        notifyItemRangeChanged(0, images.size());
+        public ImageViewHolder(View itemView) {
+            super(itemView);
+            image = itemView.findViewById(R.id.image);
+            selects = itemView.findViewById(R.id.select_button);
+            frameLayout = itemView.findViewById(R.id.background);
+            gifText = itemView.findViewById(R.id.gif_text);
+        }
     }
 }

@@ -8,9 +8,9 @@ import android.os.Handler;
 import android.provider.MediaStore;
 import android.util.Log;
 
-import com.koncle.imagemanagement.activity.MsgCenter;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
+import com.koncle.imagemanagement.message.MsgCenter;
 
 import java.io.File;
 
@@ -21,13 +21,22 @@ import java.io.File;
 public class FileChangeObserver extends ContentObserver {
     private static final String TAG = "FILE OBSERVER";
     private static final long LOCK_MILLIS = 3000;
+    public static int continueCount = 0;
+    private static boolean lock = false;
     private final Context context;
     private final Handler handler;
-
     private Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
-    private static boolean lock = false;
-    public static int continueCount = 0;
+    /**
+     * Creates a content observer.
+     *
+     * @param handler The handler to run {@link #onChange} on, or null if none.
+     */
+    public FileChangeObserver(Handler handler, Context context) {
+        super(handler);
+        this.context = context;
+        this.handler = handler;
+    }
 
     // to prevent inserting image when this app is deleting or removing images
     public static void lock() {
@@ -55,16 +64,6 @@ public class FileChangeObserver extends ContentObserver {
                 lock = false;
             }
         }).start();
-    }
-    /**
-     * Creates a content observer.
-     *
-     * @param handler The handler to run {@link #onChange} on, or null if none.
-     */
-    public FileChangeObserver(Handler handler, Context context) {
-        super(handler);
-        this.context = context;
-        this.handler = handler;
     }
 
     @Override

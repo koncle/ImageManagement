@@ -32,10 +32,19 @@ import java.util.List;
 public class Image implements Parcelable, Comparable<Image>, ClusterItem, Cloneable {
     public static final int TYPE_NORNAL = 0;
     public static final int TYPE_GIF = 1;
+    public static final Creator<Image> CREATOR = new Creator<Image>() {
+        @Override
+        public Image createFromParcel(Parcel source) {
+            return new Image(source);
+        }
 
+        @Override
+        public Image[] newArray(int size) {
+            return new Image[size];
+        }
+    };
     @Id(autoincrement = true)
     private Long id;
-
     @NotNull
     @Unique
     private String path;
@@ -44,11 +53,8 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
     private String folder;
     @NotNull
     private String name;
-
     private String desc;
-
     private Date time;
-
     @ToMany
     @JoinEntity(
             entity = TagAndImage.class,
@@ -56,7 +62,6 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
             targetProperty = "tag_id"
     )
     private List<Tag> tags;
-
     @ToMany
     @JoinEntity(
             entity = ImageAndEvent.class,
@@ -64,23 +69,63 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
             targetProperty = "event_id"
     )
     private List<Event> events;
-
     private Long loc_id;
-
     private Long folder_id;
-
     private String lat;
-
     private String lng;
-
     private int type;
-
     @Transient
     private LatLng pos;
+    /**
+     * Used to resolve relations
+     */
+    @Generated(hash = 2040040024)
+    private transient DaoSession daoSession;
+    /**
+     * Used for active entity operations.
+     */
+    @Generated(hash = 1428462909)
+    private transient ImageDao myDao;
 
+    @Generated(hash = 73242433)
+    public Image(Long id, @NotNull String path, String thumbnailPath, @NotNull String folder,
+                 @NotNull String name, String desc, Date time, Long loc_id, Long folder_id, String lat,
+                 String lng, int type) {
+        this.id = id;
+        this.path = path;
+        this.thumbnailPath = thumbnailPath;
+        this.folder = folder;
+        this.name = name;
+        this.desc = desc;
+        this.time = time;
+        this.loc_id = loc_id;
+        this.folder_id = folder_id;
+        this.lat = lat;
+        this.lng = lng;
+        this.type = type;
+    }
 
-    public void setPos(LatLng pos) {
-        this.pos = pos;
+    @Generated(hash = 1590301345)
+    public Image() {
+    }
+
+    protected Image(Parcel in) {
+        this.id = (Long) in.readValue(Long.class.getClassLoader());
+        this.path = in.readString();
+        this.thumbnailPath = in.readString();
+        this.folder = in.readString();
+        this.name = in.readString();
+        this.desc = in.readString();
+        long tmpTime = in.readLong();
+        this.time = tmpTime == -1 ? null : new Date(tmpTime);
+        this.tags = in.createTypedArrayList(Tag.CREATOR);
+        this.events = in.createTypedArrayList(Event.CREATOR);
+        this.loc_id = (Long) in.readValue(Long.class.getClassLoader());
+        this.folder_id = (Long) in.readValue(Long.class.getClassLoader());
+        this.lat = in.readString();
+        this.lng = in.readString();
+        this.type = in.readInt();
+        this.pos = in.readParcelable(LatLng.class.getClassLoader());
     }
 
     @Override
@@ -160,7 +205,6 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
         this.time = time;
     }
 
-
     public Long getLoc_id() {
         return loc_id;
     }
@@ -197,28 +241,8 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
         return pos;
     }
 
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeValue(this.id);
-        dest.writeString(this.path);
-        dest.writeString(this.thumbnailPath);
-        dest.writeString(this.folder);
-        dest.writeString(this.name);
-        dest.writeString(this.desc);
-        dest.writeLong(this.time != null ? this.time.getTime() : -1);
-        dest.writeTypedList(this.tags);
-        dest.writeTypedList(this.events);
-        dest.writeValue(this.loc_id);
-        dest.writeString(this.lat);
-        dest.writeString(this.lng);
-        dest.writeInt(this.type);
-        dest.writeParcelable(this.pos, flags);
+    public void setPos(LatLng pos) {
+        this.pos = pos;
     }
 
     /**
@@ -322,64 +346,6 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
         myDao = daoSession != null ? daoSession.getImageDao() : null;
     }
 
-    protected Image(Parcel in) {
-        this.id = (Long) in.readValue(Long.class.getClassLoader());
-        this.path = in.readString();
-        this.thumbnailPath = in.readString();
-        this.folder = in.readString();
-        this.name = in.readString();
-        this.desc = in.readString();
-        long tmpTime = in.readLong();
-        this.time = tmpTime == -1 ? null : new Date(tmpTime);
-        this.tags = in.createTypedArrayList(Tag.CREATOR);
-        this.events = in.createTypedArrayList(Event.CREATOR);
-        this.loc_id = (Long) in.readValue(Long.class.getClassLoader());
-        this.lat = in.readString();
-        this.lng = in.readString();
-        this.type = in.readInt();
-        this.pos = in.readParcelable(LatLng.class.getClassLoader());
-    }
-
-    @Generated(hash = 73242433)
-    public Image(Long id, @NotNull String path, String thumbnailPath, @NotNull String folder,
-                 @NotNull String name, String desc, Date time, Long loc_id, Long folder_id, String lat,
-                 String lng, int type) {
-        this.id = id;
-        this.path = path;
-        this.thumbnailPath = thumbnailPath;
-        this.folder = folder;
-        this.name = name;
-        this.desc = desc;
-        this.time = time;
-        this.loc_id = loc_id;
-        this.folder_id = folder_id;
-        this.lat = lat;
-        this.lng = lng;
-        this.type = type;
-    }
-
-    @Generated(hash = 1590301345)
-    public Image() {
-    }
-
-    public static final Creator<Image> CREATOR = new Creator<Image>() {
-        @Override
-        public Image createFromParcel(Parcel source) {
-            return new Image(source);
-        }
-
-        @Override
-        public Image[] newArray(int size) {
-            return new Image[size];
-        }
-    };
-    /** Used to resolve relations */
-    @Generated(hash = 2040040024)
-    private transient DaoSession daoSession;
-    /** Used for active entity operations. */
-    @Generated(hash = 1428462909)
-    private transient ImageDao myDao;
-
     @Override
     public String toString() {
         return "Image{" +
@@ -394,5 +360,29 @@ public class Image implements Parcelable, Comparable<Image>, ClusterItem, Clonea
 
     public void setFolder_id(Long folder_id) {
         this.folder_id = folder_id;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeValue(this.id);
+        dest.writeString(this.path);
+        dest.writeString(this.thumbnailPath);
+        dest.writeString(this.folder);
+        dest.writeString(this.name);
+        dest.writeString(this.desc);
+        dest.writeLong(this.time != null ? this.time.getTime() : -1);
+        dest.writeTypedList(this.tags);
+        dest.writeTypedList(this.events);
+        dest.writeValue(this.loc_id);
+        dest.writeValue(this.folder_id);
+        dest.writeString(this.lat);
+        dest.writeString(this.lng);
+        dest.writeInt(this.type);
+        dest.writeParcelable(this.pos, flags);
     }
 }

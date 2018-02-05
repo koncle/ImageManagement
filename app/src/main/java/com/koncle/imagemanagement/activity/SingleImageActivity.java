@@ -43,6 +43,7 @@ import com.koncle.imagemanagement.view.TagViewLayout;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
@@ -56,7 +57,12 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     public static final int IMAGE_VIEWER_MOVE = 4;
     public static final String MOVE_IMAGE = "move_image";
     public static final java.lang.String INTENT_DESC_STRING = "desc";
+    public static final String RESULT_TAG = "result";
+    public static final int IMAGE_VIEWER_DELETE = 2;
+    public static final int IMAGE_VIWER_SCROLL = 3;
     private static final String TAG = SingleImageActivity.class.getSimpleName();
+    boolean descShow = true;
+    boolean tagShow = true;
     private ViewPager imageViewPager;
     private List<Image> images;
     private View delete;
@@ -67,10 +73,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
     private LinearLayout toolLayout;
     private SingleImageViewPagerAdapter pagerAdapter;
     private boolean toolMode = true;
-
-    public static final String RESULT_TAG = "result";
-    public static final int IMAGE_VIEWER_DELETE = 2;
-    public static final int IMAGE_VIWER_SCROLL = 3;
     private List<Image> deleteImages;
     private RadioButton tag;
     private ViewGroup container;
@@ -89,12 +91,26 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         setContentView(R.layout.single_view_layout);
 
         Bundle bundle = getIntent().getExtras();
-        int position = (int) bundle.get("pos");
-
-        obj = bundle.getParcelable(ActivityUtil.ACTIVITY_MUL_IMAGE_DATA);
-        images = ImageService.getImagesFromParcelable(obj);
-
+        int position = 0;
+        boolean descOrder = false;
+        if (bundle != null) {
+            position = (int) bundle.get("pos");
+            boolean fromDatabase = bundle.getBoolean(ActivityUtil.DATA_TYPE);
+            descOrder = bundle.getBoolean(ActivityUtil.DESC_ORDER);
+            if (fromDatabase) {
+                obj = bundle.getParcelable(ActivityUtil.ACTIVITY_MUL_IMAGE_DATA);
+                images = ImageService.getImagesFromParcelable(obj);
+            } else {
+                obj = null;
+                images = bundle.getParcelableArrayList(ActivityUtil.ACTIVITY_MUL_IMAGE_DATA);
+                // recover lost dao when serialization
+                ImageService.recoverDaoSession(images);
+            }
+        }
         deleteImages = new ArrayList<>();
+        if (!descOrder) {
+            Collections.reverse(images);
+        }
 
         findViews();
         initViewPager(position);
@@ -214,7 +230,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         pagerAdapter.setOperator(this);
         imageViewPager.setAdapter(pagerAdapter);
         imageViewPager.setCurrentItem(position);
-        imageViewPager.setOffscreenPageLimit(5);
+        imageViewPager.setOffscreenPageLimit(2);
 
         imageViewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -357,7 +373,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         this.toolbar.setTitle(s);
     }
 
-    boolean descShow = true;
     public void changeDesc(String s) {
         desc.setText(s);
         if (toolMode) {
@@ -388,8 +403,6 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
 
         tagShow = tags.size() > 0;
     }
-
-    boolean tagShow = true;
 
     private void changeTags(Image image) {
         image.resetTags();

@@ -2,29 +2,24 @@ package com.koncle.imagemanagement.fragment;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.RectF;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.LruCache;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.SupportMapFragment;
-import com.amap.api.maps.model.BitmapDescriptor;
-import com.amap.api.maps.model.BitmapDescriptorFactory;
 import com.amap.api.maps.model.CameraPosition;
 import com.amap.api.maps.model.LatLng;
-import com.amap.api.maps.model.LatLngBounds;
 import com.amap.api.maps.model.Marker;
-import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.services.core.AMapException;
 import com.amap.api.services.core.LatLonPoint;
 import com.amap.api.services.geocoder.GeocodeResult;
@@ -39,6 +34,8 @@ import com.koncle.imagemanagement.markerClusters.ClusterClickListener;
 import com.koncle.imagemanagement.markerClusters.ClusterItem;
 import com.koncle.imagemanagement.markerClusters.ClusterOverlay;
 import com.koncle.imagemanagement.markerClusters.ClusterRender;
+import com.koncle.imagemanagement.message.ImageChangeObserver;
+import com.koncle.imagemanagement.util.ActivityUtil;
 import com.koncle.imagemanagement.util.ImageUtils;
 import com.koncle.imagemanagement.util.MapUtils;
 
@@ -53,26 +50,29 @@ import java.util.Map;
 
 public class MyMapFragment extends SupportMapFragment
         implements HasName, AMap.OnCameraChangeListener,
-        GeocodeSearch.OnGeocodeSearchListener, ClusterRender, ClusterClickListener {
+        GeocodeSearch.OnGeocodeSearchListener, ClusterRender, ClusterClickListener, ImageChangeObserver {
     final String name = DrawerActivity.MAP_FRAGMENT_NAME;
     Operator operator;
     AMap aMap;
     List<Image> images;
+    List<Marker> markers = new ArrayList<>();
+    LruCache<Long, Bitmap> bitmapLruCache = new LruCache<Long, Bitmap>(1024 * 1024 * 8) {
+        @Override
+        protected int sizeOf(Long key, Bitmap value) {
+            return value.getWidth() * value.getHeight();
+        }
+    };
     private int markerHeight = 100;
     private int markerWidth = 100;
     private GeocodeSearch geocodeSearch;
     private View mapLayout = null;
-    List<Marker> markers = new ArrayList<>();
     private MapView mapView = null;
-
     private Map<Integer, Drawable> mBackDrawAbles = new HashMap<Integer, Drawable>();
-    private int clusterRadius = 50;
+    private int clusterRadius = 70;
     private ClusterOverlay clusterOverlay;
 
     public static MyMapFragment newInstance() {
-
         Bundle args = new Bundle();
-
         MyMapFragment fragment = new MyMapFragment();
         fragment.setArguments(args);
         return fragment;
@@ -91,6 +91,9 @@ public class MyMapFragment extends SupportMapFragment
                     @Override
                     public void onMapLoaded() {
                         progressBar.setVisibility(View.GONE);
+                        geocodeSearch = new GeocodeSearch(getContext());
+                        geocodeSearch.setOnGeocodeSearchListener(MyMapFragment.this);
+                        aMap.setOnCameraChangeListener(MyMapFragment.this);
                         initMarker();
                     }
                 });
@@ -104,11 +107,6 @@ public class MyMapFragment extends SupportMapFragment
     }
 
     private void initMarker() {
-        aMap.setOnCameraChangeListener(this);
-
-        geocodeSearch = new GeocodeSearch(getContext());
-        geocodeSearch.setOnGeocodeSearchListener(this);
-
         new Thread() {
             @Override
             public void run() {
@@ -116,35 +114,29 @@ public class MyMapFragment extends SupportMapFragment
                 List<ClusterItem> items = new ArrayList<>();
                 for (int i = 0; i < images.size(); i++) {
                     Image image = images.get(i);
-                    //image.setPos(convert2LatLng(image.getLat(), image.getLng()));
-                    image.setPos(new LatLng(Double.parseDouble(image.getLat()), Double.parseDouble(image.getLng())));
+                    image.setPos(convert2LatLng(image.getLat(), image.getLng()));
                     items.add(image);
                 }
+                aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(items.get(items.size() - 1).getPosition(), 19));
 
+                if (clusterOverlay != null) {
+                    clusterOverlay.onDestroy();
+                }
                 clusterOverlay = new ClusterOverlay(aMap, items, dp2px(getActivity(), clusterRadius), getActivity());
                 clusterOverlay.setClusterRenderer(MyMapFragment.this);
                 clusterOverlay.setOnClusterClickListener(MyMapFragment.this);
-
-                aMap.moveCamera(CameraUpdateFactory.newLatLngZoom(items.get(0).getPosition(), 19));
             }
         }.start();
     }
 
-    private LatLng convert2LatLng(String lat, String lng) {
-        LatLng latLng = MapUtils.convertToLatLng(new LatLonPoint(Double.parseDouble(lat), Double.parseDouble(lng)));
-        return MapUtils.convert2AMapCoord(getContext(), latLng);
+    public void refreshMarkers() {
+        if (clusterOverlay == null) return;
+        initMarker();
     }
 
-    private Marker addImageMarker(String path, LatLng latLng) {
-        // mark
-        final MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.position(latLng);
-        markerOptions.title("Hello");
-        markerOptions.visible(true);
-
-        BitmapDescriptor bitmapDescriptor = BitmapDescriptorFactory.fromBitmap(ImageUtils.loadBitmap(path, markerHeight, markerWidth));
-        markerOptions.icon(bitmapDescriptor);
-        return aMap.addMarker(markerOptions);
+    private LatLng convert2LatLng(String lat, String lng) {
+        LatLng latLng = new LatLng(Double.parseDouble(lat), Double.parseDouble(lng));
+        return MapUtils.convert2AMapCoord(getContext(), latLng);
     }
 
     /**
@@ -155,7 +147,6 @@ public class MyMapFragment extends SupportMapFragment
                 GeocodeSearch.AMAP);// 第一个参数表示一个Latlng，第二参数表示范围多少米，第三个参数表示是火系坐标系还是GPS原生坐标系
         geocodeSearch.getFromLocationAsyn(query);// 设置异步逆地理编码请求
     }
-
 
     @Override
     public void onRegeocodeSearched(RegeocodeResult result, int rCode) {
@@ -170,7 +161,6 @@ public class MyMapFragment extends SupportMapFragment
             Toast.makeText(getContext(), "error ", Toast.LENGTH_SHORT).show();
         }
     }
-
 
     @Override
     public void onCameraChange(CameraPosition cameraPosition) {
@@ -188,7 +178,6 @@ public class MyMapFragment extends SupportMapFragment
     public String getName() {
         return this.name;
     }
-
 
     public void setOperator(Operator operator) {
         this.operator = operator;
@@ -220,6 +209,7 @@ public class MyMapFragment extends SupportMapFragment
     public void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
+        clusterOverlay.onDestroy();
     }
 
     @Override
@@ -237,78 +227,59 @@ public class MyMapFragment extends SupportMapFragment
     }
 
     @Override
-    public Drawable getDrawAble(int clusterNum, ClusterItem clusterItem) {
-        int radius = dp2px(getActivity(), 80);
-        return new BitmapDrawable(null, ImageUtils.loadBitmap(((Image) clusterItem).getPath(), 60, 60));
-        /*
-        if (clusterNum == 1) {
-            Drawable bitmapDrawable = mBackDrawAbles.get(1);
-            if (bitmapDrawable == null) {
-                bitmapDrawable =
-                        getActivity().getResources().getDrawable(
-                                R.drawable.icon_openmap_mark);
-                mBackDrawAbles.put(1, bitmapDrawable);
-            }
-
-            return bitmapDrawable;
-        } else if (clusterNum < 5) {
-            Drawable bitmapDrawable = mBackDrawAbles.get(2);
-            if (bitmapDrawable == null) {
-                bitmapDrawable = new BitmapDrawable(null, drawCircle(radius,
-                        Color.argb(159, 210, 154, 6)));
-                mBackDrawAbles.put(2, bitmapDrawable);
-            }
-
-            return bitmapDrawable;
-        } else if (clusterNum < 10) {
-            Drawable bitmapDrawable = mBackDrawAbles.get(3);
-            if (bitmapDrawable == null) {
-                bitmapDrawable = new BitmapDrawable(null, drawCircle(radius,
-                        Color.argb(199, 217, 114, 0)));
-                mBackDrawAbles.put(3, bitmapDrawable);
-            }
-
-            return bitmapDrawable;
-        } else {
-            Drawable bitmapDrawable = mBackDrawAbles.get(4);
-            if (bitmapDrawable == null) {
-                bitmapDrawable = new BitmapDrawable(null, drawCircle(radius,
-                        Color.argb(235, 215, 66, 2)));
-                mBackDrawAbles.put(4, bitmapDrawable);
-            }
-
-            return bitmapDrawable;
+    public View getDrawAble(int clusterNum, ClusterItem clusterItem) {
+        Bitmap bitmap = bitmapLruCache.get(((Image) clusterItem).getId());
+        if (bitmap == null) {
+            bitmap = ImageUtils.loadBitmap(((Image) clusterItem).getPath(), 60, 60);
+            bitmapLruCache.put(((Image) clusterItem).getId(), bitmap);
         }
-        */
-    }
 
-    private Bitmap drawImageWithNum(int width, int height, String path) {
-        Bitmap bitmap = ImageUtils.loadBitmap(path, width, height);
-        Canvas canvas = new Canvas(bitmap);
-        return null;
-    }
-
-    private Bitmap drawCircle(int radius, int color) {
-
-        Bitmap bitmap = Bitmap.createBitmap(radius * 2, radius * 2,
-                Bitmap.Config.ARGB_8888);
-
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint();
-        RectF rectF = new RectF(0, 0, radius * 2, radius * 2);
-        paint.setColor(color);
-        canvas.drawArc(rectF, 0, 360, true, paint);
-        return bitmap;
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.map_item_layout, null, true);
+        ImageView imageView = view.findViewById(R.id.map_image);
+        imageView.setImageBitmap(bitmap);
+        TextView textView = view.findViewById(R.id.map_text);
+        textView.setText(String.valueOf(clusterNum));
+        return view;
     }
 
     @Override
     public void onClick(Marker marker, List<ClusterItem> clusterItems) {
+        /*
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         for (ClusterItem clusterItem : clusterItems) {
             builder.include(clusterItem.getPosition());
         }
         LatLngBounds latLngBounds = builder.build();
         aMap.animateCamera(CameraUpdateFactory.newLatLngBounds(latLngBounds, 0));
+        */
+        List<Image> images = new ArrayList<>();
+        for (ClusterItem item : clusterItems) {
+            images.add((Image) item);
+        }
+        ActivityUtil.showImageList(getContext(), images, "From Map");
     }
 
+    private boolean isValidImage(Image image) {
+        return !(Double.parseDouble(image.getLat()) == 0 || Double.parseDouble(image.getLng()) == 0);
+    }
+
+    @Override
+    public void onImageAdded(Image image) {
+        if (isValidImage(image)) {
+            //clusterOverlay.addClusterItem(image);
+            refreshMarkers();
+        }
+    }
+
+    @Override
+    public void onImageMoved(Image oldImage, Image newImage) {
+    }
+
+    @Override
+    public void onImageDeleted(Image image) {
+        if (isValidImage(image)) {
+            // clusterOverlay.removeClusterItem(image);
+            refreshMarkers();
+        }
+    }
 }

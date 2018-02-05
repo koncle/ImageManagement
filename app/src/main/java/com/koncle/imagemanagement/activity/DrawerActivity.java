@@ -26,6 +26,7 @@ import com.arlib.floatingsearchview.suggestions.SearchSuggestionsAdapter;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.bean.Event;
+import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.bean.MySearchSuggestion;
 import com.koncle.imagemanagement.bean.Tag;
@@ -35,6 +36,9 @@ import com.koncle.imagemanagement.fragment.FolderFragment;
 import com.koncle.imagemanagement.fragment.HasName;
 import com.koncle.imagemanagement.fragment.MyMapFragment;
 import com.koncle.imagemanagement.fragment.Operator;
+import com.koncle.imagemanagement.message.FolderChangeObserver;
+import com.koncle.imagemanagement.message.ImageChangeObserver;
+import com.koncle.imagemanagement.message.MsgCenter;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
@@ -42,14 +46,16 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static android.view.View.GONE;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADDED;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADD_TO_EVENT;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_DELETED_BY_SELF;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_MOVED;
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_TAG_ADDED;
-import static com.koncle.imagemanagement.activity.MyHandler.SCAN_OK;
-import static com.koncle.imagemanagement.activity.MyHandler.SCAN_OK_SHOW;
+import static com.koncle.imagemanagement.message.MyHandler.FOLDER_ADDED;
+import static com.koncle.imagemanagement.message.MyHandler.FOLDER_DELETED;
+import static com.koncle.imagemanagement.message.MyHandler.IMAGE_ADDED;
+import static com.koncle.imagemanagement.message.MyHandler.IMAGE_ADD_TO_EVENT;
+import static com.koncle.imagemanagement.message.MyHandler.IMAGE_DELETED;
+import static com.koncle.imagemanagement.message.MyHandler.IMAGE_DELETED_BY_SELF;
+import static com.koncle.imagemanagement.message.MyHandler.IMAGE_MOVED;
+import static com.koncle.imagemanagement.message.MyHandler.IMAGE_TAG_CHANGED;
+import static com.koncle.imagemanagement.message.MyHandler.SCAN_OK;
+import static com.koncle.imagemanagement.message.MyHandler.SCAN_OK_SHOW;
 
 /**
  * Created by Koncle on 2018/1/20.
@@ -59,17 +65,14 @@ public class DrawerActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, Operator {
 
     public static final String WATCH_TAG = "folders";
-    private static final boolean INIT_TABLES = false;
     public static final String className = DrawerActivity.class.getSimpleName();
-
-    private static final int FOLDER_FRAGMENT = 0;
-    private static final int EVENT_FRAGMENT = 1;
-    private static final int MAP_FRAGMENT = 2;
-
     public static final String FOLDER_FRAGMENT_NAME = "folder";
     public static final String EVENT_FRAGMENT_NAME = "event";
     public static final String MAP_FRAGMENT_NAME = "map";
-
+    private static final boolean INIT_TABLES = false;
+    private static final int FOLDER_FRAGMENT = 0;
+    private static final int EVENT_FRAGMENT = 1;
+    private static final int MAP_FRAGMENT = 2;
     private int curFragmentIndex = FOLDER_FRAGMENT;
     private ProgressDialog progressDialog;
     private List<Fragment> fragments;
@@ -91,6 +94,7 @@ public class DrawerActivity extends AppCompatActivity
         }
 
         initDataBase(INIT_TABLES);
+
         Log.w(className, "onCreate");
     }
 
@@ -125,6 +129,7 @@ public class DrawerActivity extends AppCompatActivity
     private void initData(boolean load) {
         if (!load) {
             show();
+            refreshData();
         } else {
             progressDialog = ProgressDialog.show(this, null, "Loading...");
             new Thread(new Runnable() {
@@ -265,7 +270,9 @@ public class DrawerActivity extends AppCompatActivity
                 }
             }
         }
-        ActivityUtil.showImageList(DrawerActivity.this, null, "No Result for : " + query);
+        // to differentiate methods
+        Image nullObject = null;
+        ActivityUtil.showImageList(DrawerActivity.this, nullObject, "No Result for : " + query);
     }
 
     private Fragment getFragment(String name) {
@@ -334,7 +341,7 @@ public class DrawerActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else if (fsv.isSearchBarFocused()) {
@@ -387,6 +394,7 @@ public class DrawerActivity extends AppCompatActivity
         }
     }
 
+    // scan images in system database asynchronously
     @Override
     public void refreshData() {
         new Thread(new Runnable() {
@@ -417,6 +425,7 @@ public class DrawerActivity extends AppCompatActivity
         public void handleMessage(Message msg) {
             Image image, newCover;
             List<Image> folders;
+            Folder folder;
             switch (msg.what) {
                 case SCAN_OK_SHOW:
                     progressDialog.dismiss();
@@ -425,25 +434,31 @@ public class DrawerActivity extends AppCompatActivity
                     break;
 
                 case SCAN_OK:
-                    ((FolderFragment) fragments.get(0)).refreshAllFolderCovers();
+                    ((FolderFragment) fragments.get(FOLDER_FRAGMENT)).refreshAllFolderCovers();
                     int count = msg.arg1;
-                    if (count > 0)
+                    if (count > 0) {
                         Toast.makeText(DrawerActivity.this, count + " images added", Toast.LENGTH_SHORT).show();
+                    }
+                    if (curFragmentIndex == MAP_FRAGMENT) {
+                        ((MyMapFragment) fragments.get(MAP_FRAGMENT)).refreshMarkers();
+                    }
                     break;
 
                 // notify folder to change singleImages
                 case IMAGE_ADDED:
                     image = msg.getData().getParcelable("image");
                     Log.w(tag, " added image " + image);
-                    ((ImageChangeListener) fragments.get(0)).onImageAdded(image);
-                    ((ImageChangeListener) fragments.get(1)).onImageAdded(image);
+                    ((ImageChangeObserver) fragments.get(FOLDER_FRAGMENT)).onImageAdded(image);
+                    ((ImageChangeObserver) fragments.get(EVENT_FRAGMENT)).onImageAdded(image);
+                    ((ImageChangeObserver) fragments.get(MAP_FRAGMENT)).onImageAdded(image);
                     break;
 
                 case IMAGE_DELETED_BY_SELF:
                     image = msg.getData().getParcelable(MsgCenter.DELETE_IMAGE);
                     Log.w(tag, " delete image from this app " + image);
-                    ((ImageChangeListener) fragments.get(0)).onImageDeleted(image);
-                    ((ImageChangeListener) fragments.get(1)).onImageDeleted(image);
+                    ((ImageChangeObserver) fragments.get(FOLDER_FRAGMENT)).onImageDeleted(image);
+                    ((ImageChangeObserver) fragments.get(EVENT_FRAGMENT)).onImageDeleted(image);
+                    ((ImageChangeObserver) fragments.get(MAP_FRAGMENT)).onImageDeleted(image);
                     break;
 
                 case IMAGE_MOVED:
@@ -455,22 +470,32 @@ public class DrawerActivity extends AppCompatActivity
                             " to :" + newImage.getPath()
                     );
 
-                    ((ImageChangeListener) fragments.get(0)).onImageMoved(oldImage, newImage);
-                    ((ImageChangeListener) fragments.get(1)).onImageMoved(oldImage, newImage);
+                    ((ImageChangeObserver) fragments.get(FOLDER_FRAGMENT)).onImageMoved(oldImage, newImage);
+                    ((ImageChangeObserver) fragments.get(EVENT_FRAGMENT)).onImageMoved(oldImage, newImage);
+                    break;
+
+                case FOLDER_DELETED:
+                    folder = (Folder) msg.obj;
+                    ((FolderChangeObserver) fragments.get(FOLDER_FRAGMENT)).onFolderDeleted(folder);
+                    break;
+
+                case FOLDER_ADDED:
+                    folder = (Folder) msg.obj;
+                    ((FolderChangeObserver) fragments.get(FOLDER_FRAGMENT)).onFolderAdded(folder);
                     break;
 
                 case IMAGE_DELETED:
                     Log.w(tag, "delete image from other app");
                     break;
 
-                case IMAGE_TAG_ADDED:
+                case IMAGE_TAG_CHANGED:
                     Log.w(tag, "added image tag");
-                    ((FolderFragment) fragments.get(0)).onTagAdded();
+                    ((FolderFragment) fragments.get(FOLDER_FRAGMENT)).onTagAdded();
                     break;
 
                 case IMAGE_ADD_TO_EVENT:
                     Log.w(tag, "added image event");
-                    ((EventFragment) fragments.get(1)).onImageAddedToAnEvent();
+                    ((EventFragment) fragments.get(EVENT_FRAGMENT)).onImageAddedToAnEvent();
                     break;
 
             }

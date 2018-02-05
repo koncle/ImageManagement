@@ -25,12 +25,11 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.koncle.imagemanagement.R;
 import com.koncle.imagemanagement.activity.DrawerActivity;
-import com.koncle.imagemanagement.activity.ImageChangeListener;
-import com.koncle.imagemanagement.activity.WeakReference;
 import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 import com.koncle.imagemanagement.dialog.InputDialogFragment;
+import com.koncle.imagemanagement.message.ImageChangeObserver;
 import com.koncle.imagemanagement.util.ActivityUtil;
 
 import java.util.ArrayList;
@@ -40,17 +39,15 @@ import java.util.List;
  * Created by 10976 on 2018/1/12.
  */
 
-public class EventFragment extends Fragment implements HasName, ImageChangeListener {
+public class EventFragment extends Fragment implements HasName, ImageChangeObserver {
     private static final String TAG = EventFragment.class.getSimpleName();
     public static String className = EventFragment.class.getSimpleName();
-
+    final int ORANGE = Color.rgb(255, 223, 0);
+    final int WHITE = Color.WHITE;
     private final String name = DrawerActivity.EVENT_FRAGMENT_NAME;
     private RecyclerView eventsRecyclerView;
     private EventRecyclerViewAdapter eventAdapter;
     private List<Event> events;
-
-    final int ORANGE = Color.rgb(255, 223, 0);
-    final int WHITE = Color.WHITE;
     private Operator operator;
     private SwipeRefreshLayout refresh;
 
@@ -125,6 +122,63 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
         popupMenu.show();
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        operator = (Operator) context;
+        Log.w(TAG, "onAttach");
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void onImageDeleted(Image image) {
+        if (eventAdapter == null) return;
+        List<Event> concernedEvents = image.getEvents();
+        eventAdapter.refreshData(concernedEvents);
+    }
+
+    @Override
+    public void onImageAdded(Image image) {
+    }
+
+    public void onImageMoved(Image oldImage, Image newImage) {
+        if (eventAdapter == null) return;
+        eventAdapter.refreshData();
+    }
+
+    // add Images selected from selectActivity to its event asynchronously
+    public void addImage2Events(List<Image> images) {
+        if (images != null) {
+            ImageService.recoverDaoSession(images);
+            ImageService.addImages2EventInThread(events.get(eventPositionWaitingForAddImageResult), images);
+        }
+    }
+
+    // receive the msg of finishing adding images to event
+    // refresh this event
+    public void onImageAddedToAnEvent() {
+        if (adapterWaitingForAddImageResult == null) return;
+
+        Event event = events.get(eventPositionWaitingForAddImageResult);
+        event.resetImageList();
+        adapterWaitingForAddImageResult.setData(event);
+        Toast.makeText(getContext(), "image added", Toast.LENGTH_SHORT).show();
+
+        eventPositionWaitingForAddImageResult = -1;
+        adapterWaitingForAddImageResult = null;
+    }
 
     class EventRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         private static final int ADD_TYPE = 1;
@@ -239,8 +293,8 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
         }
 
         class EventHolder extends RecyclerView.ViewHolder {
-            RecyclerView recyclerView;
             public TextView title;
+            RecyclerView recyclerView;
             InnerEventAdapter innerAdapter;
             ImageButton add;
             ImageButton delete;
@@ -274,11 +328,14 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
     class InnerEventAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         private final LinearLayoutManager manager;
-        private List<Image> images;
-
         private final int LINE = 1;
         private final int IMAGE = 0;
+        private List<Image> images;
         private Event event;
+
+        public InnerEventAdapter(LinearLayoutManager manager) {
+            this.manager = manager;
+        }
 
         void setData(Event event) {
             event.resetImageList();
@@ -314,10 +371,6 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
             return event;
         }
 
-        public InnerEventAdapter(LinearLayoutManager manager) {
-            this.manager = manager;
-        }
-
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             return new EventImageHolder(LayoutInflater.from(parent.getContext())
@@ -349,7 +402,7 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
             imageHolder.image.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    ActivityUtil.showSingleImageWithPos(getContext(), event, position, imageHolder.image);
+                    ActivityUtil.showSingleImageWithPos(getContext(), event, position, false, imageHolder.image);
 
                     adapterWaitingForAddImageResult = InnerEventAdapter.this;
                 }
@@ -382,67 +435,5 @@ public class EventFragment extends Fragment implements HasName, ImageChangeListe
             }
         }
 
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        operator = (Operator) context;
-        Log.w(TAG, "onAttach");
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void onImageDeleted(Image image) {
-        if (eventAdapter == null) return;
-        List<Event> concernedEvents = image.getEvents();
-        eventAdapter.refreshData(concernedEvents);
-    }
-
-    @Override
-    public void onImageAdded(Image image) {
-
-    }
-
-    public void onImageMoved(Image oldImage, Image newImage) {
-        if (eventAdapter == null) return;
-        eventAdapter.refreshData();
-    }
-
-    public void addImage2Events(List<Image> images) {
-        if (images != null) {
-            ImageService.recoverDaoSession(images);
-            ImageService.addImages2EventInThread(events.get(eventPositionWaitingForAddImageResult), images);
-        }
-    }
-
-    public void onImageAddedToAnEvent() {
-        if (adapterWaitingForAddImageResult == null) return;
-
-        Event event = events.get(eventPositionWaitingForAddImageResult);
-        event.resetImageList();
-        adapterWaitingForAddImageResult.setData(event);
-        Toast.makeText(getContext(), "image added", Toast.LENGTH_SHORT).show();
-
-        eventPositionWaitingForAddImageResult = -1;
-        adapterWaitingForAddImageResult = null;
-        WeakReference.removeSelections();
-    }
-
-    public void onImageDeleted() {
-        if (adapterWaitingForAddImageResult == null) return;
-        adapterWaitingForAddImageResult.refreshData();
     }
 }

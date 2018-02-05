@@ -36,6 +36,8 @@ public class ActivityUtil {
 
     public static final String ACTIVITY_POS_TAG = "pos";
     public static final String ACTIVITY_MUL_IMAGE_DATA = "mul";
+    public static final String DATA_TYPE = "database";
+    public static final String DESC_ORDER = "descOrder";
 
     public static void shareImages(Context context, List<Image> images) {
 
@@ -79,20 +81,58 @@ public class ActivityUtil {
         ImageService.resetImages(obj);
         bundle.putParcelable(ACTIVITY_MUL_IMAGE_DATA, obj);
         bundle.putString(ACTIVITY_MUL_IMAGE_TITLE_TAG, title);
+        bundle.putBoolean(DATA_TYPE, true);
         intent.putExtras(bundle);
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
         //((Activity) context).startActivityForResult(intent, 1);
     }
 
-    public static void showSingleImageWithPos(final Context context, Parcelable obj, int currentPos, View view) {
+    /*
+    * reset Images and send it to mul activity
+    * */
+    public static void showImageList(Context context, List<Image> images, String title) {
+        Intent intent = new Intent(context, MultiColumnImagesActivity.class);
+        Bundle bundle = new Bundle();
+
+        bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_DATA, (ArrayList<? extends Parcelable>) images);
+        bundle.putString(ACTIVITY_MUL_IMAGE_TITLE_TAG, title);
+        bundle.putBoolean("database", false);
+        intent.putExtras(bundle);
+        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
+        ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
+        //((Activity) context).startActivityForResult(intent, 1);
+    }
+
+    public static void showSingleImageWithPos(final Context context, Parcelable obj, int currentPos, boolean desOrder, View view) {
         Intent intent = new Intent(context, SingleImageActivity.class);
         Bundle bundle = new Bundle();
         ImageService.resetImages(obj);
 
         bundle.putParcelable(ACTIVITY_MUL_IMAGE_DATA, obj);
-        //WeakReference.putSingleImages(images);
+        bundle.putBoolean(DATA_TYPE, true);
+        bundle.putBoolean(DESC_ORDER, desOrder);
+        bundle.putInt(ACTIVITY_POS_TAG, currentPos);
+        intent.putExtras(bundle);
 
+        //ActivityOptionsCompat compat = ActivityOptionsCompat.makeSceneTransitionAnimation((Activity) context, view, context.getString(R.string.m2s_transition));
+        //SharedElementCallback s = new ECallback();
+        //ActivityCompat.setEnterSharedElementCallback((Activity) context, s);
+        //ActivityCompat.setExitSharedElementCallback((Activity) context, s);
+
+        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
+        ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
+
+        //((Activity) context).startActivityForResult(intent, 1); // lager than 0
+    }
+
+    public static void showSingleImageWithPos(final Context context, List<Image> images, int currentPos, boolean desOrder, View view) {
+        Intent intent = new Intent(context, SingleImageActivity.class);
+        Bundle bundle = new Bundle();
+
+        bundle.putBoolean(DATA_TYPE, false);
+        bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_DATA, (ArrayList<? extends Parcelable>) images);
+        bundle.putBoolean(DESC_ORDER, desOrder);
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
 

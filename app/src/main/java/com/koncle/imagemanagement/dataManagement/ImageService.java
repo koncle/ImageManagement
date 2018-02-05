@@ -10,7 +10,6 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import com.koncle.imagemanagement.activity.DrawerActivity;
-import com.koncle.imagemanagement.activity.MsgCenter;
 import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
 import com.koncle.imagemanagement.bean.Event;
 import com.koncle.imagemanagement.bean.Folder;
@@ -28,6 +27,7 @@ import com.koncle.imagemanagement.dao.ImageAndEventDao;
 import com.koncle.imagemanagement.dao.ImageDao;
 import com.koncle.imagemanagement.dao.TagAndImageDao;
 import com.koncle.imagemanagement.dao.TagDao;
+import com.koncle.imagemanagement.message.MsgCenter;
 import com.koncle.imagemanagement.util.ImageUtils;
 
 import org.greenrobot.greendao.query.QueryBuilder;
@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static com.koncle.imagemanagement.activity.MyHandler.IMAGE_ADD_TO_EVENT;
+import static com.koncle.imagemanagement.message.MyHandler.IMAGE_ADD_TO_EVENT;
 import static com.koncle.imagemanagement.util.TagUtil.DEBUG;
 
 /**
@@ -187,18 +187,6 @@ public class ImageService {
         return count;
     }
 
-    public static List<Image> getImagesFromFolder(String folder) {
-        List<Image> images = daoManager.getDaoSession().getImageDao()
-                .queryBuilder()
-                .where(ImageDao.Properties.Folder.eq(folder))
-                .orderDesc(ImageDao.Properties.Time)
-                .build().list();
-        if (DEBUG) {
-            Log.i(TAG, "get singleImages from folder : " + images.size());
-        }
-        return images;
-    }
-
     public static void refreshTables() {
         DaoSession daoSession = daoManager.getDaoSession();
         DaoMaster.dropAllTables(daoSession.getDatabase(), true);
@@ -208,6 +196,13 @@ public class ImageService {
     public static boolean deleteImageInFileSystemAndBroadcast(Context context, Image image, boolean deleteSystemFile) {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         imageDao.delete(image);
+
+        Folder folder = getFolder(image.getFolder_id());
+        Image i = daoManager.getDaoSession().getImageDao().load(image.getId());
+        long count = getImageCountByFolder(folder.getName());
+        if (count == 0) {
+            removeFolderInDatabase(folder);
+        }
         // if the action of delete is successful
         // or meet invalid image
         //
@@ -322,7 +317,7 @@ public class ImageService {
                 } else {
                     MsgCenter.sendTagAddedMsg(tags, null);
                 }
-                //MsgCenter.sendEmptyMessage(MyHandler.IMAGE_TAG_ADDED, null, DrawerActivity.className);
+                //MsgCenter.sendEmptyMessage(MyHandler.IMAGE_TAG_CHANGED, null, DrawerActivity.className);
             }
         });
     }
@@ -350,7 +345,6 @@ public class ImageService {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         for (Image image : images) {
             image.resetTags();
-            ;
         }
         imageDao.saveInTx(images);
     }
@@ -501,6 +495,11 @@ public class ImageService {
         return count;
     }
 
+    /*
+    *
+    * Concerned folder will also be created if necessary
+    *
+    * */
     public static Image createImage(Cursor cursor, int pathIndex, int timeIndex, int nameIndex, int latIndex,
                                     int lngIndex, int descIndex, int mineTypeIndex) {
 
@@ -588,6 +587,12 @@ public class ImageService {
 
     public static List<Folder> getNewAllFolders() {
         List<Folder> folders = daoManager.getDaoSession().getFolderDao().loadAll();
+        for (int i = 0; i < folders.size(); i++) {
+            long count = getImageCountByFolder(folders.get(i).getName());
+            if (count == 0) {
+                removeFolderInDatabase(folders.get(i));
+            }
+        }
         folders.add(0, getAllNameFolder());
         return folders;
     }
@@ -604,6 +609,7 @@ public class ImageService {
         folder.setName(name);
         folder.setPath(folderPath);
         daoManager.getDaoSession().getFolderDao().insert(folder);
+        MsgCenter.notifyFolderAddedInner(folder);
         Log.w(TAG, "insert a folder " + folder.getPath());
         return folder;
     }
@@ -660,14 +666,15 @@ public class ImageService {
         }
     }
 
-    public static boolean moveFileAndSendMsg(Context context, Image image, Folder folder) {
-        String des = folder.getPath() + "/" + image.getName();
+    public static boolean moveFileAndSendMsg(Context context, Image image, Folder toFolder) {
+        String des = toFolder.getPath() + "/" + image.getName();
         String src = image.getPath();
         // delete from file system
         boolean b = ImageUtils.copyFile(src, des);
         if (b && ImageUtils.deleteFile(src)) {
             // set old image
             Image preImage = new Image();
+            preImage.setFolder_id(image.getFolder_id());
             preImage.setPath(image.getPath());
             preImage.setFolder(image.getFolder());
             preImage.setName(image.getName());
@@ -675,10 +682,16 @@ public class ImageService {
             preImage.setDesc(image.getDesc());
 
             // update database
-            ImageService.updateImagePath(context, image, folder);
+            ImageService.updateImagePath(context, image, toFolder);
 
             // notify
             MsgCenter.notifyDataMovedInner(preImage, image);
+
+            Folder folder = getFolder(preImage.getFolder_id());
+            long count = getImageCountByFolder(folder.getName());
+            if (count == 0) {
+                removeFolderInDatabase(folder);
+            }
 
             // refreshCover
             refreshFolderCovers();
@@ -820,5 +833,14 @@ public class ImageService {
         } else {
             throw new IllegalArgumentException("wrong argument to extract images!");
         }
+    }
+
+    public static void removeFolderInDatabase(Folder folder) {
+        daoManager.getDaoSession().getFolderDao().delete(folder);
+        MsgCenter.notifyFolderDeletedInner(folder);
+    }
+
+    public static Folder getFolder(Long folder_id) {
+        return daoManager.getDaoSession().getFolderDao().load(folder_id);
     }
 }

@@ -1,6 +1,6 @@
 package com.koncle.imagemanagement.markerClusters;
 
-import android.graphics.drawable.Drawable;
+import android.view.View;
 
 /**
  * Created by yiyi.qi on 16/10/10.
@@ -14,5 +14,5 @@ public interface ClusterRender {
      * @param clusterItem
      * @return
      */
-    Drawable getDrawAble(int clusterNum, ClusterItem clusterItem);
+    View getDrawAble(int clusterNum, ClusterItem clusterItem);
 }

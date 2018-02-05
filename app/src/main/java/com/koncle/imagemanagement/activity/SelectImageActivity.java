@@ -127,7 +127,6 @@ public class SelectImageActivity extends AppCompatActivity {
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList(SELECTED_IMAGES, (ArrayList<? extends Parcelable>) imageAdaptor.getSelections());
         intent.putExtras(bundle);
-        //WeakReference.putSelections(imageAdaptor.getSelections());
         setResult(SELECTED_IMAGE_DATA, intent);
     }
 

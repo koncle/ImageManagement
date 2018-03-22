@@ -4,7 +4,6 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -18,7 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by Koncle on 2018/1/29.
+ * Created by Koncle on 2018/3/22.
  */
 
 public class TestActivity extends AppCompatActivity {
@@ -27,7 +26,11 @@ public class TestActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.test_view);
 
-        TagViewLayout tagViewLayout = findViewById(R.id.view_group);
+        testTagView();
+    }
+
+    private void testTagView() {
+        TagViewLayout tagViewLayout = null;//findViewById(R.id.view_group);
         final String[] datax = {"hh", "asdfasdfsdaf", "asdfasdf", "23o94u2", "2-sdklf", "哈哈哈"};
         final List<String> data = new ArrayList<>();
         data.addAll(Arrays.asList(datax));
@@ -36,11 +39,12 @@ public class TestActivity extends AppCompatActivity {
             @Override
             public View getView(ViewGroup parent, int position, String tag) {
                 // attach parent to get its layoutparams
-                View v = LayoutInflater.from(TestActivity.this).inflate(R.layout.test_item, parent, false);
+                View v = getLayoutInflater().inflate(R.layout.test_item, parent, false);
                 ((TextView) v.findViewById(R.id.test_id)).setText(tag);
                 return v;
             }
         });
+
         tagViewLayout.setOnTagClickListener(new TagViewLayout.OnTagClickListener() {
             @Override
             public boolean onTagClick(View view, int position) {
@@ -54,6 +58,5 @@ public class TestActivity extends AppCompatActivity {
                 Log.w("tag", "state changed position " + data.get(position));
             }
         });
-
     }
 }

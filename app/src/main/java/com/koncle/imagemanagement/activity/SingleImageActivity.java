@@ -96,7 +96,7 @@ public class SingleImageActivity extends AppCompatActivity implements SingleImag
         if (bundle != null) {
             position = (int) bundle.get("pos");
             boolean fromDatabase = bundle.getBoolean(ActivityUtil.DATA_TYPE);
-            descOrder = bundle.getBoolean(ActivityUtil.DESC_ORDER);
+            descOrder = bundle.getBoolean(ActivityUtil.NOT_REVERSE);
             if (fromDatabase) {
                 obj = bundle.getParcelable(ActivityUtil.ACTIVITY_MUL_IMAGE_DATA);
                 images = ImageService.getImagesFromParcelable(obj);

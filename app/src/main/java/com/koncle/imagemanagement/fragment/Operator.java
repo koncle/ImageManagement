@@ -6,8 +6,4 @@ package com.koncle.imagemanagement.fragment;
 
 public interface Operator {
     void refreshData();
-
-    void hideToolbar();
-
-    void showToolbar();
 }

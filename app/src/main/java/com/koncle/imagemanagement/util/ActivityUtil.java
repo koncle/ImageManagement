@@ -18,6 +18,7 @@ import com.koncle.imagemanagement.activity.MapActivity;
 import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
 import com.koncle.imagemanagement.activity.SelectImageActivity;
 import com.koncle.imagemanagement.activity.SingleImageActivity;
+import com.koncle.imagemanagement.activity.TimeLineActivity;
 import com.koncle.imagemanagement.bean.Image;
 import com.koncle.imagemanagement.dataManagement.ImageService;
 
@@ -37,7 +38,7 @@ public class ActivityUtil {
     public static final String ACTIVITY_POS_TAG = "pos";
     public static final String ACTIVITY_MUL_IMAGE_DATA = "mul";
     public static final String DATA_TYPE = "database";
-    public static final String DESC_ORDER = "descOrder";
+    public static final String NOT_REVERSE = "descOrder";
 
     public static void shareImages(Context context, List<Image> images) {
 
@@ -69,6 +70,18 @@ public class ActivityUtil {
 
         intent.putExtra(Intent.EXTRA_STREAM, uri);
 
+        context.startActivity(intent);
+    }
+
+
+    public static void showTimeLine(Context context, @Nullable Parcelable obj, String title) {
+        Intent intent = new Intent(context, TimeLineActivity.class);
+        Bundle bundle = new Bundle();
+        ImageService.resetImages(obj);
+        bundle.putParcelable(ACTIVITY_MUL_IMAGE_DATA, obj);
+        bundle.putString(ACTIVITY_MUL_IMAGE_TITLE_TAG, title);
+        bundle.putBoolean(DATA_TYPE, true);
+        intent.putExtras(bundle);
         context.startActivity(intent);
     }
 
@@ -104,14 +117,14 @@ public class ActivityUtil {
         //((Activity) context).startActivityForResult(intent, 1);
     }
 
-    public static void showSingleImageWithPos(final Context context, Parcelable obj, int currentPos, boolean desOrder, View view) {
+    public static void showSingleImageWithPos(final Context context, Parcelable obj, int currentPos, boolean notReverse, View view) {
         Intent intent = new Intent(context, SingleImageActivity.class);
         Bundle bundle = new Bundle();
         ImageService.resetImages(obj);
 
         bundle.putParcelable(ACTIVITY_MUL_IMAGE_DATA, obj);
         bundle.putBoolean(DATA_TYPE, true);
-        bundle.putBoolean(DESC_ORDER, desOrder);
+        bundle.putBoolean(NOT_REVERSE, notReverse);
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
 
@@ -132,7 +145,7 @@ public class ActivityUtil {
 
         bundle.putBoolean(DATA_TYPE, false);
         bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_DATA, (ArrayList<? extends Parcelable>) images);
-        bundle.putBoolean(DESC_ORDER, desOrder);
+        bundle.putBoolean(NOT_REVERSE, desOrder);
         bundle.putInt(ACTIVITY_POS_TAG, currentPos);
         intent.putExtras(bundle);
 
@@ -168,6 +181,7 @@ public class ActivityUtil {
         ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
     }
+
 
     static class ECallback extends SharedElementCallback {
         @Override

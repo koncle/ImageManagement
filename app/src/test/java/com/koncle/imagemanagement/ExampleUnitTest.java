@@ -1,6 +1,6 @@
 package com.koncle.imagemanagement;
 
-import com.koncle.imagemanagement.util.ImageUtils;
+import com.koncle.imagemanagement.util.Functions;
 
 import org.junit.Test;
 
@@ -11,7 +11,10 @@ import org.junit.Test;
  */
 public class ExampleUnitTest {
     @Test
-    public void addition_isCorrect() throws Exception {
-        System.out.println(ImageUtils.getFolderPathFromPath("asdfasdf/asdf/asd/fa/sdf/asd/f"));
+    public void test() throws Exception {
+        float res = Functions.sigmoid((float) Math.pow(100, 100));
+        float res2 = Functions.sigmoid((float) -Math.pow(100, 100));
+        float res3 = Functions.sigmoid((float) 0.5);
+        System.out.println("res : " + res + " res2 " + res2 + " res3 " + res3);
     }
 }

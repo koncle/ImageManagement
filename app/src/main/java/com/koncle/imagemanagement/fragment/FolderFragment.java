@@ -58,7 +58,7 @@ public class FolderFragment extends Fragment implements HasName, ImageChangeObse
     private SwipeRefreshLayout refresh;
     private LinearLayout operations;
 
-    private int BLUE = Color.parseColor("#B3E5FC");
+    private int BLUE = Color.parseColor("#83E5FC");
     private int ORANGE = Color.parseColor("#ff9800");
 
     public static Fragment newInstance() {
@@ -290,7 +290,9 @@ public class FolderFragment extends Fragment implements HasName, ImageChangeObse
 
         public void setFolderCover(int index, Folder folder) {
             folders.set(index, folder);
-            notifyItemChanged(index);
+            notifyItemRangeChanged(index, folders.size());
+            ///notifyItemChanged(index);
+            Log.w(TAG, "set " + index + " cover");
         }
 
         public void refreshAll() {
@@ -330,7 +332,8 @@ public class FolderFragment extends Fragment implements HasName, ImageChangeObse
             final String folder = folders.get(position).getName();
 
             if (getItemViewType(position) == OTHER) {
-                holder.num.setText(String.format("(%d)", ImageService.getImageCountByFolder(folder)));
+                long count = folders.get(position).getImages().size();
+                holder.num.setText(String.format("(%d)", count));
                 holder.more.setVisibility(View.VISIBLE);
             } else {
                 holder.num.setText(String.format("(%d)", ImageService.getImagesCount()));

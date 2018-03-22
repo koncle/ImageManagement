@@ -49,6 +49,10 @@ public class ImageService {
     private static DaoManager daoManager;
     private static String TAG = ImageService.class.getSimpleName();
 
+    /*
+    * init image service
+    * and msg center to get msg from fragments and activities
+    * */
     public static void init(Context context) {
         daoManager = DaoManager.getInstance();
         daoManager.init(context);
@@ -58,23 +62,29 @@ public class ImageService {
         QueryBuilder.LOG_VALUES = true;
     }
 
+    /*
+    * close the service and msg center which holds handler and may result in memory leak
+    * */
     public static void close(Context context) {
         daoManager.closeConnection();
         daoManager = null;
         MsgCenter.close(context);
     }
 
+    // create all tables
     public static void createTables() {
         DaoSession daoSession = daoManager.getDaoSession();
         DaoMaster.createAllTables(daoSession.getDatabase(), true);
     }
 
+    // delete all tables
     public static void dropTables() {
         DaoSession daoSession = daoManager.getDaoSession();
         DaoMaster.dropAllTables(daoSession.getDatabase(), true);
     }
 
-    public static Image ifExistImage(Image image) {
+    // make sure this image does exist in database
+    public static Image ifExistInDB(Image image) {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         List<Image> images;
         if (image.getId() == null) {
@@ -98,7 +108,7 @@ public class ImageService {
 
     public static Image insertImage(Image image) {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
-        Image imageInDatabase = ifExistImage(image);
+        Image imageInDatabase = ifExistInDB(image);
         if (imageInDatabase == null) {
             imageDao.insertInTx(image);
             imageInDatabase = image;
@@ -148,7 +158,12 @@ public class ImageService {
 
     public static List<Image> getImagesWithLoc() {
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
-        List<Image> images = imageDao.queryRawCreate("where T.lat !=? ", "0.0").list();
+        List<Image> images = imageDao.queryBuilder()
+                .where(ImageDao.Properties.Lat.notEq(0.))
+                .where(ImageDao.Properties.Lng.notEq(0.))
+                .orderDesc(ImageDao.Properties.Time)
+                .build().list();
+        //queryRawCreate("where T.lat !=? order by T.time desc", "0.0").list();
         if (DEBUG) {
             Log.i(TAG, "get singleImages with loc : " + images.size());
         }
@@ -231,7 +246,15 @@ public class ImageService {
         context.sendBroadcast(mediaScannerIntent);
     }
 
+    /*
+    *
+    * @params :
+    *   path : the path that does not exists in the phone
+    * */
     public static boolean deleteImageByPath(String path) {
+        File file = new File(path);
+        if (file.exists()) return false;
+
         ImageDao imageDao = daoManager.getDaoSession().getImageDao();
         List<Image> images = imageDao.queryBuilder().where(new WhereCondition.StringCondition("T.path = ?", path)).list();
         Log.w(TAG, "delete file from path : " + path);
@@ -470,7 +493,7 @@ public class ImageService {
             Image image = new Image();
             String path = cursor.getString(pathIndex); // 文件地址
             image.setPath(path);
-            image = ifExistImage(image);
+            image = ifExistInDB(image);
             if (image == null) {
                 createImage(cursor, pathIndex, timeIndex, nameIndex, latIndex, lngIndex, descIndex, mineTypeIndex);
                 count += 1;
@@ -700,6 +723,16 @@ public class ImageService {
         return false;
     }
 
+    public static void updateImagePath(Context context, Image image, Folder folder) {
+        broadcastToNotifySystem(context, image.getPath());
+        String path = folder.getPath() + "/" + image.getName();
+        image.setPath(path);
+        image.setFolder(ImageUtils.getFolderNameFromPath(path));
+        image.setFolder_id(folder.getId());
+        daoManager.getDaoSession().getImageDao().save(image);
+        broadcastToNotifySystem(context, image.getPath());
+    }
+
     public static Tag searchTagByName(String name) {
         List<Tag> tags = daoManager.getDaoSession().getTagDao()
                 .queryBuilder()
@@ -758,16 +791,6 @@ public class ImageService {
         daoManager.getDaoSession().getImageDao().save(image);
     }
 
-    public static void updateImagePath(Context context, Image image, Folder folder) {
-        broadcastToNotifySystem(context, image.getPath());
-        String path = folder.getPath() + "/" + image.getName();
-        image.setPath(path);
-        image.setFolder(ImageUtils.getFolderNameFromPath(path));
-        image.setFolder_id(folder.getId());
-        daoManager.getDaoSession().getImageDao().save(image);
-        broadcastToNotifySystem(context, image.getPath());
-    }
-
     public static void deleteTag(final Tag tag) {
         Long tag_id = tag.getId();
         // delete
@@ -819,6 +842,9 @@ public class ImageService {
         }
     }
 
+    /*
+    * reset Images so that you can get newest info
+    * */
     public static void resetImages(Parcelable obj) {
         if (obj == null) return;
         if (obj instanceof Folder) {

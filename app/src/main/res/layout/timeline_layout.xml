@@ -7,25 +7,6 @@
     android:layerType="software"
     android:orientation="vertical">
 
-    <!--
-    <com.koncle.imagemanagement.view.TagViewLayout
-        android:id="@+id/view_group"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:selectMaxNum="2"
-        app:canSelect="true"
-        app:canMultiSelect="true" />
-    -->
-
-    <!--
-    <ImageView
-        android:layout_gravity="center"
-        android:scaleType="fitXY"
-        android:background="@drawable/line"
-        android:layout_width="match_parent"
-        android:layout_height="50dp" />
-    -->
-
     <TextView
         android:id="@+id/timeline_title"
         android:layout_width="wrap_content"

@@ -4,7 +4,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.NinePatchDrawable;
 import android.util.Log;
 
 import com.koncle.imagemanagement.bean.Image;
@@ -31,22 +33,19 @@ public class ImageUtils {
     public static final String TAG = ImageUtils.class.getSimpleName();
 
     private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.CHINA);
+    private static SimpleDateFormat sdfY = new SimpleDateFormat("yyyy", Locale.CHINA);
+    private static SimpleDateFormat sdfMD = new SimpleDateFormat("MM-dd", Locale.CHINA);
 
     public static String getFormatedTime(Date date) {
         return sdf.format(date);
     }
 
-    public static Bitmap drawableToBitmap(Drawable drawable) {
+    public static String getFormatedYear(Date date) {
+        return sdfY.format(date);
+    }
 
-        Bitmap bitmap = Bitmap.createBitmap(
-                drawable.getIntrinsicWidth(),
-                drawable.getIntrinsicHeight(),
-                drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
-        Canvas canvas = new Canvas(bitmap);
-        //canvas.setBitmap(bitmap);
-        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-        drawable.draw(canvas);
-        return bitmap;
+    public static String getFormatedMonthAndDay(Date date) {
+        return sdfMD.format(date);
     }
 
     /*
@@ -200,5 +199,30 @@ public class ImageUtils {
             Log.w(TAG, "can't resolve time with " + time);
         }
         return sqlDate;
+    }
+
+    /**
+     * drawable to bitmap
+     *
+     * @param drawable
+     * @return
+     */
+    public static Bitmap drawable2Bitmap(Drawable drawable) {
+        if (drawable instanceof BitmapDrawable) {//转换成Bitmap
+            return ((BitmapDrawable) drawable).getBitmap();
+        } else if (drawable instanceof NinePatchDrawable) {//.9图片转换成Bitmap
+            Bitmap bitmap = Bitmap.createBitmap(
+                    drawable.getIntrinsicWidth(),
+                    drawable.getIntrinsicHeight(),
+                    drawable.getOpacity() != PixelFormat.OPAQUE ?
+                            Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
+            Canvas canvas = new Canvas(bitmap);
+            drawable.setBounds(0, 0, drawable.getIntrinsicWidth(),
+                    drawable.getIntrinsicHeight());
+            drawable.draw(canvas);
+            return bitmap;
+        } else {
+            return null;
+        }
     }
 }

@@ -6,7 +6,6 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
-import android.util.LruCache;
 import android.view.View;
 
 import com.amap.api.maps.AMap;
@@ -20,7 +19,6 @@ import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.animation.AlphaAnimation;
 import com.amap.api.maps.model.animation.Animation;
-import com.koncle.imagemanagement.bean.Image;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,8 +43,6 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
     private ClusterRender mClusterRender;
     private List<Marker> mAddMarkers = new ArrayList<Marker>();
     private double mClusterDistance;
-    private LruCache<Integer, BitmapDescriptor> mLruCache;
-    private LruCache<Integer, View> mViewLruCache;
     private HandlerThread mMarkerHandlerThread = new HandlerThread("addMarker");
     private HandlerThread mSignClusterThread = new HandlerThread("calculateCluster");
     private Handler mMarkerhandler;
@@ -80,12 +76,14 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
     public ClusterOverlay(AMap amap, List<ClusterItem> clusterItems,
                           int clusterSize, Context context) {
         //默认最多会缓存80张图片作为聚合显示元素图片,根据自己显示需求和app使用内存情况,可以修改数量
-        mLruCache = new LruCache<Integer, BitmapDescriptor>(80) {
+
+        /*
+        mLruCache = new LruCache<Integer, BitmapDescriptor>(100) {
             protected void entryRemoved(boolean evicted, Integer key, BitmapDescriptor oldValue, BitmapDescriptor newValue) {
                 oldValue.getBitmap().recycle();
             }
         };
-        mViewLruCache = new LruCache<>(80);
+        */
 
         if (clusterItems != null) {
             mClusterItems = clusterItems;
@@ -174,7 +172,6 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
             marker.remove();
         }
         mAddMarkers.clear();
-        mLruCache.evictAll();
     }
 
     //初始化Handler
@@ -197,6 +194,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
             zoomLevel = arg0.zoom;
             assignClusters();
         }
+        Log.w("ZOOM LEVEL", "" + arg0.zoom);
     }
 
     //点击事件
@@ -254,15 +252,26 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
     private void addSingleClusterToMap(Cluster cluster) {
         LatLng latlng = cluster.getCenterLatLng();
         MarkerOptions markerOptions = new MarkerOptions();
-        markerOptions.anchor(0.5f, 0.5f)
-                .icon(getBitmapDes(cluster.getClusterItemCount(), cluster.getClusterItems().get(0))).position(latlng);
-        Marker marker = mAMap.addMarker(markerOptions);
-        marker.setAnimation(mADDAnimation);
-        marker.setObject(cluster);
+        BitmapDescriptor descriptor = null;
+        for (ClusterItem clusterItem : cluster.getClusterItems()) {
+            descriptor = getBitmapDes(cluster.getClusterItemCount(), clusterItem);
+            if (descriptor != null) break;
+        }
 
-        marker.startAnimation();
-        cluster.setMarker(marker);
-        mAddMarkers.add(marker);
+        if (descriptor != null) {
+            markerOptions.anchor(0.5f, 0.5f)
+                    .icon(descriptor)
+                    .position(latlng);
+            Marker marker = mAMap.addMarker(markerOptions);
+            marker.setAnimation(mADDAnimation);
+            marker.setObject(cluster);
+
+            marker.startAnimation();
+            cluster.setMarker(marker);
+            mAddMarkers.add(marker);
+        } else {
+            Log.e("add marker", "cluster's images are invalid");
+        }
     }
 
     private void calculateClusters() {
@@ -433,7 +442,7 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
      */
     private BitmapDescriptor getBitmapDes(int num, ClusterItem clusterItem) {
 
-        BitmapDescriptor bitmapDescriptor = mLruCache.get(((Image) clusterItem).getId().intValue());
+        BitmapDescriptor bitmapDescriptor;
         /*
         View view = mViewLruCache.get(((Image) clusterItem).getId().intValue());
         view = LayoutInflater.from(mContext).inflate(R.layout.map_item_layout, null, true);
@@ -445,6 +454,8 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
          */
         long start = System.currentTimeMillis();
         View view = mClusterRender.getDrawAble(num, clusterItem);
+        if (view == null) return null;
+
         bitmapDescriptor = BitmapDescriptorFactory.fromView(view);
         Log.w("draw", "time : " + (System.currentTimeMillis() - start));
         return bitmapDescriptor;

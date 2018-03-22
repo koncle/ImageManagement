@@ -11,8 +11,28 @@
     <ProgressBar
         android:id="@+id/progressBar"
         style="?android:attr/progressBarStyle"
-        android:layout_gravity="center"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
 
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|bottom"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/locate_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="start|bottom"
+            android:src="@drawable/ic_my_location_black_24dp" />
+
+        <ImageButton
+            android:id="@+id/locate_stop_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_my_location_black_24dp" />
+    </LinearLayout>
 </FrameLayout>

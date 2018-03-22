@@ -45,7 +45,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static android.view.View.GONE;
 import static com.koncle.imagemanagement.message.MyHandler.FOLDER_ADDED;
 import static com.koncle.imagemanagement.message.MyHandler.FOLDER_DELETED;
 import static com.koncle.imagemanagement.message.MyHandler.IMAGE_ADDED;
@@ -366,7 +365,6 @@ public class DrawerActivity extends AppCompatActivity
         }
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
@@ -408,16 +406,6 @@ public class DrawerActivity extends AppCompatActivity
                 //ImageService.testFile(getApplicationContext());
             }
         }).start();
-    }
-
-    @Override
-    public void hideToolbar() {
-        fsv.setVisibility(GONE);
-    }
-
-    @Override
-    public void showToolbar() {
-        fsv.setVisibility(View.VISIBLE);
     }
 
     public class MyHandler extends Handler {

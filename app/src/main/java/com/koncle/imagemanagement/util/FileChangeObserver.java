@@ -95,7 +95,7 @@ public class FileChangeObserver extends ContentObserver {
             image.setPath(path);
 
             // test if exist
-            Image imageInDatabase = ImageService.ifExistImage(image);
+            Image imageInDatabase = ImageService.ifExistInDB(image);
             // if return false, which means it exists in the database.
             // else it should be added to the database
             File file = new File(path);

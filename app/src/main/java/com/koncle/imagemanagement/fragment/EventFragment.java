@@ -2,11 +2,9 @@ package com.koncle.imagemanagement.fragment;
 
 import android.content.Context;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
@@ -42,14 +40,10 @@ import java.util.List;
 public class EventFragment extends Fragment implements HasName, ImageChangeObserver {
     private static final String TAG = EventFragment.class.getSimpleName();
     public static String className = EventFragment.class.getSimpleName();
-    final int ORANGE = Color.rgb(255, 223, 0);
-    final int WHITE = Color.WHITE;
     private final String name = DrawerActivity.EVENT_FRAGMENT_NAME;
     private RecyclerView eventsRecyclerView;
     private EventRecyclerViewAdapter eventAdapter;
     private List<Event> events;
-    private Operator operator;
-    private SwipeRefreshLayout refresh;
 
     private int eventPositionWaitingForAddImageResult;
     private InnerEventAdapter adapterWaitingForAddImageResult;
@@ -135,7 +129,6 @@ public class EventFragment extends Fragment implements HasName, ImageChangeObser
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        operator = (Operator) context;
         Log.w(TAG, "onAttach");
     }
 
@@ -266,7 +259,7 @@ public class EventFragment extends Fragment implements HasName, ImageChangeObser
                 finalHolder.show.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        ActivityUtil.showImageList(getContext(), event, event.getName());
+                        ActivityUtil.showTimeLine(getContext(), event, event.getName());
                     }
                 });
             }
@@ -339,9 +332,9 @@ public class EventFragment extends Fragment implements HasName, ImageChangeObser
 
         void setData(Event event) {
             event.resetImageList();
+            this.event = event;
             this.images = event.getImageList();
             notifyItemRangeChanged(0, images.size());
-            this.event = event;
         }
 
         void refreshData() {
@@ -402,7 +395,7 @@ public class EventFragment extends Fragment implements HasName, ImageChangeObser
             imageHolder.image.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    ActivityUtil.showSingleImageWithPos(getContext(), event, position, false, imageHolder.image);
+                    ActivityUtil.showSingleImageWithPos(getContext(), getEvent(), position, true, imageHolder.image);
 
                     adapterWaitingForAddImageResult = InnerEventAdapter.this;
                 }

@@ -4,7 +4,7 @@ package com.koncle.imagemanagement.message;
  * Created by Koncle on 2018/1/24.
  */
 
-public class MyHandler {
+public class HandlerConstants {
 
     public static final int SCAN_OK = 1;
     public static final int SCAN_OK_SHOW = 2;

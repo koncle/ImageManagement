@@ -77,7 +77,7 @@ public class SelectImageActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             List<Image> values = savedInstanceState.getParcelableArrayList("values");
             Log.w("Selected on", "get " + values.size());
-            imageAdaptor.createSelctedImage(values);
+            imageAdaptor.restoreState(values);
         }
     }
 
@@ -121,15 +121,6 @@ public class SelectImageActivity extends AppCompatActivity {
             }
         });
     }
-
-    private void returnImages() {
-        Intent intent = new Intent();
-        Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(SELECTED_IMAGES, (ArrayList<? extends Parcelable>) imageAdaptor.getSelections());
-        intent.putExtras(bundle);
-        setResult(SELECTED_IMAGE_DATA, intent);
-    }
-
     private void initData() {
         folderMap = new HashMap<>();
         List<Folder> folderImages = ImageService.getNewAllFolders();
@@ -138,9 +129,11 @@ public class SelectImageActivity extends AppCompatActivity {
 
             // get image paths
             List<Image> images;
+            // All文件夹，获取全部图片
             if (i == 0) {
                 images = ImageService.getImages();
                 folder.setImages(images);
+                // 普通文件夹，获取其图片
             } else {
                 images = folder.getImages();
             }
@@ -159,6 +152,7 @@ public class SelectImageActivity extends AppCompatActivity {
         spinner = findViewById(R.id.image_select_spinner);
         final FolderSpinnerAdapter fsa = new FolderSpinnerAdapter(this, folderMap);
         folderList = fsa.getFolderList();
+        // 按文件夹大小排序
         Collections.sort(folderList, new Comparator<String>() {
             @Override
             public int compare(String o1, String o2) {
@@ -195,10 +189,18 @@ public class SelectImageActivity extends AppCompatActivity {
             gridLayoutManager = new GridLayoutManager(this, 6);
         }
         recyclerView.setLayoutManager(gridLayoutManager);
-        imageAdaptor = new ImageSelectAdaptor(this, gridLayoutManager, folderMap.get(0));
+        imageAdaptor = new ImageSelectAdaptor(this, gridLayoutManager, folderMap.get(folderList.get(0)));
         recyclerView.setAdapter(imageAdaptor);
 
         ((SimpleItemAnimator) recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
         recyclerView.getItemAnimator().setChangeDuration(0);
+    }
+
+    private void returnImages() {
+        Intent intent = new Intent();
+        Bundle bundle = new Bundle();
+        bundle.putParcelableArrayList(SELECTED_IMAGES, (ArrayList<? extends Parcelable>) imageAdaptor.getSelections());
+        intent.putExtras(bundle);
+        setResult(SELECTED_IMAGE_DATA, intent);
     }
 }

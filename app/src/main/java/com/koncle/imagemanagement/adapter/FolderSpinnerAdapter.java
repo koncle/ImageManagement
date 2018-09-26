@@ -24,7 +24,9 @@ import java.util.Map;
 
 public class FolderSpinnerAdapter implements SpinnerAdapter {
 
+    // folderList is used to save path of images
     private List<String> folderList;
+    // folderMap is used to save <path, Folder>
     private Map<String, Folder> folderMap;
     private Context context;
 

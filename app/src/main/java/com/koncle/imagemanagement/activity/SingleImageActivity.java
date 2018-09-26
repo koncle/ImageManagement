@@ -38,8 +38,8 @@ import com.koncle.imagemanagement.dialog.FolderSelectDialogFragment;
 import com.koncle.imagemanagement.dialog.InfoDialog;
 import com.koncle.imagemanagement.dialog.TagSelectDialog;
 import com.koncle.imagemanagement.util.ActivityUtil;
-import com.koncle.imagemanagement.view.TagAdapter;
-import com.koncle.imagemanagement.view.TagViewLayout;
+import com.koncle.imagemanagement.view.tagview.TagAdapter;
+import com.koncle.imagemanagement.view.tagview.TagViewLayout;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -52,6 +52,8 @@ public class TimeLineLineView extends ViewGroup implements OnDataSetChangedListe
     private LineViewAdapter lineViewAdapter;
     private Bitmap timeLineBitmap;
     private NinePatch ninePatch;
+    private OnTimeLineMoveListener onTimeLineMoveListener;
+
     private GestureDetector.OnGestureListener onGestureListener = new GestureDetector.OnGestureListener() {
         // must return true to give this event to fling()
         @Override
@@ -209,6 +211,7 @@ public class TimeLineLineView extends ViewGroup implements OnDataSetChangedListe
 
     private void moveTo(int direction, float offset) {
         Log.e("move", "" + offset + " " + direction);
+        onTimeLineMoveListener.onMoved(offset);
         int count = getChildCount();
         switch (direction) {
             case LEFT:
@@ -289,20 +292,17 @@ public class TimeLineLineView extends ViewGroup implements OnDataSetChangedListe
         float centerY = maxChildHeight;
 
         paint.setColor(Color.GRAY);
-        //canvas.drawRect(0, centerY -5, width, centerY +5, paint);
 
+        // draw nine patch file
         if (timeLineBitmap == null) {
             timeLineBitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ar2);
             ninePatch = new NinePatch(timeLineBitmap, timeLineBitmap.getNinePatchChunk(), null);
         }
 
-        // remove white space
+        // remove white space in the image
         // so draw from -10 to width + 10
         Rect rect = new Rect(-10, (int) centerY - 25, width + 10, (int) centerY + 25);
 
-        // canvas.drawBitmap(timeLineBitmap, null, rect, paint);
-        // Drawable drawable = DrawableCompat.wrap(getResources().getDrawable(R.mipmap.ar2));
-        // drawable.setTint(Color.parseColor("#333"));
         ninePatch.draw(canvas, rect, paint);
     }
 
@@ -342,6 +342,14 @@ public class TimeLineLineView extends ViewGroup implements OnDataSetChangedListe
             Log.e("pos", point.getX() + " " + pos + "");
         }
         return pos;
+    }
+
+    public void setOnTimeLineMoveListener(OnTimeLineMoveListener onTimeLineMoveListener) {
+        this.onTimeLineMoveListener = onTimeLineMoveListener;
+    }
+
+    interface OnTimeLineMoveListener{
+        void onMoved(float x);
     }
 
 

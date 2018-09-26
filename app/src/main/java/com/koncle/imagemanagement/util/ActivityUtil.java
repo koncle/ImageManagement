@@ -10,11 +10,9 @@ import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.SharedElementCallback;
-import android.transition.Explode;
 import android.util.Log;
 import android.view.View;
 
-import com.koncle.imagemanagement.activity.MapActivity;
 import com.koncle.imagemanagement.activity.MultiColumnImagesActivity;
 import com.koncle.imagemanagement.activity.SelectImageActivity;
 import com.koncle.imagemanagement.activity.SingleImageActivity;
@@ -158,21 +156,6 @@ public class ActivityUtil {
         ActivityCompat.startActivityForResult((Activity) context, intent, 1, options.toBundle());
 
         //((Activity) context).startActivityForResult(intent, 1); // lager than 0
-    }
-
-    public static void showMap(Context context, List<Image> images) {
-
-        Intent intent = new Intent(context, MapActivity.class);
-        Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(ACTIVITY_MUL_IMAGE_TAG, (ArrayList<Image>) images);
-        intent.putExtras(bundle);
-
-        //((Activity) context).startActivityForResult(intent, 1);
-
-        ((Activity) context).getWindow().setExitTransition(new Explode());
-        ((Activity) context).getWindow().setEnterTransition(new Explode());
-        ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation((Activity) context);
-        context.startActivity(intent, options.toBundle());
     }
 
     public static void selectImages(Context context) {

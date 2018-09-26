@@ -45,16 +45,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import static com.koncle.imagemanagement.message.MyHandler.FOLDER_ADDED;
-import static com.koncle.imagemanagement.message.MyHandler.FOLDER_DELETED;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_ADDED;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_ADD_TO_EVENT;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_DELETED;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_DELETED_BY_SELF;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_MOVED;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_TAG_CHANGED;
-import static com.koncle.imagemanagement.message.MyHandler.SCAN_OK;
-import static com.koncle.imagemanagement.message.MyHandler.SCAN_OK_SHOW;
+import static com.koncle.imagemanagement.message.HandlerConstants.FOLDER_ADDED;
+import static com.koncle.imagemanagement.message.HandlerConstants.FOLDER_DELETED;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_ADDED;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_ADD_TO_EVENT;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_DELETED;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_DELETED_BY_SELF;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_MOVED;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_TAG_CHANGED;
+import static com.koncle.imagemanagement.message.HandlerConstants.SCAN_OK;
+import static com.koncle.imagemanagement.message.HandlerConstants.SCAN_OK_SHOW;
 
 /**
  * Created by Koncle on 2018/1/20.
@@ -174,9 +174,6 @@ public class DrawerActivity extends AppCompatActivity
             public void onActionMenuItemSelected(MenuItem item) {
                 int id = item.getItemId();
                 switch (id) {
-                    case R.id.map:
-                        ActivityUtil.showMap(DrawerActivity.this, ImageService.getImagesWithLoc());
-                        break;
                     case R.id.refresh_data:
                         refreshData();
                         break;
@@ -288,7 +285,6 @@ public class DrawerActivity extends AppCompatActivity
                 case MAP_FRAGMENT_NAME:
                     fragment = MyMapFragment.newInstance();
                     break;
-
             }
         }
         return fragment;
@@ -418,7 +414,6 @@ public class DrawerActivity extends AppCompatActivity
                 case SCAN_OK_SHOW:
                     progressDialog.dismiss();
                     show();
-
                     break;
 
                 case SCAN_OK:

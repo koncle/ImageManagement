@@ -306,7 +306,6 @@ public class ClusterOverlay implements AMap.OnCameraChangeListener,
         // end calculation
 
         //复制一份数据，规避同步
-        // ?? what does it mean?
         List<Cluster> clusters = new ArrayList<Cluster>();
         clusters.addAll(mClusters);
         Message message = Message.obtain();

@@ -9,8 +9,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.koncle.imagemanagement.R;
-import com.koncle.imagemanagement.view.TagAdapter;
-import com.koncle.imagemanagement.view.TagViewLayout;
+import com.koncle.imagemanagement.view.tagview.TagAdapter;
+import com.koncle.imagemanagement.view.tagview.TagViewLayout;
 
 import java.util.ArrayList;
 import java.util.Arrays;

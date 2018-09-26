@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.koncle.imagemanagement.message.MyHandler.FOLDER_ADDED;
-import static com.koncle.imagemanagement.message.MyHandler.FOLDER_DELETED;
+import static com.koncle.imagemanagement.message.HandlerConstants.FOLDER_ADDED;
+import static com.koncle.imagemanagement.message.HandlerConstants.FOLDER_DELETED;
 
 /**
  * Created by Koncle on 2018/1/22.
@@ -40,13 +40,13 @@ public class MsgCenter {
         Bundle bundle = new Bundle();
         bundle.putParcelable(DELETE_IMAGE, image);
         msg.setData(bundle);
-        msg.what = com.koncle.imagemanagement.message.MyHandler.IMAGE_DELETED_BY_SELF;
+        msg.what = HandlerConstants.IMAGE_DELETED_BY_SELF;
         MsgCenter.sendMsg(msg);
     }
 
     public static void notifyDataMovedInner(Image preImage, Image rearImage) {
         Message msg = Message.obtain();
-        msg.what = com.koncle.imagemanagement.message.MyHandler.IMAGE_MOVED;
+        msg.what = HandlerConstants.IMAGE_MOVED;
         Bundle bundle = new Bundle();
         bundle.putParcelable(MOVE_REARIMAGE, rearImage);
         bundle.putParcelable(MOVE_PREIMAGE, preImage);
@@ -56,7 +56,7 @@ public class MsgCenter {
 
     public static void notifyImageAdded(Image image) {
         Message msg = Message.obtain();
-        msg.what = com.koncle.imagemanagement.message.MyHandler.IMAGE_ADDED;
+        msg.what = HandlerConstants.IMAGE_ADDED;
         Bundle bundle = new Bundle();
         bundle.putParcelable("image", image);
         msg.setData(bundle);
@@ -65,7 +65,7 @@ public class MsgCenter {
 
     public static void sendTagAddedMsg(List<Tag> tags, Image image) {
         Message msg = Message.obtain();
-        msg.what = com.koncle.imagemanagement.message.MyHandler.IMAGE_TAG_CHANGED;
+        msg.what = HandlerConstants.IMAGE_TAG_CHANGED;
         msg.obj = image;
         Bundle bundle = new Bundle();
         bundle.putParcelableArrayList("tags", (ArrayList<? extends Parcelable>) tags);
@@ -135,6 +135,7 @@ public class MsgCenter {
     }
 
     public static void init(Context context) {
+        // receiver system msg
         Uri uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         observer = new FileChangeObserver(new MyHandler(), context);
         context.getContentResolver().registerContentObserver(uri, false, observer);

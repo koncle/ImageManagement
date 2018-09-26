@@ -32,7 +32,7 @@ import java.util.Locale;
 public class ImageUtils {
     public static final String TAG = ImageUtils.class.getSimpleName();
 
-    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.CHINA);
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA);
     private static SimpleDateFormat sdfY = new SimpleDateFormat("yyyy", Locale.CHINA);
     private static SimpleDateFormat sdfMD = new SimpleDateFormat("MM-dd", Locale.CHINA);
 

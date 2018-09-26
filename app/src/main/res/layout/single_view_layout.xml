@@ -34,7 +34,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <com.koncle.imagemanagement.view.TagViewLayout
+        <com.koncle.imagemanagement.view.tagview.TagViewLayout
             android:id="@+id/tag_view_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -23,6 +23,9 @@ public abstract class ImageViewAdapter<T> extends PagerAdapter {
 
     public void setItems(List<T> images) {
         this.items = images;
+        if (onDataSetChangedListener != null){
+            onDataSetChangedListener.onChanged();
+        }
     }
 
     public T getItem(int pos) {
@@ -47,6 +50,11 @@ public abstract class ImageViewAdapter<T> extends PagerAdapter {
         container.removeView((View) object);
     }
 
+    /*
+    *
+    * this method can control the num of images that are offscreen
+    *
+    * */
     @Override
     public float getPageWidth(int position) {
         return TimeLineImageView.mid;

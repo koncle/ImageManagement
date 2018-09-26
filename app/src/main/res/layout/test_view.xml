@@ -8,7 +8,7 @@
     android:orientation="vertical">
 
     <!--
-    <com.koncle.imagemanagement.view.TagViewLayout
+ com.koncle.imagemanagement.view.tagview.TagViewLayoutyout
         android:id="@+id/view_group"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

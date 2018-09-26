@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_ADD_TO_EVENT;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_ADD_TO_EVENT;
 import static com.koncle.imagemanagement.util.TagUtil.DEBUG;
 
 /**
@@ -340,7 +340,7 @@ public class ImageService {
                 } else {
                     MsgCenter.sendTagAddedMsg(tags, null);
                 }
-                //MsgCenter.sendEmptyMessage(MyHandler.IMAGE_TAG_CHANGED, null, DrawerActivity.className);
+                //MsgCenter.sendEmptyMessage(HandlerConstants.IMAGE_TAG_CHANGED, null, DrawerActivity.className);
             }
         });
     }

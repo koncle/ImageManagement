@@ -1,4 +1,4 @@
-package com.koncle.imagemanagement.view;
+package com.koncle.imagemanagement.view.tagview;
 
 import android.view.View;
 import android.view.ViewGroup;

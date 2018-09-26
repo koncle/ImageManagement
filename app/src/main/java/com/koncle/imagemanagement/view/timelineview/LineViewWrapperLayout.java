@@ -38,6 +38,7 @@ public class LineViewWrapperLayout<T> {
         timeLineImageView.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                // when viewpager moved, the time on timeline will move together
                 timeLineLineView.movePoints(position, positionOffset, positionOffsetPixels);
             }
 
@@ -47,7 +48,12 @@ public class LineViewWrapperLayout<T> {
             }
 
             @Override
-            public void onPageScrollStateChanged(int state) {
+            public void onPageScrollStateChanged(int state) {}
+        });
+        timeLineLineView.setOnTimeLineMoveListener(new TimeLineLineView.OnTimeLineMoveListener() {
+            @Override
+            public void onMoved(float x) {
+                //TODO: conbine two components
             }
         });
     }

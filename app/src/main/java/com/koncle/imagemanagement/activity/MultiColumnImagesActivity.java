@@ -30,6 +30,7 @@ import android.widget.RadioButton;
 import android.widget.Toast;
 
 import com.koncle.imagemanagement.R;
+import com.koncle.imagemanagement.adapter.AbstractImageAdapter;
 import com.koncle.imagemanagement.adapter.ImageAdaptor;
 import com.koncle.imagemanagement.bean.Folder;
 import com.koncle.imagemanagement.bean.Image;
@@ -44,11 +45,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static android.view.Window.FEATURE_CONTENT_TRANSITIONS;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_ADDED;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_DELETED;
-import static com.koncle.imagemanagement.message.MyHandler.IMAGE_TAG_CHANGED;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_ADDED;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_DELETED;
+import static com.koncle.imagemanagement.message.HandlerConstants.IMAGE_TAG_CHANGED;
 
-public class MultiColumnImagesActivity extends AppCompatActivity implements ImageAdaptor.ModeOperator {
+public class MultiColumnImagesActivity extends AppCompatActivity implements AbstractImageAdapter.ModeListener {
 
     public static final String className = MultiColumnImagesActivity.class.getSimpleName();
     public static final String ALL_FOLDER_NAME = "ALL";
@@ -345,8 +346,8 @@ public class MultiColumnImagesActivity extends AppCompatActivity implements Imag
         }
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, spanCount);
         recyclerView.setLayoutManager(gridLayoutManager);
-        imageAdaptor = new ImageAdaptor(this, handler, gridLayoutManager, images);
-        imageAdaptor.setOperater(this);
+        imageAdaptor = new ImageAdaptor(this, gridLayoutManager, images);
+        imageAdaptor.setListener(this);
         recyclerView.setAdapter(imageAdaptor);
         recyclerView.setItemViewCacheSize(0);
 
